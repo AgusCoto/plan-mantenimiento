@@ -4,6 +4,7 @@
   "private": true,
   "description": "Plan de Mantenimiento: aplicación de escritorio (Mac y Windows) con base de datos en Supabase",
   "scripts": {
+    "tauri": "tauri",
     "vendor": "node scripts/vendor.mjs",
     "dev": "npm run vendor && tauri dev",
     "build": "npm run vendor && tauri build",
