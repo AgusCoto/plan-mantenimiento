@@ -1,0 +1,19 @@
+{
+  "name": "plan-mantenimiento",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Plan de Mantenimiento: aplicación de escritorio (Mac y Windows) con base de datos en Supabase",
+  "scripts": {
+    "vendor": "node scripts/vendor.mjs",
+    "dev": "npm run vendor && tauri dev",
+    "build": "npm run vendor && tauri build",
+    "web": "npm run vendor && npx --yes serve src -l 5173"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "2.45.4",
+    "qrcode-generator": "1.4.4"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.1.0"
+  }
+}

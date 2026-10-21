@@ -1,0 +1,1455 @@
+<!doctype html><html lang="es"><head><meta charset=utf-8><title>Plan de Mantenimiento</title><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style>
+
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<style>
+/* Layout: tablero de planta — barra superior fija con pestañas, lista de tareas ordenada por urgencia, detalle por equipo con horómetro */
+:root{
+  --bg:#EEF2F3; --surface:#FFFFFF; --surface-2:#E3E9EB; --fg:#14212A; --muted:#566670; --line:#CDD6DA;
+  --accent:#1D6A73; --accent-fg:#FFFFFF; --accent-soft:#D6E9EA;
+  --bad:#B8322A; --bad-soft:#F6DCD9; --warn:#9A6B00; --warn-bar:#E0A800; --warn-soft:#FBEFC8;
+  --ok:#2D7A4C; --ok-soft:#D7EEDF; --none:#7B8A93; --none-soft:#E3E8EA;
+  --shadow:0 1px 2px rgba(20,33,42,.06),0 6px 24px rgba(20,33,42,.08);
+  --f-display:"IBM Plex Sans Condensed","Arial Narrow",Arial,sans-serif;
+  --f-body:"IBM Plex Sans",-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0E1418; --surface:#161F25; --surface-2:#1E2930; --fg:#E2E9ED; --muted:#93A3AD; --line:#2B3841;
+  --accent:#4DB0B4; --accent-fg:#0B1417; --accent-soft:#183539;
+  --bad:#F07065; --bad-soft:#3A1F1D; --warn:#F2C230; --warn-bar:#F2C230; --warn-soft:#352D12;
+  --ok:#5FC38D; --ok-soft:#173022; --none:#8495A0; --none-soft:#222D34;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 28px rgba(0,0,0,.35); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E1418; --surface:#161F25; --surface-2:#1E2930; --fg:#E2E9ED; --muted:#93A3AD; --line:#2B3841;
+  --accent:#4DB0B4; --accent-fg:#0B1417; --accent-soft:#183539;
+  --bad:#F07065; --bad-soft:#3A1F1D; --warn:#F2C230; --warn-bar:#F2C230; --warn-soft:#352D12;
+  --ok:#5FC38D; --ok-soft:#173022; --none:#8495A0; --none-soft:#222D34;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 28px rgba(0,0,0,.35); color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:14px;line-height:1.45}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--surface)}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--surface);border-bottom:1px solid var(--line)}
+.top-row{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding-block:12px}
+.brand{display:flex;align-items:baseline;gap:10px;margin-right:auto}
+.brand h1{font-family:var(--f-display);font-weight:700;font-size:21px;letter-spacing:.01em;margin:0;text-wrap:balance}
+.brand span{font-family:var(--f-mono);font-size:11px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.tabs{display:flex;gap:2px;flex-wrap:wrap}
+.tab{border:0;background:none;padding:12px 14px 10px;font-family:var(--f-display);font-weight:600;font-size:15px;color:var(--muted);border-bottom:3px solid transparent;cursor:pointer}
+.tab[aria-selected="true"]{color:var(--fg);border-bottom-color:var(--accent)}
+.tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding-block:0 12px}
+.tools input[type=search]{flex:1 1 220px;min-width:0}
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:7px 12px;font-weight:500;cursor:pointer;white-space:nowrap}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.danger{color:var(--bad);border-color:var(--bad)}
+.btn.sm{padding:4px 9px;font-size:13px}
+.btn.link{border:0;background:none;padding:4px 0;color:var(--accent)}
+input,select,textarea{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:7px 10px;width:100%}
+textarea{resize:vertical;min-height:64px}
+label.f{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted);font-weight:500;min-width:0}
+label.f>span{letter-spacing:.02em}
+main{padding-block:20px 48px}
+.empty{background:var(--surface);border:1px dashed var(--line);border-radius:10px;padding:32px 24px;text-align:center;color:var(--muted)}
+.empty h2{font-family:var(--f-display);color:var(--fg);margin:0 0 6px;font-size:20px}
+.banner{background:var(--warn-soft);color:var(--fg);border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:13px}
+/* summary */
+.summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:20px}
+.sum{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px 14px;text-align:left;cursor:pointer;display:flex;flex-direction:column;gap:2px;border-left-width:5px}
+.sum[aria-pressed="true"]{box-shadow:0 0 0 2px var(--accent) inset}
+.sum b{font-family:var(--f-mono);font-size:26px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.1}
+.sum span{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.sum.vencida{border-left-color:var(--bad)} .sum.vencida b{color:var(--bad)}
+.sum.proxima{border-left-color:var(--warn-bar)} .sum.proxima b{color:var(--warn)}
+.sum.ok{border-left-color:var(--ok)} .sum.ok b{color:var(--ok)}
+.sum.sin{border-left-color:var(--none)} .sum.sin b{color:var(--none)}
+.sec-h{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:22px 0 10px}
+.sec-h h2{font-family:var(--f-display);font-size:18px;margin:0}
+.sec-h small{color:var(--muted)}
+/* task rows */
+.list{display:flex;flex-direction:column;gap:8px}
+.row{position:relative;display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1.1fr) auto;gap:6px 18px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px 14px 12px 18px;overflow:hidden}
+.row::before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:var(--none)}
+.row.vencida::before{background:var(--bad)} .row.proxima::before{background:var(--warn-bar)} .row.ok::before{background:var(--ok)}
+.row .what{min-width:0}
+.code{font-family:var(--f-mono);font-size:12px;color:var(--muted);letter-spacing:.02em}
+.row .tname{font-weight:600;margin:1px 0}
+.row .meta{font-size:12px;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 10px}
+.when{min-width:0}
+.when .big{font-family:var(--f-mono);font-weight:600;font-size:14px;font-variant-numeric:tabular-nums}
+.vencida .when .big{color:var(--bad)} .proxima .when .big{color:var(--warn)} .ok .when .big{color:var(--ok)} .sin .when .big{color:var(--none)}
+.when .sub{font-size:12px;color:var(--muted)}
+.bar{height:5px;border-radius:3px;background:var(--surface-2);margin-top:6px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--ok)}
+.vencida .bar i{background:var(--bad)} .proxima .bar i{background:var(--warn-bar)}
+.acts{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.chip{display:inline-block;font-size:11px;font-weight:600;letter-spacing:.04em;border-radius:4px;padding:1px 6px;background:var(--surface-2);color:var(--muted);text-transform:uppercase}
+.chip.A{background:var(--bad-soft);color:var(--bad)} .chip.B{background:var(--warn-soft);color:var(--warn)} .chip.C{background:var(--ok-soft);color:var(--ok)}
+.chip.st-vencida{background:var(--bad-soft);color:var(--bad)} .chip.st-proxima{background:var(--warn-soft);color:var(--warn)} .chip.st-ok{background:var(--ok-soft);color:var(--ok)} .chip.st-sin{background:var(--none-soft);color:var(--none)}
+/* equipos grid */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.card{position:relative;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 14px 14px 18px;cursor:pointer;display:flex;flex-direction:column;gap:8px;overflow:hidden}
+.card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:var(--none)}
+.card.vencida::before{background:var(--bad)} .card.proxima::before{background:var(--warn-bar)} .card.ok::before{background:var(--ok)}
+.card:hover{border-color:var(--accent)}
+.card h3{margin:0;font-size:15px;font-weight:600;line-height:1.3}
+.card .counts{display:flex;gap:6px;flex-wrap:wrap}
+/* horómetro */
+.hm{display:inline-flex;align-items:center;gap:3px}
+.hm .d{font-family:var(--f-mono);font-weight:600;font-size:15px;background:var(--fg);color:var(--bg);border-radius:3px;min-width:16px;text-align:center;padding:1px 2px;font-variant-numeric:tabular-nums}
+.hm .u{font-family:var(--f-mono);font-size:12px;color:var(--muted);margin-left:4px}
+.hm.small .d{font-size:12px;min-width:12px}
+/* detail */
+.detail-h{display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px}
+.detail-h h2{font-family:var(--f-display);font-size:24px;margin:2px 0 6px;text-wrap:balance}
+.kv{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px 18px;margin-top:12px}
+.kv div{min-width:0}
+.kv dt{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.kv dd{margin:0;overflow-wrap:anywhere}
+.hm-box{background:var(--surface-2);border-radius:8px;padding:12px 14px;display:flex;flex-direction:column;gap:6px;min-width:220px}
+.hm-box small{color:var(--muted);font-size:12px}
+.detail-acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.tbl-wrap{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:8px}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600;background:var(--surface-2);white-space:nowrap}
+td.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+tr:last-child td{border-bottom:0}
+/* modal */
+.overlay{position:fixed;inset:0;z-index:50;background:rgba(10,16,20,.55);display:flex;align-items:flex-start;justify-content:center;padding:max(24px,env(safe-area-inset-top,0px)) max(12px,env(safe-area-inset-right,0px)) 24px max(12px,env(safe-area-inset-left,0px));overflow-y:auto}
+.modal{background:var(--surface);border-radius:12px;box-shadow:var(--shadow);width:100%;max-width:720px;padding:20px;display:flex;flex-direction:column;gap:14px}
+.modal h2{font-family:var(--f-display);margin:0;font-size:21px;text-wrap:balance}
+.modal .x{margin-left:auto}
+.mh{display:flex;align-items:flex-start;gap:12px}
+.fg{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.fg .full{grid-column:1/-1}
+fieldset{border:1px solid var(--line);border-radius:8px;padding:12px;margin:0;display:flex;flex-direction:column;gap:10px;min-width:0}
+legend{font-family:var(--f-display);font-weight:600;font-size:14px;padding:0 6px}
+.radios{display:flex;gap:8px;flex-wrap:wrap}
+.radios label{display:flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:6px;padding:6px 10px;cursor:pointer}
+.radios input{width:auto}
+.inline{display:flex;gap:8px;align-items:center}
+.inline>*{min-width:0}
+.hint{font-size:12px;color:var(--muted)}
+.m-acts{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+.err{color:var(--bad);font-size:13px}
+.ins h3{font-family:var(--f-display);font-size:15px;margin:0 0 4px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.ins ol{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:6px}
+.ins p{margin:0;white-space:pre-wrap}
+.ins .warnbox{background:var(--warn-soft);border-radius:8px;padding:10px 12px}
+.subtabs{display:flex;gap:4px;flex-wrap:wrap;border-bottom:1px solid var(--line);margin:22px 0 14px}
+.subtab{border:0;background:none;padding:10px 12px 8px;font-family:var(--f-display);font-weight:600;font-size:15px;color:var(--muted);border-bottom:3px solid transparent;margin-bottom:-1px;cursor:pointer;display:inline-flex;gap:6px;align-items:center}
+.subtab[aria-selected="true"]{color:var(--fg);border-bottom-color:var(--accent)}
+.subtab .cnt{font-family:var(--f-mono);font-size:11px;background:var(--surface-2);border-radius:10px;padding:1px 7px;color:var(--muted)}
+.ck-head{display:flex;gap:16px;flex-wrap:wrap;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-bottom:14px}
+.ck-note{margin-top:6px;font-size:12px;background:var(--warn-soft);border-radius:6px;padding:6px 9px}
+.ck-prog{display:flex;flex-direction:column;gap:2px;min-width:130px}
+.ck-prog b{font-family:var(--f-mono);font-size:20px;font-variant-numeric:tabular-nums}
+.ck-prog span{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.ck-grp{margin-bottom:16px}
+.ck-gh{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:6px}
+.ck-gh h3{font-family:var(--f-display);font-size:15px;margin:0;text-transform:uppercase;letter-spacing:.05em}
+.ck-list{list-style:none;margin:0;padding:0;background:var(--surface);border:1px solid var(--line);border-radius:8px}
+.ck-item{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid var(--line);border-left:4px solid var(--none)}
+.ck-item:last-child{border-bottom:0}
+.ck-item.hecho{border-left-color:var(--ok)} .ck-item.toca{border-left-color:var(--warn-bar)} .ck-item.vencido{border-left-color:var(--bad)}
+.ck-box{display:flex;gap:10px;align-items:flex-start;cursor:pointer;min-width:0;flex:1}
+.ck-box input{width:20px;height:20px;margin-top:1px;accent-color:var(--ok);flex:none}
+.ck-txt{display:flex;flex-direction:column;gap:1px;min-width:0}
+.ck-t{font-weight:500}
+.ck-item.hecho .ck-t{color:var(--muted)}
+.ck-d{font-size:12px;color:var(--muted)}
+.ck-s{font-size:12px;font-family:var(--f-mono)}
+.ck-item.hecho .ck-s{color:var(--ok)} .ck-item.toca .ck-s{color:var(--warn)} .ck-item.vencido .ck-s{color:var(--bad)} .ck-item.nunca .ck-s{color:var(--none)}
+.ck-a{flex:none}
+.ck-er{display:grid;grid-template-columns:minmax(0,2fr) auto minmax(0,1.4fr) auto;gap:8px;align-items:center;position:relative}
+.ck-er.hd{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:-6px}
+.ck-er[data-ai]{background:var(--accent-soft);border-radius:8px;padding:6px}
+.chip.ai{position:absolute;top:-7px;left:6px;background:var(--accent);color:var(--accent-fg)}
+@media (max-width:760px){.ck-er{grid-template-columns:minmax(0,1fr) auto;border-bottom:1px solid var(--line);padding-bottom:8px}.ck-er .er-t,.ck-er .er-d{grid-column:1/-1}.ck-er.hd{display:none}.ck-item{flex-wrap:wrap}}
+.code-prev{background:var(--surface-2);border-radius:6px;padding:8px 10px;font-size:13px}
+.code-big{font-family:var(--f-mono);font-weight:600;font-size:15px;letter-spacing:.03em}
+.is-baja .w{display:none!important}
+.code-spec{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px;display:flex;flex-direction:column;gap:14px}
+.code-anat{display:flex;align-items:flex-end;gap:6px;flex-wrap:wrap}
+.code-anat span{display:flex;flex-direction:column;align-items:center;gap:4px;border-bottom:3px solid var(--line);padding:0 6px 6px}
+.code-anat span.perm{border-bottom-color:var(--accent)}
+.code-anat b{font-family:var(--f-mono);font-size:30px;font-weight:600;letter-spacing:.04em}
+.code-anat small{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.code-anat i{font-family:var(--f-mono);font-size:28px;font-style:normal;color:var(--muted);padding-bottom:26px}
+.rules{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;max-width:75ch}
+.uchip{display:inline-block;font-family:var(--f-mono);font-weight:600;font-size:12px;border-radius:4px;padding:2px 7px;letter-spacing:.02em;white-space:nowrap}
+.uchip.big{font-size:15px;padding:5px 10px}
+.uchip.u1{background:var(--bad);color:var(--surface)} .uchip.u2{background:var(--warn-bar);color:#14212A} .uchip.u3{background:var(--accent-soft);color:var(--accent)} .uchip.u4{background:var(--none-soft);color:var(--muted)}
+.ot-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px;margin-bottom:18px}
+.ot{background:var(--surface);border:1px solid var(--line);border-top:5px solid var(--none);border-radius:8px;padding:12px 14px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.ot.u1{border-top-color:var(--bad)} .ot.u2{border-top-color:var(--warn-bar)} .ot.u3{border-top-color:var(--accent)}
+.ot-top{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.ot-d{font-weight:600;overflow-wrap:anywhere}
+.ot .meta{font-size:12px;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 10px}
+.ot-flags{display:flex;flex-wrap:wrap;gap:6px}
+.flag{font-size:12px;border-radius:4px;padding:2px 7px}
+.flag.ok{background:var(--ok-soft);color:var(--ok)} .flag.warn{background:var(--warn-soft);color:var(--warn)} .flag.bad{background:var(--bad-soft);color:var(--bad);font-weight:600}
+.ot .acts{justify-content:flex-start}
+.urg-prev{background:var(--surface-2);border-radius:8px;padding:10px 12px}
+.urg-row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.radios.col{flex-direction:column;align-items:stretch}
+details summary{cursor:pointer;color:var(--accent);font-weight:500}
+.who{display:flex;align-items:center;gap:8px;min-width:0}
+.who .av{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;color:#FFFFFF;font-weight:600;font-size:13px;flex:none}
+.who-t{display:flex;flex-direction:column;line-height:1.2;min-width:0}
+.who-t b{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px}
+.who-t span{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+body.ro .w,body.noadm .adm{display:none!important}
+body.ro .w-in{pointer-events:none;opacity:.7}
+.rp-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.rp-kpi{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px 14px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.rp-kpi b{font-family:var(--f-mono);font-size:22px;font-weight:600;font-variant-numeric:tabular-nums}
+.rp-kpi span{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.rp-kpi small{font-size:12px;color:var(--muted)}
+.rp-h{font-family:var(--f-display);font-size:17px;margin:24px 0 8px}
+.rp-bars{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.rp-br{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,2fr) auto;gap:10px;align-items:center;font-size:13px}
+.rp-bl{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rp-bl b{font-family:var(--f-mono);font-weight:600}
+.rp-bt{display:block;height:10px;background:var(--surface-2);border-radius:3px;overflow:hidden}
+.rp-bt i{display:block;height:100%;background:var(--bad)}
+.rp-br .num{font-family:var(--f-mono);font-size:12px;color:var(--muted);white-space:nowrap}
+.eq-pick{max-height:200px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;border:1px solid var(--line);border-radius:6px;padding:8px}
+.eq-pick label{display:flex;gap:8px;align-items:center;cursor:pointer}
+.eq-pick input{width:auto}
+.linkchip{border:0;cursor:pointer;font-family:var(--f-mono);text-transform:none}
+.linkchip:hover{background:var(--accent-soft);color:var(--accent)}
+td a{color:var(--accent)}
+@media (max-width:760px){.rp-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.rp-br{grid-template-columns:minmax(0,1fr) auto}.rp-bt{grid-column:1/-1;grid-row:2}}
+.tag-wrap{display:flex;gap:18px;flex-wrap:wrap;align-items:flex-start}
+.tag-card{background:#FFFFFF;color:#14212A;border:1px dashed var(--line);border-radius:10px;padding:14px;text-align:center;width:220px;max-width:100%;flex:none}
+.tag-card .qr svg{width:100%;height:auto;display:block}
+.tag-code{font-family:var(--f-mono);font-weight:600;font-size:15px;margin-top:6px}
+.tag-name{font-size:12px;color:#566670}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:8px;z-index:60;font-weight:500;max-width:calc(100% - 32px)}
+@media (max-width:760px){
+  .summary{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .row{grid-template-columns:minmax(0,1fr)}
+  .acts{justify-content:flex-start}
+  .fg{grid-template-columns:minmax(0,1fr)}
+  .tab{padding:10px 10px 8px}
+}
+@media (prefers-reduced-motion:no-preference){.btn,.card,.sum{transition:border-color .15s,box-shadow .15s}}
+</style>
+
+</head><body>
+<header class="top">
+  <div class="wrap">
+    <div class="top-row">
+      <div class="brand"><h1>Plan de Mantenimiento</h1><span>Grupo · 4 plantas</span></div>
+      <nav class="tabs" role="tablist" aria-label="Secciones">
+        <button class="tab" role="tab" id="tab-tablero" data-go="tablero" aria-selected="true">Tablero</button>
+        <button class="tab" role="tab" id="tab-equipos" data-go="equipos" aria-selected="false">Equipos</button>
+        <button class="tab" role="tab" id="tab-historial" data-go="historial" aria-selected="false">Historial</button>
+        <button class="tab" role="tab" id="tab-informe" data-go="informe" aria-selected="false">Informe mensual</button>
+        <button class="tab" role="tab" id="tab-manuales" data-go="manuales" aria-selected="false">Manuales</button>
+      </nav>
+      <div class="who" id="who" aria-live="polite"><span class="hint">Identificando usuario…</span></div>
+    </div>
+    <div class="tools">
+      <select id="f-empresa" aria-label="Empresa" style="width:auto">
+        <option value="">Todas las empresas</option>
+        <option value="IP">IP · Inyectora</option>
+        <option value="LH">LH · Limpieza</option>
+        <option value="PH">PH · Pinturas</option>
+        <option value="AL">AL · Alimentos</option>
+      </select>
+      <input type="search" id="f-q" placeholder="Buscar equipo, código o tarea" aria-label="Buscar">
+      <button class="btn danger w" data-act="falla" type="button">Reportar falla</button>
+      <button class="btn primary adm" id="btn-new-eq" type="button">+ Equipo</button>
+    </div>
+  </div>
+</header>
+<main class="wrap" id="main"></main>
+<div id="modal-root"></div>
+<div id="toast-root"></div>
+
+<script src="vendor/qrcode.js"></script>
+<script src="vendor/supabase.js"></script>
+<script src="config.js"></script>
+<script src="backend.js"></script>
+<script>
+(function(){
+"use strict";
+const EMP={IP:"Inyectora de plásticos",LH:"Limpieza hogar",PH:"Pinturas",AL:"Alimentos",GR:"Grupo (pañol / sin asignar)"};
+const AREAS0=[["INY","Inyección"],["SOP","Soplado"],["MOL","Molienda / recuperado"],["ELA","Elaboración / mezcla"],["ENV","Envasado / llenado"],["EMP","Etiquetado y empaque"],["DEP","Depósito / logística"],["SER","Servicios generales (aire, agua, vapor, energía)"],["LAB","Calidad / laboratorio"],["EFL","Efluentes"],["EDI","Edilicio"],["TAL","Taller / pañol de mantenimiento"]];
+const TIPOS0=[["INY","Inyectora",0],["SOP","Sopladora",0],["MOL","Molino",0],["MDE","Molde / matriz",1],["CHI","Chiller / enfriador",0],["COM","Compresor",1],["SEC","Secador / deshumidificador",0],["MEZ","Mezclador / agitador",0],["DIS","Dispersor",0],["MAR","Marmita / reactor",0],["BOM","Bomba",1],["LLE","Llenadora / envasadora",0],["TAP","Tapadora",0],["ETQ","Etiquetadora",0],["CIN","Cinta transportadora",0],["TAN","Tanque / recipiente",0],["CAL","Caldera",0],["INT","Intercambiador / pasteurizador",0],["TAB","Tablero eléctrico",0],["MOT","Motor eléctrico / motorreductor",1],["API","Apiladora",1],["AUT","Autoelevador / zorra",1],["HER","Herramienta eléctrica",1],["SOL","Soldadora",1],["GEN","Grupo electrógeno",1],["BAL","Balanza",0],["EXT","Extracción / ventilación",0],["ROB","Robot / manipulador",0],["OTR","Otro",0]];
+const MOV=new Set(["Alta","Traslado","Baja","Reactivación"]);
+const URG={U1:{l:"Emergencia",resp:1,meta:"Respuesta inmediata (menos de 1 h)",accion:"Se atiende ya, con todos los recursos disponibles. Se interrumpe cualquier otro trabajo."},
+  U2:{l:"Urgente",resp:4,meta:"Dentro del mismo turno (menos de 4 h)",accion:"Se atiende en el turno. Puede postergar preventivos no críticos."},
+  U3:{l:"Programable",resp:72,meta:"Dentro de 3 días",accion:"Se programa en los próximos días, coordinando con producción."},
+  U4:{l:"Planificada",resp:360,meta:"Próxima parada programada (hasta 15 días)",accion:"Se agrega al plan y se hace en la próxima parada o mantenimiento."}};
+const FALLAS=[["seg","Riesgo para personas, inocuidad del alimento o ambiente",100],["total","Detiene el equipo o la línea",100],["parcial","Reduce capacidad, velocidad o calidad",50],["menor","No afecta la producción por ahora",0]];
+const fallaLabel=k=>(FALLAS.find(f=>f[0]===k)||[])[1]||"";
+const MOTIVOS_BAJA=["Venta","Desguace / chatarra","Obsoleto / reemplazado","Rotura irreparable","Robo o pérdida","Devolución (alquiler / comodato)","Otro"];
+const TIPOS=["Inspección","Lubricación","Limpieza","Ajuste / reapriete","Cambio de componente","Medición predictiva","Calibración","Inspección legal"];
+const UNID={dias:["día","días"],semanas:["semana","semanas"],meses:["mes","meses"],anios:["año","años"]};
+const RANK={vencida:0,proxima:1,ok:2,sin:3};
+const S={eq:new Map(),ta:new Map(),re:[],ck:new Map(),loaded:{eq:false,ta:false,re:false},view:"tablero",eqId:null,eqTab:"plan",filtroEstado:"",empresa:"",q:"",db:null,dl:null,smp:null,ckBusy:false,dbState:"cargando"};
+Object.assign(S,{ot:new Map(),ma:new Map(),user:null,me:null,canWrite:null,isAdmin:false,assets:null,names:{},mes:todayStr().slice(0,7)});
+const RESULTADOS=["Resuelto","Pendiente de repuesto","Enviado a reparación externa","Equipo fuera de servicio"];
+const MAN_TIPOS=["Operación y mantenimiento","Despiece / repuestos","Eléctrico / esquemas","Manual de servicio","Ficha técnica","Otro"];
+const canW=()=>!!S.db&&S.canWrite!==false;
+const WRITE_ACTS=new Set(["falla","ot-edit","ot-close","ot-start","reg","reg-eq","hm","new-task","edit-task","ck-toggle","ck-plan","ck-edit","ck-ai","ck-ai-run","close-rep"]);
+const ADMIN_ACTS=new Set(["mover","baja","reactivar","cod-new","new-eq","edit-eq","del-eq","del-eq-ok","del-task","man-new","man-edit","man-del","man-del-ok"]);
+function applyRole(){
+  document.body.classList.toggle("ro",!canW());
+  document.body.classList.toggle("noadm",!S.isAdmin);
+  const w=$("#who");if(!w)return;
+  if(!S.me){w.innerHTML='<span class="hint">Sin identificar</span>';return}
+  const rol=S.isAdmin?"Administrador":canW()?"Técnico":"Solo lectura";
+  w.innerHTML='<span class="av" style="background:'+esc(S.me.color||"var(--accent)")+'">'+esc((S.me.name||"?").trim().charAt(0).toUpperCase())+'</span><span class="who-t"><b>'+esc(S.me.name||"Usuario")+'</b><span>'+rol+'</span></span>';
+}
+async function resolveNames(ids){
+  ids=[...new Set(ids.filter(x=>x&&!(x in S.names)))];if(!ids.length||!S.user)return;
+  ids.forEach(i=>S.names[i]="");
+  try{const ps=await S.user.profiles(ids);for(const i of ids)S.names[i]=(ps[i]&&ps[i].name)||"Usuario";render()}catch(_){}
+}
+const UNIT_OPTS=[["dias","días"],["semanas","semanas"],["meses","meses"],["anios","años"],["horas","horas de uso"]];
+const UNIT_DAYS={dias:1,semanas:7,meses:30.4,anios:365};
+const BASE=(window.PM_PUBLIC_URL||(!window.__TAURI__&&/^https?:/.test(location.protocol)?location.origin+location.pathname:"")).replace(/#.*$/,"");
+const RESERVED=/^(settings|sidebar|customize|upgrade|downloads|comment-)/i;
+function areas(){const m=new Map(AREAS0);((S.cfg&&S.cfg.areas)||[]).forEach(a=>{if(a&&a.c&&!m.has(a.c))m.set(a.c,a.d)});return [...m]}
+function tipos(){const m=new Map(TIPOS0.map(t=>[t[0],{d:t[1],movil:!!t[2]}]));((S.cfg&&S.cfg.tipos)||[]).forEach(t=>{if(t&&t.c&&!m.has(t.c))m.set(t.c,{d:t.d,movil:!!t.movil})});return [...m]}
+const areaDesc=c=>(areas().find(a=>a[0]===c)||[])[1]||"";
+const tipoInfo=c=>(tipos().find(t=>t[0]===c)||[])[1]||null;
+const pad3=v=>String(v).padStart(3,"0");
+const idAct=(t,v)=>t+"-"+pad3(v);
+const codeOf=(em,ar,t,v)=>em+"-"+ar+"-"+t+"-"+pad3(v);
+function parseCode(c){const m=/^([A-Z]{2})-([A-Z]{3})-([A-Z]{3})-(\d{1,4})$/.exec(String(c||""));return m?{empresa:m[1],area:m[2],tipo:m[3],numero:Number(m[4])}:null}
+function eqParts(e){const p=parseCode(e.codigo)||{};return {empresa:e.empresa||p.empresa||"",area:e.area||p.area||"",tipo:e.tipo||p.tipo||"",numero:isNum(e.numero)?Number(e.numero):(p.numero||null)}}
+function nextNum(tipo,exceptId){let mx=0;for(const e of S.eq.values()){if(e.id===exceptId)continue;const p=eqParts(e);if(p.tipo===tipo&&p.numero>mx)mx=p.numero}return mx+1}
+const isActivo=e=>!!e&&e.estado!=="Baja";
+function tokenFor(e){if(e.idActivo&&/^[A-Za-z0-9._~-]+$/.test(e.idActivo))return e.idActivo;const c=String(e.codigo||"");return /^[A-Za-z0-9._~-]+$/.test(c)&&!RESERVED.test(c)?c:e.id}
+function linkFor(e){return BASE+"#"+tokenFor(e)}
+function findByToken(tok){if(!tok)return null;const t=tok.toUpperCase();
+  for(const e of S.eq.values()){if(String(e.idActivo||"").toUpperCase()===t||String(e.codigo||"").toUpperCase()===t||e.id===tok)return e}
+  for(const e of S.eq.values()){if((e.codigosAnteriores||[]).some(c=>String(c).toUpperCase()===t))return e}return null}
+function qrSvg(text,cell){try{if(typeof qrcode!=="function")return "";const q=qrcode(0,"M");q.addData(text);q.make();return q.createSvgTag(cell||4,2)}catch(_){return ""}}
+function qrImg(text){try{if(typeof qrcode!=="function")return "";const q=qrcode(0,"M");q.addData(text);q.make();return q.createDataURL(4,2)}catch(_){return ""}}
+let pendingTok="";
+function openFromHash(){
+  let tok="";try{tok=decodeURIComponent((location.hash||"").slice(1))}catch(_){}
+  if(!tok)return;
+  if(!S.loaded.eq){pendingTok=tok;return}
+  const e=findByToken(tok);pendingTok="";
+  if(e){S.view="equipo";S.eqId=e.id;S.eqTab=((S.ck.get(e.id)||{}).items||[]).length?"check":"plan";closeModal();render();window.scrollTo(0,0);toast("Equipo identificado: "+e.codigo)}
+  else toast("La etiqueta "+tok+" no corresponde a ningún equipo cargado.");
+}
+
+/* ---------- utilidades ---------- */
+const $=s=>document.querySelector(s);
+const esc=v=>String(v==null?"":v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const isNum=v=>v!==null&&v!==""&&v!==undefined&&isFinite(Number(v));
+const n=v=>isNum(v)?Number(v):null;
+function todayStr(){const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
+function toUTC(s){const [y,m,d]=s.split("-").map(Number);return Date.UTC(y,m-1,d)}
+function fromUTC(t){const d=new Date(t);return d.getUTCFullYear()+"-"+String(d.getUTCMonth()+1).padStart(2,"0")+"-"+String(d.getUTCDate()).padStart(2,"0")}
+function diffDays(a,b){return Math.round((toUTC(b)-toUTC(a))/864e5)}
+function addInterval(s,v,u){
+  const [y,m,d]=s.split("-").map(Number);
+  if(u==="dias")return fromUTC(Date.UTC(y,m-1,d+v));
+  if(u==="semanas")return fromUTC(Date.UTC(y,m-1,d+7*v));
+  if(u==="meses"){const tm=m-1+v;const last=new Date(Date.UTC(y,tm+1,0)).getUTCDate();return fromUTC(Date.UTC(y,tm,Math.min(d,last)))}
+  const last=new Date(Date.UTC(y+v,m,0)).getUTCDate();return fromUTC(Date.UTC(y+v,m-1,Math.min(d,last)));
+}
+const fmtD=s=>s?s.split("-").reverse().join("/"):"—";
+const fmtN=v=>Number(v).toLocaleString("es-AR",{maximumFractionDigits:1});
+function plural(v,u){return v===1?UNID[u][0]:UNID[u][1]}
+function freqLabel(t){
+  const parts=[];const m=t.modo||"tiempo";
+  if(m!=="horas"&&n(t.cadaValor)){const v=n(t.cadaValor),u=t.cadaUnidad||"dias";
+    const one={dias:"Diaria",semanas:"Semanal",meses:"Mensual",anios:"Anual"};
+    parts.push(v===1?one[u]:"Cada "+v+" "+plural(v,u));}
+  if(m!=="tiempo"&&n(t.cadaHoras))parts.push("Cada "+fmtN(t.cadaHoras)+" h");
+  return parts.join(" o ")+(parts.length>1?" (lo primero)":"");
+}
+function hmDigits(v,cls){
+  if(!isNum(v))return '<span class="hint">Sin lectura</span>';
+  const s=String(Math.round(Number(v))).padStart(5,"0");
+  return '<span class="hm '+(cls||"")+'">'+[...s].map(c=>'<span class="d">'+c+'</span>').join("")+'<span class="u">h</span></span>';
+}
+function curHours(eq){
+  if(!eq||!isNum(eq.horometro))return {h:null};
+  const hd=n(eq.horasDia)||0;const d=eq.horometroFecha?Math.max(0,diffDays(eq.horometroFecha,todayStr())):0;
+  return {h:Number(eq.horometro)+hd*d,est:hd>0&&d>0,d};
+}
+function status(t){
+  const eq=S.eq.get(t.equipoId);const today=todayStr();const m=t.modo||"tiempo";const partes=[];let falta="";
+  if(m!=="horas"&&n(t.cadaValor)>0){
+    if(t.ultimaFecha){
+      const next=addInterval(t.ultimaFecha,n(t.cadaValor),t.cadaUnidad||"dias");
+      const total=Math.max(1,diffDays(t.ultimaFecha,next));const rest=diffDays(today,next);
+      const aviso=isNum(t.avisoDias)?Number(t.avisoDias):Math.min(14,Math.round(total*.15));
+      partes.push({k:"t",next,rest,total,frac:rest/total,warn:rest<=aviso,due:rest<0,dias:rest});
+    } else falta="Falta la fecha de la última realización";
+  }
+  if(m!=="tiempo"&&n(t.cadaHoras)>0){
+    const cur=curHours(eq);
+    if(cur.h===null)falta="Falta cargar el horómetro del equipo";
+    else if(!isNum(t.ultimaHoras))falta="Falta el horómetro de la última realización";
+    else{
+      const nextH=Number(t.ultimaHoras)+n(t.cadaHoras);const rest=nextH-cur.h;
+      const aviso=isNum(t.avisoHoras)?Number(t.avisoHoras):Math.round(n(t.cadaHoras)*.1);
+      const hd=n(eq.horasDia)||0;
+      partes.push({k:"h",nextH,rest,total:n(t.cadaHoras),frac:rest/n(t.cadaHoras),warn:rest<=aviso,due:rest<=0,dias:hd>0?rest/hd:null,est:cur.est});
+    }
+  }
+  if(!partes.length)return {estado:"sin",partes,falta:falta||"Sin programación",key:9};
+  const gov=partes.find(p=>p.due)||partes.slice().sort((a,b)=>a.frac-b.frac)[0];
+  const estado=partes.some(p=>p.due)?"vencida":partes.some(p=>p.warn)?"proxima":"ok";
+  return {estado,partes,gov,key:gov.frac};
+}
+function partLabel(p){
+  if(p.k==="t"){
+    const r=p.rest;let big;
+    if(r<0)big="Vencida hace "+(-r)+" "+(-r===1?"día":"días");
+    else if(r===0)big="Vence hoy";else if(r===1)big="Vence mañana";
+    else big="Faltan "+r+" días"+(r>=60?" (≈ "+fmtN(Math.round(r/30.4))+" meses)":"");
+    return {big,sub:"Próxima: "+fmtD(p.next)};
+  }
+  const r=p.rest;let big=r<=0?"Vencida por "+fmtN(Math.round(-r))+" h":"Faltan "+fmtN(Math.round(r))+" h";
+  let sub="A las "+fmtN(p.nextH)+" h de horómetro";
+  if(r>0&&p.dias!==null)sub+=" · ≈ "+Math.max(1,Math.round(p.dias))+" días de uso";
+  if(p.est)sub+=" · horómetro estimado";
+  return {big,sub};
+}
+function elapsed(st){if(!st.gov)return 0;return Math.min(1,Math.max(0,1-st.gov.frac))}
+function matchQ(eq,t){
+  if(S.empresa&&(!eq||eq.empresa!==S.empresa))return false;
+  if(!S.q)return true;const q=S.q.toLowerCase();
+  return [eq&&eq.codigo,eq&&eq.nombre,t&&t.nombre].some(x=>x&&String(x).toLowerCase().includes(q));
+}
+function toast(msg){const r=$("#toast-root");r.innerHTML='<div class="toast" role="status">'+esc(msg)+'</div>';clearTimeout(toast.t);toast.t=setTimeout(()=>{r.innerHTML=""},3200)}
+function writeErr(e){
+  const c=e&&e.code;
+  if(c==="invalid_argument"){if(!S.isAdmin&&S.canWrite!==true){S.canWrite=false;applyRole();toast("Tu usuario no tiene permiso para modificar datos. Pedile al administrador que te asigne el rol Técnico.")}else toast("No se pudo guardar: el servidor rechazó los datos ("+(e.message||c)+").")}
+  else if(c==="quota_exceeded")toast("Se llenó el espacio de datos: borrá registros viejos.");
+  else toast("No se pudo guardar ("+(c||"error")+"). Probá de nuevo en unos segundos.");
+}
+function tasksOf(id){return [...S.ta.values()].filter(t=>t.equipoId===id)}
+function eqWorst(id){let w="sin";const c={vencida:0,proxima:0,ok:0,sin:0};
+  for(const t of tasksOf(id)){const s=status(t).estado;c[s]++;if(RANK[s]<RANK[w])w=s}
+  return {w:tasksOf(id).length?w:"sin",c}}
+
+/* ---------- render ---------- */
+function render(){
+  document.querySelectorAll(".tab").forEach(b=>b.setAttribute("aria-selected",String(S.view.startsWith(b.dataset.go)||(b.dataset.go==="equipos"&&S.view==="codigos")||(b.dataset.go==="equipos"&&S.view==="equipo"))));
+  applyRole();
+  const m=$("#main");
+  const ta0=$("#inf-nota");if(ta0)S.infDraft={k:ta0.dataset.k,v:ta0.value,f:document.activeElement===ta0,s:ta0.selectionStart};
+  if(S.dbState==="sin"){m.innerHTML='<div class="empty"><h2>No hay conexión con la base de datos</h2><p>Revisá la conexión a internet y los datos de la base en Cuenta → Configuración.</p></div>';return}
+  const loading=!(S.loaded.eq&&S.loaded.ta);
+  if(loading){m.innerHTML='<div class="empty"><h2>Cargando equipos…</h2><p>Acá vas a ver las tareas ordenadas por lo que vence primero.</p></div>';return}
+  if(!S.eq.size&&!["historial","informe","manuales","codigos"].includes(S.view)){m.innerHTML='<div class="empty"><h2>Todavía no hay equipos cargados</h2><p>Cargá el primer equipo con su horómetro y después sus tareas de mantenimiento. El tablero te va a mostrar cuánto falta para cada una.</p><p><button class="btn primary adm" data-act="new-eq">+ Cargar primer equipo</button></p></div>';return}
+  if(S.view==="tablero")m.innerHTML=viewTablero();
+  else if(S.view==="equipos")m.innerHTML=viewEquipos();
+  else if(S.view==="equipo")m.innerHTML=viewEquipo();
+  else if(S.view==="informe")m.innerHTML=viewInforme();
+  else if(S.view==="manuales")m.innerHTML=viewManuales();
+  else if(S.view==="codigos")m.innerHTML=viewCodigos();
+  else m.innerHTML=viewHistorial();
+  applyRole();
+  const ta1=$("#inf-nota");
+  if(ta1){ta1.dataset.k=informeKey();if(S.infDraft&&S.infDraft.k===ta1.dataset.k){ta1.value=S.infDraft.v;if(S.infDraft.f){ta1.focus();try{ta1.setSelectionRange(S.infDraft.s,S.infDraft.s)}catch(_){}}}}
+}
+function taskRow(t,showEq){
+  const eq=S.eq.get(t.equipoId);const st=status(t);
+  let when;
+  if(st.estado==="sin")when='<div class="big">Sin datos</div><div class="sub">'+esc(st.falta)+'</div>';
+  else{
+    when=st.partes.map(p=>{const l=partLabel(p);return '<div class="big">'+esc(l.big)+'</div><div class="sub">'+esc(l.sub)+'</div>'}).join("");
+    when+='<div class="bar" aria-hidden="true"><i style="width:'+(elapsed(st)*100).toFixed(0)+'%"></i></div>';
+  }
+  return '<article class="row '+st.estado+'">'+
+    '<div class="what">'+(showEq&&eq?'<div class="code">'+esc(eq.codigo)+' · '+esc(eq.nombre)+'</div>':'')+
+    '<div class="tname">'+esc(t.nombre)+'</div>'+
+    '<div class="meta"><span>'+esc(freqLabel(t))+'</span><span>'+esc(t.tipo||"")+'</span><span>'+esc(t.responsable||"")+'</span>'+(t.ultimaFecha?'<span>Última: '+fmtD(t.ultimaFecha)+(isNum(t.ultimaHoras)?' · '+fmtN(t.ultimaHoras)+' h':'')+'</span>':'')+'</div></div>'+
+    '<div class="when">'+when+'</div>'+
+    '<div class="acts"><button class="btn sm" data-act="ins" data-id="'+esc(t.id)+'">Instructivo</button>'+
+    '<button class="btn sm primary w" data-act="reg" data-id="'+esc(t.id)+'">Registrar hecho</button></div></article>';
+}
+function viewTablero(){
+  const items=[...S.ta.values()].filter(t=>isActivo(S.eq.get(t.equipoId))&&matchQ(S.eq.get(t.equipoId),t)).map(t=>({t,st:status(t)}));
+  const c={vencida:0,proxima:0,ok:0,sin:0};items.forEach(i=>c[i.st.estado]++);
+  const L={vencida:"Vencidas",proxima:"Próximas",ok:"Al día",sin:"Sin datos"};
+  const ots=openOts(o=>matchQ(S.eq.get(o.equipoId),null));
+  let h=ots.length?'<div class="sec-h" style="margin-top:0"><h2>Fallas abiertas</h2><small>'+ots.length+' · ordenadas por urgencia</small></div><div class="ot-grid">'+ots.map(o=>otCard(o,true)).join("")+'</div>':'';
+  h+='<div class="summary">'+Object.keys(L).map(k=>'<button class="sum '+k+'" data-act="filtro" data-k="'+k+'" aria-pressed="'+(S.filtroEstado===k)+'"><b>'+c[k]+'</b><span>'+L[k]+'</span></button>').join("")+'</div>';
+  let list=items;if(S.filtroEstado)list=list.filter(i=>i.st.estado===S.filtroEstado);
+  list.sort((a,b)=>RANK[a.st.estado]-RANK[b.st.estado]||a.st.key-b.st.key);
+  h+='<div class="sec-h"><h2>'+(S.filtroEstado?L[S.filtroEstado]:"Todas las tareas, lo más urgente primero")+' <button class="btn sm primary w" data-act="new-task">+ Tarea</button></h2><small>'+list.length+' tareas · hoy '+fmtD(todayStr())+(S.filtroEstado?' · <button class="btn link" data-act="filtro" data-k="">Ver todas</button>':'')+'</small></div>';
+  if(!list.length)h+='<div class="empty"><p>No hay tareas para mostrar con este filtro.</p></div>';
+  else h+='<div class="list">'+list.map(i=>taskRow(i.t,true)).join("")+'</div>';
+  return h;
+}
+function viewEquipos(){
+  const all=[...S.eq.values()].filter(e=>matchQ(e,null)||tasksOf(e.id).some(t=>matchQ(e,t)));
+  const nBaja=all.filter(e=>!isActivo(e)).length;
+  const eqs=all.filter(e=>S.verBajas?!isActivo(e):isActivo(e));
+  eqs.sort((a,b)=>RANK[eqWorst(a.id).w]-RANK[eqWorst(b.id).w]||String(a.codigo).localeCompare(String(b.codigo)));
+  let h='<div class="sec-h"><h2>'+(S.verBajas?'Equipos dados de baja':'Equipos')+'</h2><small>'+eqs.length+' equipos · <button class="btn link" data-act="bajas">'+(S.verBajas?'Ver equipos activos':'Ver dados de baja ('+nBaja+')')+'</button> · <button class="btn link" data-go="codigos">Norma de codificación</button> · <button class="btn link" data-act="tags-all">Descargar etiquetas QR</button></small></div>';
+  if(!eqs.length)return h+'<div class="empty"><p>Ningún equipo coincide con el filtro.</p></div>';
+  h+='<div class="grid">'+eqs.map(e=>{const w=eqWorst(e.id);
+    const cnt=[["vencida","vencidas"],["proxima","próximas"],["ok","al día"],["sin","sin datos"]].filter(([k])=>w.c[k]).map(([k,l])=>'<span class="chip st-'+k+'">'+w.c[k]+' '+l+'</span>').join("")||'<span class="chip">Sin tareas</span>';
+    const baja=!isActivo(e);
+    return '<button class="card '+(baja?'sin':w.w)+'" data-act="open-eq" data-id="'+esc(e.id)+'"><div class="code">'+esc(e.codigo)+'</div><h3>'+esc(e.nombre)+'</h3>'+
+      '<div class="meta" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center"><span class="chip">'+esc(e.empresa||"")+'</span>'+(baja?'<span class="chip">Baja '+fmtD(e.baja&&e.baja.fecha)+'</span>':'')+(e.movil?'<span class="chip">Móvil</span>':'')+(e.criticidad?'<span class="chip '+esc(e.criticidad)+'">Crit. '+esc(e.criticidad)+'</span>':'')+(e.estadoOp&&e.estadoOp!=="Operativo"?'<span class="chip st-vencida">'+esc(e.estadoOp)+'</span>':'')+(isNum(e.horometro)?hmDigits(curHours(e).h,"small"):'')+'</div>'+
+      '<div class="counts">'+cnt+'</div></button>'}).join("")+'</div>';
+  return h;
+}
+function viewEquipo(){
+  const e=S.eq.get(S.eqId);if(!e){S.view="equipos";return viewEquipos()}
+  const cur=curHours(e);const ts=tasksOf(e.id).map(t=>({t,st:status(t)})).sort((a,b)=>RANK[a.st.estado]-RANK[b.st.estado]||a.st.key-b.st.key);
+  const ep=eqParts(e);const baja=!isActivo(e);
+  const kv=[["ID permanente",e.idActivo||(ep.tipo&&ep.numero?idAct(ep.tipo,ep.numero):"")],["Estado",baja?"Dado de baja":(e.estadoOp||"Operativo")],["Empresa",(e.empresa?e.empresa+" · "+(EMP[e.empresa]||""):"")],["Área",ep.area?ep.area+" · "+areaDesc(ep.area):e.sector],["Tipo",ep.tipo?ep.tipo+" · "+((tipoInfo(ep.tipo)||{}).d||""):""],["Movilidad",e.movil?"Móvil (puede rotar entre empresas)":"Fijo"],["Nº de serie",e.serie],["Códigos anteriores",(e.codigosAnteriores||[]).join(", ")],["Ubicación",e.ubicacion],["Marca / modelo",[e.marca,e.modelo].filter(Boolean).join(" · ")],["Criticidad",e.criticidad],["Notas",e.notas]].filter(x=>x[1]);
+  let h='<p><button class="btn link" data-go="equipos">← Todos los equipos</button></p>';
+  const eots=openOts(o=>o.equipoId===e.id);
+  if(baja)h+='<div class="banner">Equipo dado de baja el '+fmtD(e.baja&&e.baja.fecha)+' · '+esc(e.baja&&e.baja.motivo||"")+(e.baja&&e.baja.destino?' · '+esc(e.baja.destino):'')+'. Se conserva su historial; no aparece en el tablero ni en los informes de tareas. <button class="btn sm adm" data-act="reactivar" data-id="'+esc(e.id)+'">Reactivar</button></div>';
+  h+='<section class="detail-h'+(baja?' is-baja':'')+'"><div style="min-width:0;flex:1 1 320px"><div class="code">'+esc(e.codigo)+'</div><h2>'+esc(e.nombre)+'</h2>'+
+    '<dl class="kv">'+kv.map(([k,v])=>'<div><dt>'+esc(k)+'</dt><dd>'+esc(v)+'</dd></div>').join("")+'</dl>'+
+    '<div class="detail-acts'+(baja?' is-baja':'')+'"><button class="btn danger w" data-act="falla" data-id="'+esc(e.id)+'">Reportar falla</button><button class="btn primary w" data-act="new-task" data-id="'+esc(e.id)+'">+ Tarea</button><button class="btn w" data-act="reg-eq" data-id="'+esc(e.id)+'">Registrar intervención</button><button class="btn" data-act="tag" data-id="'+esc(e.id)+'">Etiqueta NFC / QR</button><button class="btn" data-act="dl-eq" data-id="'+esc(e.id)+'">Descargar ficha e instructivos</button><button class="btn adm" data-act="edit-eq" data-id="'+esc(e.id)+'">Editar</button>'+(baja?'':'<button class="btn adm" data-act="mover" data-id="'+esc(e.id)+'">Reubicar / transferir</button><button class="btn danger adm" data-act="baja" data-id="'+esc(e.id)+'">Dar de baja</button>')+'<button class="btn danger adm" data-act="del-eq" data-id="'+esc(e.id)+'" title="Solo para equipos cargados por error">Eliminar carga errónea</button></div></div>'+
+    '<div class="hm-box"><small>Horómetro'+(cur.est?' estimado hoy':'')+'</small>'+hmDigits(cur.h)+
+    (isNum(e.horometro)?'<small>Última lectura: '+fmtN(e.horometro)+' h el '+fmtD(e.horometroFecha)+'</small>':'<small>Cargá la lectura para las tareas por horas</small>')+
+    '<small>Uso promedio: '+(n(e.horasDia)?fmtN(e.horasDia)+' h/día':'sin dato')+'</small>'+
+    '<button class="btn sm w" data-act="hm" data-id="'+esc(e.id)+'">Actualizar lectura</button></div></section>';
+  const regs=S.re.filter(r=>r.equipoId===e.id).slice(0,30);
+  const ck=S.ck.get(e.id);const ckItems=(ck&&ck.items)||[];
+  const ckPend=ckItems.filter(it=>itemSt(it,e).st!=="hecho").length;
+  const st=(k,l,c)=>'<button class="subtab" role="tab" data-act="eqtab" data-k="'+k+'" aria-selected="'+(S.eqTab===k)+'">'+l+(c!=null?' <span class="cnt">'+c+'</span>':'')+'</button>';
+  const mans=[...S.ma.values()].filter(m=>(m.equipoIds||[]).includes(e.id));
+  if(eots.length)h+='<div class="sec-h"><h2>Fallas abiertas</h2><small>'+eots.length+'</small></div><div class="ot-grid">'+eots.map(o=>otCard(o,false)).join("")+'</div>';
+  h+='<nav class="subtabs" role="tablist" aria-label="Secciones del equipo">'+st("plan","Plan de mantenimiento",ts.length)+st("check","Checklist del fabricante",ckItems.length?ckPend+" pend.":null)+st("hist","Historial",regs.length)+st("man","Manuales",mans.length)+'</nav>';
+  if(S.eqTab==="check")h+=viewChecklist(e);
+  else if(S.eqTab==="man")h+=(mans.length?manualTable(mans,false):'<div class="empty"><p>Todavía no hay manuales asociados a este equipo.</p></div>')+
+    '<div class="detail-acts"><button class="btn primary adm" data-act="man-new" data-id="'+esc(e.id)+'">+ Agregar manual</button><a class="btn" href="'+esc(searchUrl(e))+'" target="_blank" rel="noopener">Buscar el manual en la web ↗</a></div>';
+  else if(S.eqTab==="hist")h+=tablaRegs(regs,false);
+  else h+=ts.length?'<div class="list">'+ts.map(i=>taskRowEq(i.t)).join("")+'</div>':'<div class="empty"><p>Este equipo todavía no tiene tareas. Agregá la primera con “+ Tarea” o pasá ítems desde el checklist del fabricante.</p></div>';
+  return h;
+}
+
+/* ---------- checklist del fabricante ---------- */
+function grpKey(it){return it.unidad==="horas"?100000+Number(it.cada):UNIT_DAYS[it.unidad||"dias"]*Number(it.cada)}
+function grpLabel(it){const v=Number(it.cada),u=it.unidad||"dias";
+  if(u==="horas")return "Cada "+fmtN(v)+" h de uso";
+  const one={dias:"Diario",semanas:"Semanal",meses:"Mensual",anios:"Anual"};
+  if(v===1)return one[u];if(u==="dias"&&v===15)return "Quincenal";if(u==="meses"&&v===3)return "Trimestral";if(u==="meses"&&v===6)return "Semestral";
+  return "Cada "+v+" "+plural(v,u);}
+function itemSt(it,eq){
+  const last=(it.hist||[])[0];
+  if(!last)return {st:"nunca",txt:"Sin registrar"};
+  const when="Hecho el "+fmtD(last.f)+(isNum(last.h)?" · "+fmtN(last.h)+" h":"");
+  if(it.unidad==="horas"){
+    const cur=curHours(eq);
+    if(cur.h===null||!isNum(last.h))return {st:"hecho",txt:when+" · falta horómetro para calcular"};
+    const rest=Number(last.h)+Number(it.cada)-cur.h;
+    return rest>0?{st:"hecho",txt:when+" · faltan "+fmtN(Math.round(rest))+" h"}:{st:"vencido",txt:when+" · vencido por "+fmtN(Math.round(-rest))+" h"};
+  }
+  const next=addInterval(last.f,Number(it.cada),it.unidad||"dias");const rest=diffDays(todayStr(),next);
+  if(rest>0)return {st:"hecho",txt:when+(rest>1?" · vuelve a tocar el "+fmtD(next):" · vuelve a tocar mañana")};
+  if(rest===0)return {st:"toca",txt:"Toca hoy · último "+fmtD(last.f)};
+  return {st:"vencido",txt:"Vencido hace "+(-rest)+" "+(-rest===1?"día":"días")+" · último "+fmtD(last.f)};
+}
+function viewChecklist(e){
+  const ck=S.ck.get(e.id);const items=(ck&&ck.items)||[];
+  const aiBtn=S.smp?'<button class="btn w" data-act="ck-ai" data-id="'+esc(e.id)+'">Sugerir ítems con IA</button>':'';
+  if(!items.length)return '<div class="empty"><h2>Sin checklist del fabricante</h2><p>Cargá los controles que indica el manual: qué revisar, cada cuánto y con qué valor de referencia. Después los vas tildando en cada ronda.</p><p style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap"><button class="btn primary w" data-act="ck-edit" data-id="'+esc(e.id)+'">Cargar checklist</button>'+aiBtn+'</p></div>';
+  const groups=new Map();items.slice().sort((a,b)=>grpKey(a)-grpKey(b)).forEach(it=>{const k=grpLabel(it);if(!groups.has(k))groups.set(k,[]);groups.get(k).push(it)});
+  const done=items.filter(it=>itemSt(it,e).st==="hecho").length;
+  let h='<div class="ck-head"><div style="min-width:0;flex:1 1 260px"><div class="hint">Fuente</div><div>'+esc(ck.fuente||"Sin indicar (anotá manual y página)")+'</div>'+(ck.ia?'<div class="ck-note">Incluye ítems sugeridos por IA: verificá intervalos y valores contra el manual del fabricante.</div>':'')+'</div>'+
+    '<div class="ck-prog"><b>'+done+' / '+items.length+'</b><span>al día</span><div class="bar"><i style="width:'+(done/items.length*100).toFixed(0)+'%"></i></div></div>'+
+    '<div class="detail-acts" style="margin:0"><button class="btn w" data-act="ck-edit" data-id="'+esc(e.id)+'">Editar checklist</button><button class="btn" data-act="ck-dl" data-id="'+esc(e.id)+'">Descargar para imprimir</button></div></div>';
+  for(const [g,its] of groups){
+    const gd=its.filter(it=>itemSt(it,e).st==="hecho").length;
+    h+='<section class="ck-grp"><div class="ck-gh"><h3>'+esc(g)+'</h3><span class="hint">'+gd+' de '+its.length+' al día</span></div><ul class="ck-list">'+its.map(it=>{
+      const s=itemSt(it,e);const inPlan=it.tareaId&&S.ta.has(it.tareaId);
+      return '<li class="ck-item '+s.st+'"><label class="ck-box"><input type="checkbox" id="ck-'+esc(it.id)+'" data-act="ck-toggle" data-eq="'+esc(e.id)+'" data-id="'+esc(it.id)+'"'+(s.st==="hecho"?' checked':'')+(S.ckBusy||!canW()?' disabled':'')+'><span class="ck-txt"><span class="ck-t">'+esc(it.texto)+'</span>'+(it.detalle?'<span class="ck-d">'+esc(it.detalle)+'</span>':'')+'<span class="ck-s">'+esc(s.txt)+'</span></span></label>'+
+        '<div class="ck-a">'+(inPlan?'<span class="chip st-ok">En el plan</span>':'<button class="btn sm w" data-act="ck-plan" data-eq="'+esc(e.id)+'" data-id="'+esc(it.id)+'" title="Crear una tarea con aviso en el tablero">Pasar al plan</button>')+'</div></li>'}).join("")+'</ul></section>';
+  }
+  h+='<p class="hint">Tildá cada ítem al hacerlo: queda la fecha y el horómetro, y se destilda solo cuando vuelve a tocar. Para recibir avisos en el tablero, usá “Pasar al plan”.</p>';
+  return h;
+}
+async function saveCk(eqId,patch){
+  const ref=S.db.doc("checklists/"+eqId);
+  if(S.ck.has(eqId))await ref.update(patch);else await ref.set(Object.assign({equipoId:eqId,items:[]},patch));
+}
+async function toggleItem(eqId,itemId){
+  if(S.ckBusy)return;const ck=S.ck.get(eqId),e=S.eq.get(eqId);if(!ck||!e)return;
+  const items=JSON.parse(JSON.stringify(ck.items||[]));const it=items.find(x=>x.id===itemId);if(!it)return;
+  const s=itemSt(it,e);it.hist=it.hist||[];
+  if(s.st==="hecho")it.hist.shift();
+  else{const cur=curHours(e);it.hist.unshift({f:todayStr(),h:cur.h!==null?Math.round(cur.h):null});it.hist=it.hist.slice(0,40)}
+  S.ckBusy=true;render();
+  try{await saveCk(eqId,{items});toast(s.st==="hecho"?"Se deshizo el último registro":"Ítem registrado")}catch(x){writeErr(x)}
+  S.ckBusy=false;render();
+}
+async function itemToPlan(eqId,itemId){
+  const ck=S.ck.get(eqId);const items=JSON.parse(JSON.stringify(ck.items||[]));const it=items.find(x=>x.id===itemId);if(!it)return;
+  const last=(it.hist||[])[0];const h=it.unidad==="horas";
+  const t={equipoId:eqId,nombre:it.texto,tipo:"Inspección",responsable:"Mantenimiento",modo:h?"horas":"tiempo",
+    cadaValor:h?null:Number(it.cada),cadaUnidad:h?"meses":it.unidad,cadaHoras:h?Number(it.cada):null,
+    ultimaFecha:last?last.f:null,ultimaHoras:last&&isNum(last.h)?last.h:null,avisoDias:null,avisoHoras:null,
+    instructivo:{minutos:null,detenido:"",seguridad:"",herramientas:"",repuestos:"",criterio:it.detalle||"",pasos:[]},
+    origen:"Checklist del fabricante",creado:new Date().toISOString()};
+  try{const ref=await S.db.collection("tareas").add(t);it.tareaId=ref.id;await saveCk(eqId,{items});toast("Tarea creada en el plan: completá su instructivo")}catch(x){writeErr(x)}
+}
+let ckSeq=0;
+function ckRow(it){it=it||{};const id=it.id||("n"+Date.now().toString(36)+(ckSeq++));
+  return '<div class="ck-er" data-rid="'+esc(id)+'"'+(it.ai?' data-ai="1"':'')+'>'+
+    '<input class="er-t" aria-label="Qué hacer" placeholder="Qué hacer (ej. Revisar nivel de aceite)" value="'+esc(it.texto)+'">'+
+    '<div class="inline"><input class="er-c" aria-label="Cada" inputmode="numeric" style="width:70px" value="'+esc(isNum(it.cada)?it.cada:"")+'"><select class="er-u" aria-label="Unidad">'+UNIT_OPTS.map(([v,l])=>'<option value="'+v+'"'+((it.unidad||"dias")===v?' selected':'')+'>'+l+'</option>').join("")+'</select></div>'+
+    '<input class="er-d" aria-label="Valor de referencia" placeholder="Valor de referencia / detalle" value="'+esc(it.detalle)+'">'+
+    '<button type="button" class="btn sm" data-act="ck-row-del" aria-label="Quitar ítem">✕</button>'+(it.ai?'<span class="chip ai">IA</span>':'')+'</div>';
+}
+function formChecklist(eqId,autoAI){
+  const e=S.eq.get(eqId);const ck=S.ck.get(eqId)||{items:[]};const byId=new Map((ck.items||[]).map(i=>[i.id,i]));
+  openModal(mhead("Checklist del fabricante")+'<p class="hint" style="margin:-6px 0 0">'+esc(e.codigo+" · "+e.nombre)+'</p>'+
+  '<form id="frm" novalidate style="display:flex;flex-direction:column;gap:12px">'+
+  '<label class="f"><span>Fuente (manual, edición, página)</span><input id="ck-fuente" value="'+esc(ck.fuente)+'" placeholder="Manual de operación y mantenimiento, cap. 7, pág. 42"></label>'+
+  '<div class="ck-er hd" aria-hidden="true"><span>Qué hacer</span><span>Cada</span><span>Valor de referencia</span><span></span></div>'+
+  '<div id="ck-rows" style="display:flex;flex-direction:column;gap:8px">'+((ck.items||[]).length?(ck.items||[]).map(ckRow).join(""):ckRow())+'</div>'+
+  '<div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn" data-act="ck-row-add">+ Agregar ítem</button>'+(S.smp?'<button type="button" class="btn" id="ck-ai-btn" data-act="ck-ai-run" data-id="'+esc(eqId)+'">Sugerir ítems con IA</button>':'')+'</div>'+
+  '<p class="hint" id="ck-ai-msg" style="margin:0"></p>'+
+  '<div class="err" id="err"></div>'+
+  '<div class="m-acts"><button type="button" class="btn" data-act="close">Cancelar</button><button type="submit" class="btn primary">Guardar checklist</button></div></form>',
+  r=>{
+    r.querySelector("#frm").addEventListener("submit",async ev=>{ev.preventDefault();
+      const rows=[...r.querySelectorAll("#ck-rows .ck-er")];const items=[];let bad=false;let ai=false;
+      for(const row of rows){const texto=row.querySelector(".er-t").value.trim();const cada=Number(row.querySelector(".er-c").value.replace(",","."));
+        if(!texto&&!row.querySelector(".er-c").value)continue;
+        if(!texto||!(cada>0)){bad=true;continue}
+        const old=byId.get(row.dataset.rid)||{};if(row.dataset.ai)ai=true;
+        items.push({id:row.dataset.rid,texto,cada,unidad:row.querySelector(".er-u").value,detalle:row.querySelector(".er-d").value.trim(),hist:old.hist||[],tareaId:old.tareaId||null,ai:!!(old.ai||row.dataset.ai)})}
+      if(bad){$("#err").textContent="Cada ítem necesita una descripción y un intervalo mayor a cero.";return}
+      try{await saveCk(eqId,{fuente:val("ck-fuente"),items,ia:items.some(i=>i.ai)});closeModal();toast("Checklist guardado");render()}catch(x){writeErr(x)}
+    });
+    if(autoAI)suggestAI(eqId);
+  });
+}
+async function suggestAI(eqId){
+  const e=S.eq.get(eqId);const btn=$("#ck-ai-btn"),msg=$("#ck-ai-msg");if(!S.smp||!btn)return;
+  btn.disabled=true;btn.textContent="Generando sugerencias…";msg.textContent="";
+  const existentes=[...document.querySelectorAll("#ck-rows .er-t")].map(i=>i.value.trim()).filter(Boolean);
+  const prompt="Sos un jefe de mantenimiento industrial en Argentina. Armá el checklist de mantenimiento preventivo que suelen recomendar los fabricantes para este equipo.\n"+
+    "Equipo: "+e.nombre+"\nMarca: "+(e.marca||"no indicada")+"\nModelo: "+(e.modelo||"no indicado")+"\nEmpresa / rubro: "+(EMP[e.empresa]||e.empresa)+"\nSector: "+(e.sector||"")+"\nNotas: "+(e.notas||"")+
+    (existentes.length?"\nÍtems ya cargados (no los repitas): "+existentes.join("; "):"")+
+    "\n\nReglas: entre 8 y 20 ítems, en español rioplatense, cada uno una acción concreta y corta. Usá intervalos típicos de manuales de fabricantes para este tipo de equipo. Si el equipo tiene horómetro (compresores, motores, bombas grandes), usá horas de uso para cambios de filtros, aceite y componentes. No inventes valores numéricos específicos de un modelo: si el valor depende del manual, escribí 'según manual'. "+
+    "Respondé SOLO con un arreglo JSON de objetos con estas claves: texto (string), cada (número entero mayor a 0), unidad (uno de: dias, semanas, meses, anios, horas), detalle (string corto con el valor de referencia o criterio, puede ser vacío).";
+  try{
+    const arr=await S.smp.json(prompt,{modelTier:"default"});
+    const ok=(Array.isArray(arr)?arr:[]).filter(x=>x&&typeof x.texto==="string"&&Number(x.cada)>0&&UNIT_OPTS.some(([v])=>v===x.unidad)).slice(0,25);
+    if(!ok.length){msg.textContent="No llegaron sugerencias válidas. Probá de nuevo o cargá los ítems a mano.";}
+    else{
+      const box=$("#ck-rows");[...box.querySelectorAll(".ck-er")].forEach(r=>{if(!r.querySelector(".er-t").value.trim()&&!r.querySelector(".er-c").value)r.remove()});
+      box.insertAdjacentHTML("beforeend",ok.map(x=>ckRow({texto:x.texto.trim(),cada:Math.round(Number(x.cada)),unidad:x.unidad,detalle:String(x.detalle||"").trim(),ai:true})).join(""));
+      msg.textContent="Se agregaron "+ok.length+" ítems sugeridos (marcados IA). Son orientativos: comparalos con el manual del fabricante, corregí intervalos y borrá lo que no aplique antes de guardar.";
+    }
+  }catch(x){msg.textContent=x&&x.code==="rate_limited"?"Demasiados pedidos seguidos. Esperá un minuto.":x&&x.code==="not_granted"?"No se dio permiso para usar la IA en esta página.":"No se pudieron generar sugerencias.";}
+  btn.disabled=false;btn.textContent="Sugerir ítems con IA";
+}
+function printableChecklist(e,ck){
+  const items=(ck.items||[]).slice().sort((a,b)=>grpKey(a)-grpKey(b));const groups=new Map();items.forEach(it=>{const k=grpLabel(it);if(!groups.has(k))groups.set(k,[]);groups.get(k).push(it)});
+  const css='body{font-family:Arial,sans-serif;color:#111;margin:24px;font-size:12px}h1{font-size:20px;margin:0}h2{font-size:14px;margin:18px 0 6px;border-bottom:2px solid #1D6A73;padding-bottom:3px}table{border-collapse:collapse;width:100%}td,th{border:1px solid #bbb;padding:5px 6px;text-align:left;vertical-align:top}th{background:#eef2f3}td.b{width:34px}.code{font-family:monospace;color:#555}section{page-break-inside:avoid}@media print{body{margin:10mm}}';
+  let body='';for(const [g,its] of groups){body+='<section><h2>'+esc(g)+'</h2><table><tr><th>Ítem</th><th>Valor de referencia</th>'+[1,2,3,4,5,6].map(()=>'<th class="b">Fecha</th>').join("")+'</tr>'+its.map(it=>'<tr><td>☐ '+esc(it.texto)+'</td><td>'+esc(it.detalle)+'</td>'+[1,2,3,4,5,6].map(()=>'<td class="b"></td>').join("")+'</tr>').join("")+'</table></section>'}
+  return '<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Checklist '+esc(e.codigo)+'</title><style>'+css+'</style></head><body><div class="code">'+esc(e.codigo)+'</div><h1>Checklist del fabricante · '+esc(e.nombre)+'</h1><p style="color:#555">Fuente: '+esc(ck.fuente||"—")+' · Generado el '+fmtD(todayStr())+' · Anotá la fecha y las iniciales en cada casillero.</p>'+body+'<p style="margin-top:18px">Operario: ____________________ &nbsp;&nbsp; Supervisor: ____________________</p></body></html>';
+}
+function taskRowEq(t){return taskRow(t,false).replace('<div class="acts">','<div class="acts"><button class="btn sm w" data-act="edit-task" data-id="'+esc(t.id)+'">Editar</button>')}
+function tablaRegs(regs,showEq){
+  if(!regs.length)return '<div class="empty"><p>Sin intervenciones registradas.</p></div>';
+  resolveNames(regs.map(r=>r.porId));
+  return '<div class="tbl-wrap"><table><thead><tr><th>Fecha</th>'+(showEq?'<th>Equipo</th>':'')+'<th>Tarea / tipo</th><th>Resultado</th><th>Horómetro</th><th>Trabajo</th><th>Parada</th><th>Técnico</th><th>Observaciones</th></tr></thead><tbody>'+
+    regs.map(r=>{const e=S.eq.get(r.equipoId);const abierto=r.resultado&&r.resultado!=="Resuelto"&&!r.fechaCierre;
+      const rc=!r.resultado||r.resultado==="Resuelto"||r.fechaCierre?"st-ok":"st-proxima";
+      return '<tr><td class="num">'+fmtD(r.fecha)+'</td>'+(showEq?'<td><span class="code">'+esc(e?e.codigo:(r.equipoCodigo||"(eliminado)"))+'</span><br>'+esc(e?e.nombre:"")+'</td>':'')+
+      '<td>'+esc(r.tareaNombre||"")+'<br><span class="chip">'+esc(r.tipo||"")+'</span>'+(r.demorada?' <span class="chip st-vencida">Demorada</span>':'')+'</td>'+
+      '<td><span class="chip '+rc+'">'+esc(r.fechaCierre&&r.resultado!=="Resuelto"?"Resuelto "+fmtD(r.fechaCierre):(r.resultado||"—"))+'</span>'+(r.proveedor?'<br><span class="hint">'+esc(r.proveedor)+'</span>':'')+(abierto?'<br><button class="btn sm w" data-act="close-rep" data-id="'+esc(r.id)+'" style="margin-top:4px">Marcar resuelto</button>':'')+'</td>'+
+      '<td class="num">'+(isNum(r.horometro)?fmtN(r.horometro)+' h':'—')+'</td><td class="num">'+(isNum(r.duracion)?fmtN(r.duracion)+' h':'—')+'</td><td class="num">'+(isNum(r.parada)?fmtN(r.parada)+' h':'—')+'</td>'+
+      '<td>'+esc(r.tecnico||"")+(r.porId&&S.names[r.porId]?'<br><span class="hint">cargó '+esc(S.names[r.porId])+'</span>':'')+'</td><td>'+esc(r.obs||"")+(r.repuestos?'<br><span class="hint">Repuestos: '+esc(r.repuestos)+'</span>':'')+'</td></tr>'}).join("")+'</tbody></table></div>';
+}
+function viewHistorial(){
+  const regs=S.re.filter(r=>{const e=S.eq.get(r.equipoId);if(S.empresa&&(!e||e.empresa!==S.empresa))return false;
+    if(!S.q)return true;const q=S.q.toLowerCase();return [e&&e.codigo,e&&e.nombre,r.tareaNombre,r.tecnico,r.obs].some(x=>x&&String(x).toLowerCase().includes(q))});
+  return '<div class="sec-h"><h2>Historial de intervenciones</h2><small>'+regs.length+' registros · <button class="btn link" data-act="csv">Exportar CSV</button></small></div>'+tablaRegs(regs,true);
+}
+
+/* ---------- modales ---------- */
+function openModal(html,onMount){const r=$("#modal-root");r.innerHTML='<div class="overlay" data-act="ov"><div class="modal" role="dialog" aria-modal="true">'+html+'</div></div>';
+  const f=r.querySelector("input,select,textarea,button.primary");if(f)f.focus();if(onMount)onMount(r)}
+function closeModal(){$("#modal-root").innerHTML=""}
+function mhead(t){return '<div class="mh"><h2>'+esc(t)+'</h2><button class="btn sm x" type="button" data-act="close" aria-label="Cerrar">✕</button></div>'}
+function val(id){const el=document.getElementById(id);return el?el.value.trim():""}
+function numVal(id){const v=val(id).replace(",",".");return v===""?null:Number(v)}
+
+function formEquipo(e){
+  e=e||{};const o=(v,l,sl)=>'<option value="'+esc(v)+'"'+(sl===v?' selected':'')+'>'+esc(l)+'</option>';
+  const ep=eqParts(e);const editing=!!e.id;
+  const lockId=editing&&!!(ep.tipo&&ep.numero);const lockLoc=editing&&!!(ep.empresa&&ep.area);
+  openModal(mhead(editing?"Editar equipo":"Alta de equipo")+
+  '<form id="frm" class="fg" novalidate>'+
+  '<fieldset class="full"><legend>Identificación</legend><div class="fg">'+
+  '<label class="f"><span>Empresa *</span><select id="e-empresa"'+(lockLoc?' disabled':'')+'>'+o("","Elegí…",ep.empresa)+Object.entries(EMP).map(([k,l])=>o(k,k+" · "+l,ep.empresa)).join("")+'</select></label>'+
+  '<label class="f"><span>Área *</span><select id="e-area"'+(lockLoc?' disabled':'')+'>'+o("","Elegí…",ep.area)+areas().map(([k,l])=>o(k,k+" · "+l,ep.area)).join("")+'</select></label>'+
+  '<label class="f"><span>Tipo de equipo *</span><select id="e-tipo"'+(lockId?' disabled':'')+'>'+o("","Elegí…",ep.tipo)+tipos().map(([k,i])=>o(k,k+" · "+i.d+(i.movil?" (móvil)":""),ep.tipo)).join("")+'</select></label>'+
+  '<label class="f"><span>Número (correlativo del grupo)</span><input id="e-num" inputmode="numeric" value="'+esc(ep.numero||"")+'"'+(lockId?' disabled':'')+'></label>'+
+  '<div class="code-prev full" id="e-prev"></div>'+
+  (lockLoc?'<p class="hint full" style="margin:0">Para cambiar de empresa o área usá “Reubicar / transferir”: así queda registrado el traslado y el código anterior.</p>':'')+
+  (lockId?'<p class="hint full" style="margin:0">El tipo y el número forman el ID permanente y no se modifican.</p>':'')+
+  '<label class="f full" style="flex-direction:row;align-items:center;gap:8px;color:var(--fg)"><input type="checkbox" id="e-movil" style="width:auto"'+(e.movil?' checked':'')+'> Equipo móvil: puede pasar de una empresa a otra del grupo</label>'+
+  '</div></fieldset>'+
+  '<label class="f full"><span>Nombre / descripción *</span><input id="e-nombre" value="'+esc(e.nombre)+'" placeholder="Compresor de tornillo 30 HP"></label>'+
+  '<label class="f"><span>Ubicación / línea</span><input id="e-ubic" value="'+esc(e.ubicacion)+'"></label>'+
+  '<label class="f"><span>Criticidad</span><select id="e-crit">'+o("","Sin definir",e.criticidad||"")+o("A","A – Crítico",e.criticidad)+o("B","B – Importante",e.criticidad)+o("C","C – Secundario",e.criticidad)+'</select></label>'+
+  '<label class="f"><span>Marca</span><input id="e-marca" value="'+esc(e.marca)+'"></label>'+
+  '<label class="f"><span>Modelo</span><input id="e-modelo" value="'+esc(e.modelo)+'"></label>'+
+  '<label class="f"><span>Nº de serie</span><input id="e-serie" value="'+esc(e.serie)+'"></label>'+
+  '<label class="f"><span>Estado operativo</span><select id="e-estado">'+["Operativo","Esperando repuesto","En reparación externa","Fuera de servicio"].map(x=>o(x,x,e.estadoOp||"Operativo")).join("")+'</select></label>'+
+  '<fieldset class="full"><legend>Horómetro (si el equipo cuenta horas)</legend><div class="fg">'+
+  '<label class="f"><span>Lectura actual (h)</span><input id="e-hm" inputmode="decimal" value="'+esc(isNum(e.horometro)?e.horometro:"")+'"></label>'+
+  '<label class="f"><span>Uso promedio (h por día)</span><input id="e-hd" inputmode="decimal" value="'+esc(isNum(e.horasDia)?e.horasDia:"")+'" placeholder="ej. 16"></label>'+
+  '<label class="f full" style="flex-direction:row;align-items:center;gap:8px;color:var(--fg)"><input type="checkbox" id="e-auto" style="width:auto"'+(e.usoAuto===false?'':' checked')+'> Recalcular el uso promedio con cada nueva lectura</label></div></fieldset>'+
+  (()=>{const pr=e.prod||{};const v=k=>esc(isNum(pr[k])?pr[k]:"");return '<fieldset class="full"><legend>Producción y demanda (para calcular la urgencia de las fallas)</legend><div class="fg">'+
+  '<label class="f full"><span>Línea o producto que depende de este equipo</span><input id="p-lin" value="'+esc(pr.linea||"")+'" placeholder="Bidones 5 L"></label>'+
+  '<label class="f"><span>Capacidad (unidades por hora)</span><input id="p-cap" inputmode="decimal" value="'+v("cap")+'"></label>'+
+  '<label class="f"><span>Demanda (unidades por día)</span><input id="p-dem" inputmode="decimal" value="'+v("dem")+'"></label>'+
+  '<label class="f"><span>Horas productivas por día</span><input id="p-hd" inputmode="decimal" value="'+v("hdisp")+'" placeholder="16 (2 turnos)"></label>'+
+  '<label class="f"><span>Stock disponible (unidades)</span><input id="p-st" inputmode="decimal" value="'+v("stock")+'"></label>'+
+  '<label class="f"><span>Días para recuperar producción</span><input id="p-dias" inputmode="numeric" value="'+esc(isNum(pr.dias)?pr.dias:5)+'"></label>'+
+  '<label class="f"><span>o holgura conocida (h)</span><input id="p-hm" inputmode="decimal" value="'+v("holguraManual")+'" placeholder="opcional"></label>'+
+  '<label class="f full" style="flex-direction:row;align-items:center;gap:8px;color:var(--fg)"><input type="checkbox" id="p-res" style="width:auto"'+(pr.reserva?' checked':'')+'> Hay un equipo de reserva que puede reemplazarlo</label>'+
+  '<div class="code-prev full" id="p-prev"></div></div></fieldset>'})()+
+  '<label class="f full"><span>Notas</span><textarea id="e-notas">'+esc(e.notas)+'</textarea></label>'+
+  '<div class="err full" id="err"></div>'+
+  '<div class="m-acts full"><button type="button" class="btn" data-act="close">Cancelar</button><button type="submit" class="btn primary">'+(editing?'Guardar cambios':'Dar de alta')+'</button></div></form>',
+  r=>{
+    const g=id=>r.querySelector("#"+id);let numTouched=!!ep.numero;
+    const upd=()=>{
+      const t=g("e-tipo").value;
+      if(t&&!numTouched&&!lockId)g("e-num").value=nextNum(t,e.id);
+      const em=g("e-empresa").value,ar=g("e-area").value,nu=Number(g("e-num").value);
+      g("e-prev").innerHTML=(em&&ar&&t&&nu>0)?'<span class="hint">Código:</span> <b class="code-big">'+esc(codeOf(em,ar,t,nu))+'</b> <span class="hint">· ID permanente (va en la etiqueta NFC):</span> <b class="code-big">'+esc(idAct(t,nu))+'</b>':'<span class="hint">Elegí empresa, área y tipo para ver el código.</span>';
+    };
+    const readProd=()=>({linea:val("p-lin"),cap:numVal("p-cap"),dem:numVal("p-dem"),hdisp:numVal("p-hd"),stock:numVal("p-st"),dias:numVal("p-dias"),holguraManual:numVal("p-hm"),reserva:g("p-res").checked});
+    const updP=()=>{const h=holgura({prod:readProd()});const pr=readProd();
+      g("p-prev").innerHTML=h===null?'<span class="hint">Cargá capacidad, demanda y horas productivas (o la holgura conocida) para calcular la holgura.</span>':
+        '<span class="hint">Holgura:</span> <b class="code-big">'+fmtN(h)+' h</b> <span class="hint">de producción que se pueden perder sin dejar de cumplir la demanda'+(pr.cap>0&&pr.dem!==null&&pr.hdisp>0&&pr.hdisp<pr.dem/pr.cap?' · ¡Atención! Con estas horas no se llega a la demanda diaria.':'')+'</span>'};
+    ["p-cap","p-dem","p-hd","p-st","p-dias","p-hm"].forEach(id=>g(id).addEventListener("input",updP));updP();
+    g("e-tipo").addEventListener("change",()=>{const i=tipoInfo(g("e-tipo").value);if(i&&!editing)g("e-movil").checked=i.movil;upd()});
+    g("e-num").addEventListener("input",()=>{numTouched=true;upd()});
+    g("e-empresa").addEventListener("change",upd);g("e-area").addEventListener("change",upd);upd();
+    g("frm").addEventListener("submit",async ev=>{ev.preventDefault();
+      const err=g("err");const em=g("e-empresa").value,ar=g("e-area").value,t=g("e-tipo").value,nu=Number(g("e-num").value);
+      const d={nombre:val("e-nombre"),empresa:em,area:ar,sector:areaDesc(ar),tipo:t,numero:nu,idActivo:idAct(t,nu),codigo:codeOf(em,ar,t,nu),movil:g("e-movil").checked,
+        criticidad:val("e-crit"),ubicacion:val("e-ubic"),marca:val("e-marca"),modelo:val("e-modelo"),serie:val("e-serie"),notas:val("e-notas"),
+        horasDia:numVal("e-hd"),estadoOp:val("e-estado"),usoAuto:g("e-auto").checked,prod:readProd()};
+      if(Object.values(d.prod).some(x=>typeof x==="number"&&!isFinite(x))){err.textContent="Revisá los números de producción y demanda.";return}
+      const hm=numVal("e-hm");
+      if(!d.nombre||!em||!ar||!t){err.textContent="Completá nombre, empresa, área y tipo.";return}
+      if(!(Number.isInteger(nu)&&nu>0&&nu<10000)){err.textContent="El número tiene que ser un entero entre 1 y 9999.";return}
+      const dup=[...S.eq.values()].find(x=>x.id!==e.id&&(x.idActivo===d.idActivo||(eqParts(x).tipo===t&&eqParts(x).numero===nu)));
+      if(dup){err.textContent="El ID "+d.idActivo+" ya lo usa "+dup.codigo+(isActivo(dup)?"":" (dado de baja)")+". Los números no se reutilizan: usá el "+nextNum(t)+".";return}
+      if(hm!==null&&!isFinite(hm)){err.textContent="La lectura del horómetro tiene que ser un número.";return}
+      if(hm!==null&&hm!==n(e.horometro)){d.horometro=hm;d.horometroFecha=todayStr()}else if(hm===null)d.horometro=null;
+      if(editing&&e.codigo&&e.codigo!==d.codigo)d.codigosAnteriores=[...new Set([...(e.codigosAnteriores||[]),e.codigo])];
+      try{
+        if(editing)await S.db.doc("equipos/"+e.id).update(d);
+        else{d.estado="Activo";d.creado=new Date().toISOString();const ref=await S.db.collection("equipos").add(d);
+          await S.db.collection("registros").add({equipoId:ref.id,equipoCodigo:d.codigo,tareaId:null,tareaNombre:"Alta de equipo "+d.idActivo,tipo:"Alta",fecha:todayStr(),empresaHacia:em,hacia:d.codigo,obs:"",porId:S.me&&S.me.id||null,creado:new Date().toISOString()});
+          S.eqId=ref.id;S.view="equipo";S.eqTab="plan"}
+        closeModal();toast(editing?"Equipo actualizado":"Equipo dado de alta: "+d.codigo);render()}catch(x){writeErr(x)}
+    });
+  });
+}
+function formMover(e){
+  const ep=eqParts(e);const o=(v,l,sl)=>'<option value="'+esc(v)+'"'+(sl===v?' selected':'')+'>'+esc(l)+'</option>';
+  openModal(mhead("Reubicar / transferir equipo")+'<p class="hint" style="margin:-6px 0 0">'+esc(e.codigo+" · "+e.nombre)+' · ID permanente '+esc(e.idActivo||idAct(ep.tipo,ep.numero))+'</p>'+
+  '<form id="frm" class="fg" novalidate>'+
+  '<label class="f"><span>Empresa de destino *</span><select id="mv-emp">'+Object.entries(EMP).map(([k,l])=>o(k,k+" · "+l,ep.empresa)).join("")+'</select></label>'+
+  '<label class="f"><span>Área de destino *</span><select id="mv-area">'+areas().map(([k,l])=>o(k,k+" · "+l,ep.area)).join("")+'</select></label>'+
+  '<label class="f"><span>Ubicación / línea</span><input id="mv-ubic" value="'+esc(e.ubicacion)+'"></label>'+
+  '<label class="f"><span>Fecha del traslado *</span><input type="date" id="mv-f" value="'+todayStr()+'" max="'+todayStr()+'"></label>'+
+  '<label class="f"><span>Recibe (responsable en destino)</span><input id="mv-rec"></label>'+
+  '<label class="f"><span>Motivo</span><input id="mv-mot" placeholder="Préstamo, reasignación definitiva, reemplazo…"></label>'+
+  '<div class="code-prev full" id="mv-prev"></div>'+
+  '<p class="hint full" style="margin:0">El ID permanente y la etiqueta NFC no cambian. El código anterior queda guardado y sus tareas, checklist e historial viajan con el equipo.</p>'+
+  '<div class="err full" id="err"></div><div class="m-acts full"><button type="button" class="btn" data-act="close">Cancelar</button><button type="submit" class="btn primary">Registrar traslado</button></div></form>',
+  r=>{const g=id=>r.querySelector("#"+id);
+    const upd=()=>{g("mv-prev").innerHTML='<span class="hint">Código actual</span> <b class="code-big">'+esc(e.codigo)+'</b> <span class="hint">→ nuevo</span> <b class="code-big">'+esc(codeOf(g("mv-emp").value,g("mv-area").value,ep.tipo,ep.numero))+'</b>'};
+    g("mv-emp").addEventListener("change",upd);g("mv-area").addEventListener("change",upd);upd();
+    g("frm").addEventListener("submit",async ev=>{ev.preventDefault();
+      const em=g("mv-emp").value,ar=g("mv-area").value,f=g("mv-f").value;const nuevo=codeOf(em,ar,ep.tipo,ep.numero);
+      if(!ep.tipo||!ep.numero){g("err").textContent="Primero completá tipo y número del equipo con “Editar”.";return}
+      if(!f){g("err").textContent="Indicá la fecha.";return}
+      if(nuevo===e.codigo&&val("mv-ubic")===(e.ubicacion||"")){g("err").textContent="El destino es igual a la ubicación actual.";return}
+      try{
+        await S.db.doc("equipos/"+e.id).update({empresa:em,area:ar,sector:areaDesc(ar),ubicacion:val("mv-ubic"),codigo:nuevo,tipo:ep.tipo,numero:ep.numero,idActivo:idAct(ep.tipo,ep.numero),
+          codigosAnteriores:nuevo!==e.codigo?[...new Set([...(e.codigosAnteriores||[]),e.codigo])]:(e.codigosAnteriores||[])});
+        await S.db.collection("registros").add({equipoId:e.id,equipoCodigo:nuevo,tareaId:null,tareaNombre:"Traslado "+e.codigo+" → "+nuevo,tipo:"Traslado",fecha:f,
+          desde:e.codigo,hacia:nuevo,empresaDesde:ep.empresa,empresaHacia:em,recibe:val("mv-rec"),obs:val("mv-mot"),porId:S.me&&S.me.id||null,creado:new Date().toISOString()});
+        closeModal();toast("Traslado registrado: "+nuevo);render()}catch(x){writeErr(x)}
+    });
+  });
+}
+function formBaja(e){
+  openModal(mhead("Dar de baja el equipo")+'<p class="hint" style="margin:-6px 0 0">'+esc(e.codigo+" · "+e.nombre)+'</p>'+
+  '<form id="frm" class="fg" novalidate>'+
+  '<label class="f"><span>Fecha de baja *</span><input type="date" id="b-f" value="'+todayStr()+'" max="'+todayStr()+'"></label>'+
+  '<label class="f"><span>Motivo *</span><select id="b-mot">'+MOTIVOS_BAJA.map(x=>'<option>'+x+'</option>').join("")+'</select></label>'+
+  '<label class="f full"><span>Destino (comprador, chatarrero, proveedor, etc.)</span><input id="b-dest"></label>'+
+  '<label class="f full"><span>Observaciones / documentación (remito, acta)</span><textarea id="b-obs"></textarea></label>'+
+  '<p class="hint full" style="margin:0">El equipo sale del tablero y de las listas, pero se conserva su historial. Su número no se vuelve a usar. Si se mudó a otra empresa del grupo, usá “Reubicar / transferir” en lugar de dar de baja.</p>'+
+  '<div class="err full" id="err"></div><div class="m-acts full"><button type="button" class="btn" data-act="close">Cancelar</button><button type="submit" class="btn danger">Confirmar baja</button></div></form>',
+  r=>r.querySelector("#frm").addEventListener("submit",async ev=>{ev.preventDefault();
+    const f=val("b-f");if(!f){$("#err").textContent="Indicá la fecha.";return}
+    const baja={fecha:f,motivo:val("b-mot"),destino:val("b-dest"),obs:val("b-obs"),porId:S.me&&S.me.id||null};
+    try{await S.db.doc("equipos/"+e.id).update({estado:"Baja",baja});
+      await S.db.collection("registros").add({equipoId:e.id,equipoCodigo:e.codigo,tareaId:null,tareaNombre:"Baja: "+baja.motivo,tipo:"Baja",fecha:f,empresaDesde:e.empresa,desde:e.codigo,obs:[baja.destino,baja.obs].filter(Boolean).join(" · "),porId:baja.porId,creado:new Date().toISOString()});
+      closeModal();toast("Equipo dado de baja");render()}catch(x){writeErr(x)}
+  }));
+}
+async function reactivar(e){
+  try{await S.db.doc("equipos/"+e.id).update({estado:"Activo",baja:null});
+    await S.db.collection("registros").add({equipoId:e.id,equipoCodigo:e.codigo,tareaId:null,tareaNombre:"Reactivación",tipo:"Reactivación",fecha:todayStr(),empresaHacia:e.empresa,obs:"",porId:S.me&&S.me.id||null,creado:new Date().toISOString()});
+    toast("Equipo reactivado");render()}catch(x){writeErr(x)}
+}
+function viewCodigos(){
+  const tb=(rows,cols)=>'<div class="tbl-wrap"><table><thead><tr>'+cols.map(c=>'<th>'+c+'</th>').join("")+'</tr></thead><tbody>'+rows.join("")+'</tbody></table></div>';
+  const cnt={};for(const e of S.eq.values()){const p=eqParts(e);if(p.tipo)cnt[p.tipo]=Math.max(cnt[p.tipo]||0,p.numero||0)}
+  return '<p><button class="btn link" data-go="equipos">← Equipos</button></p>'+
+  '<div class="sec-h"><h2>Norma de codificación y urgencias</h2><button class="btn adm" data-act="cod-new">+ Agregar área o tipo</button></div>'+
+  '<section class="code-spec"><div class="code-anat"><span><b>IP</b><small>Empresa</small></span><i>-</i><span><b>SER</b><small>Área</small></span><i>-</i><span class="perm"><b>COM</b><small>Tipo</small></span><i>-</i><span class="perm"><b>007</b><small>Número</small></span></div>'+
+  '<ul class="rules"><li><b>Código de ubicación</b> (IP-SER-COM-007): dice dónde está el equipo hoy. Cambia si se traslada a otra empresa o área.</li>'+
+  '<li><b>ID permanente</b> (COM-007): tipo + número correlativo único en todo el grupo. Es el que se graba en la etiqueta NFC/QR y no cambia nunca, aunque el equipo rote entre empresas.</li>'+
+  '<li>Los números no se reutilizan: un equipo dado de baja conserva el suyo y el siguiente toma el próximo libre.</li>'+
+  '<li>Los equipos móviles (apiladoras, herramientas, compresores portátiles, motores, soldadoras) sin destino fijo van a <b>GR</b> (pañol del grupo) mientras no estén asignados.</li>'+
+  '<li>Retirado para siempre → <b>Dar de baja</b>. Pasa a otra empresa del grupo → <b>Reubicar / transferir</b>. Cargado por error → <b>Eliminar</b>.</li></ul></section>'+
+  urgenciaDoc()+'<h3 class="rp-h">Empresas</h3>'+tb(Object.entries(EMP).map(([k,v])=>'<tr><td class="num"><b>'+k+'</b></td><td>'+esc(v)+'</td></tr>'),["Código","Empresa"])+
+  '<h3 class="rp-h">Áreas</h3>'+tb(areas().map(([k,v])=>'<tr><td class="num"><b>'+esc(k)+'</b></td><td>'+esc(v)+'</td></tr>'),["Código","Área"])+
+  '<h3 class="rp-h">Tipos de equipo</h3>'+tb(tipos().map(([k,i])=>'<tr><td class="num"><b>'+esc(k)+'</b></td><td>'+esc(i.d)+'</td><td>'+(i.movil?'<span class="chip">Móvil</span>':'Fijo')+'</td><td class="num">'+(cnt[k]?'último '+esc(idAct(k,cnt[k]))+' · próximo '+esc(idAct(k,cnt[k]+1)):'próximo '+esc(idAct(k,1)))+'</td></tr>'),["Código","Tipo","Movilidad","Numeración"]);
+}
+function formCodigo(){
+  openModal(mhead("Agregar código")+'<form id="frm" class="fg" novalidate>'+
+  '<label class="f"><span>Tabla</span><select id="cd-t"><option value="areas">Área</option><option value="tipos">Tipo de equipo</option></select></label>'+
+  '<label class="f"><span>Código (3 letras) *</span><input id="cd-c" maxlength="3" style="text-transform:uppercase"></label>'+
+  '<label class="f full"><span>Descripción *</span><input id="cd-d"></label>'+
+  '<label class="f full" id="cd-mv-w" style="flex-direction:row;align-items:center;gap:8px;color:var(--fg)" hidden><input type="checkbox" id="cd-mv" style="width:auto"> Es un tipo de equipo móvil</label>'+
+  '<div class="err full" id="err"></div><div class="m-acts full"><button type="button" class="btn" data-act="close">Cancelar</button><button type="submit" class="btn primary">Agregar</button></div></form>',
+  r=>{const g=id=>r.querySelector("#"+id);g("cd-t").addEventListener("change",()=>{g("cd-mv-w").hidden=g("cd-t").value!=="tipos"});
+    g("frm").addEventListener("submit",async ev=>{ev.preventDefault();
+      const t=g("cd-t").value,c=g("cd-c").value.trim().toUpperCase(),d=g("cd-d").value.trim();
+      if(!/^[A-Z]{3}$/.test(c)){g("err").textContent="El código tiene que tener exactamente 3 letras.";return}
+      if(!d){g("err").textContent="Escribí la descripción.";return}
+      const exists=(t==="areas"?areas().map(a=>a[0]):tipos().map(x=>x[0])).includes(c);
+      if(exists){g("err").textContent="El código "+c+" ya existe en esa tabla.";return}
+      const cfg={areas:[...((S.cfg&&S.cfg.areas)||[])],tipos:[...((S.cfg&&S.cfg.tipos)||[])]};
+      if(t==="areas")cfg.areas.push({c,d});else cfg.tipos.push({c,d,movil:g("cd-mv").checked});
+      try{await S.db.doc("config/codigos").set(cfg);closeModal();toast("Código "+c+" agregado");render()}catch(x){writeErr(x)}
+    });
+  });
+}
+function formTarea(t,equipoId){
+  t=t||{equipoId,modo:"tiempo",cadaValor:1,cadaUnidad:"meses",responsable:"Mantenimiento",tipo:"Inspección",instructivo:{}};
+  const pickEq=!t.equipoId;
+  const ins=t.instructivo||{};const e=S.eq.get(t.equipoId);
+  const o=(v,l,s)=>'<option value="'+esc(v)+'"'+(s===v?' selected':'')+'>'+esc(l)+'</option>';
+  const rad=(v,l)=>'<label><input type="radio" name="modo" value="'+v+'"'+((t.modo||"tiempo")===v?' checked':'')+'> '+l+'</label>';
+  openModal(mhead(t.id?"Editar tarea":"Nueva tarea")+'<p class="hint" style="margin:-6px 0 0">'+esc(e?e.codigo+" · "+e.nombre:"")+'</p>'+
+  '<form id="frm" class="fg" novalidate>'+
+  (pickEq?'<label class="f full"><span>Equipo *</span><select id="t-eq"><option value="">Elegí el equipo…</option>'+[...S.eq.values()].filter(isActivo).sort((a,b)=>String(a.codigo).localeCompare(String(b.codigo))).map(x=>'<option value="'+esc(x.id)+'">'+esc(x.codigo+" · "+x.nombre)+'</option>').join("")+'</select></label>':'')+
+  '<label class="f full"><span>Tarea *</span><input id="t-nombre" value="'+esc(t.nombre)+'" placeholder="Cambio de filtro de aire"></label>'+
+  '<label class="f"><span>Tipo</span><select id="t-tipo">'+TIPOS.map(x=>o(x,x,t.tipo)).join("")+'</select></label>'+
+  '<label class="f"><span>Responsable</span><select id="t-resp">'+["Operario","Mantenimiento","Externo"].map(x=>o(x,x,t.responsable)).join("")+'</select></label>'+
+  '<fieldset class="full"><legend>¿Cada cuánto se hace?</legend><div class="radios">'+rad("tiempo","Por calendario")+rad("horas","Por horas de uso")+rad("ambos","Lo que ocurra primero")+'</div>'+
+  '<div class="fg"><div class="f" id="g-t"><span>Cada</span><div class="inline"><input id="t-cv" inputmode="numeric" style="width:90px" value="'+esc(isNum(t.cadaValor)?t.cadaValor:"")+'"><select id="t-cu">'+o("dias","días",t.cadaUnidad)+o("semanas","semanas",t.cadaUnidad)+o("meses","meses",t.cadaUnidad)+o("anios","años",t.cadaUnidad)+'</select></div></div>'+
+  '<label class="f" id="g-h"><span>Cada (horas de horómetro)</span><input id="t-ch" inputmode="numeric" value="'+esc(isNum(t.cadaHoras)?t.cadaHoras:"")+'" placeholder="2000"></label></div>'+
+  '<div class="fg"><label class="f"><span>Última realización (fecha)</span><input type="date" id="t-uf" value="'+esc(t.ultimaFecha||"")+'"></label>'+
+  '<label class="f" id="g-uh"><span>Horómetro en la última realización</span><input id="t-uh" inputmode="decimal" value="'+esc(isNum(t.ultimaHoras)?t.ultimaHoras:"")+'"></label></div>'+
+  '<div class="fg"><label class="f" id="g-ad"><span>Avisar con (días de anticipación)</span><input id="t-ad" inputmode="numeric" value="'+esc(isNum(t.avisoDias)?t.avisoDias:"")+'" placeholder="automático"></label>'+
+  '<label class="f" id="g-ah"><span>Avisar con (horas de anticipación)</span><input id="t-ah" inputmode="numeric" value="'+esc(isNum(t.avisoHoras)?t.avisoHoras:"")+'" placeholder="10 % del intervalo"></label></div>'+
+  '<p class="hint" style="margin:0">Si dejás el aviso vacío, la tarea pasa a “Próxima” cuando le queda el 15 % del intervalo (hasta 14 días) o el 10 % de las horas.</p></fieldset>'+
+  '<fieldset class="full"><legend>Instructivo</legend>'+
+  '<div class="fg"><label class="f"><span>Tiempo estimado (min)</span><input id="i-min" inputmode="numeric" value="'+esc(isNum(ins.minutos)?ins.minutos:"")+'"></label>'+
+  '<label class="f"><span>¿Requiere equipo detenido?</span><select id="i-det">'+o("","Sin indicar",ins.detenido||"")+o("Sí","Sí",ins.detenido)+o("No","No",ins.detenido)+'</select></label></div>'+
+  '<label class="f"><span>Seguridad y EPP (bloqueo, guantes, anteojos…)</span><textarea id="i-seg">'+esc(ins.seguridad)+'</textarea></label>'+
+  '<div class="fg"><label class="f"><span>Herramientas</span><textarea id="i-her">'+esc(ins.herramientas)+'</textarea></label>'+
+  '<label class="f"><span>Repuestos e insumos</span><textarea id="i-rep">'+esc(ins.repuestos)+'</textarea></label></div>'+
+  '<label class="f"><span>Pasos (uno por renglón)</span><textarea id="i-pasos" style="min-height:130px">'+esc((ins.pasos||[]).join("\n"))+'</textarea></label>'+
+  '<label class="f"><span>Criterio de aceptación / valores de referencia</span><textarea id="i-crit">'+esc(ins.criterio)+'</textarea></label></fieldset>'+
+  '<div class="err full" id="err"></div>'+
+  '<div class="m-acts full">'+(t.id?'<button type="button" class="btn danger adm" data-act="del-task" data-id="'+esc(t.id)+'" style="margin-right:auto">Eliminar tarea</button>':'')+'<button type="button" class="btn" data-act="close">Cancelar</button><button type="submit" class="btn primary">Guardar tarea</button></div></form>',
+  r=>{
+    const sync=()=>{const m=r.querySelector('input[name=modo]:checked').value;
+      r.querySelector("#g-t").hidden=m==="horas";r.querySelector("#g-ad").hidden=m==="horas";
+      ["#g-h","#g-uh","#g-ah"].forEach(s=>r.querySelector(s).hidden=m==="tiempo")};
+    r.querySelectorAll('input[name=modo]').forEach(x=>x.addEventListener("change",sync));sync();
+    r.querySelector("#frm").addEventListener("submit",async ev=>{ev.preventDefault();
+      const modo=r.querySelector('input[name=modo]:checked').value;
+      const eqSel=pickEq?val("t-eq"):t.equipoId;
+      const d={equipoId:eqSel,nombre:val("t-nombre"),tipo:val("t-tipo"),responsable:val("t-resp"),modo,
+        cadaValor:modo==="horas"?null:numVal("t-cv"),cadaUnidad:val("t-cu"),cadaHoras:modo==="tiempo"?null:numVal("t-ch"),
+        ultimaFecha:val("t-uf")||null,ultimaHoras:modo==="tiempo"?null:numVal("t-uh"),
+        avisoDias:modo==="horas"?null:numVal("t-ad"),avisoHoras:modo==="tiempo"?null:numVal("t-ah"),
+        instructivo:{minutos:numVal("i-min"),detenido:val("i-det"),seguridad:val("i-seg"),herramientas:val("i-her"),repuestos:val("i-rep"),criterio:val("i-crit"),pasos:val("i-pasos").split("\n").map(s=>s.replace(/^\s*\d+[.)-]\s*/,"").trim()).filter(Boolean)}};
+      const err=$("#err");
+      const fail=m=>{err.textContent=m;err.scrollIntoView({block:"nearest"});toast(m)};
+      if(!d.equipoId){fail("Elegí el equipo.");return}
+      if(!d.nombre){fail("Escribí el nombre de la tarea.");return}
+      if(modo!=="horas"&&!(d.cadaValor>0)){fail("Indicá cada cuántos días, semanas, meses o años.");return}
+      if(modo!=="tiempo"&&!(d.cadaHoras>0)){fail("Indicá cada cuántas horas de uso.");return}
+      for(const k of ["cadaValor","cadaHoras","ultimaHoras","avisoDias","avisoHoras"])if(d[k]!==null&&!isFinite(d[k])){fail("Revisá los campos numéricos.");return}
+      try{if(t.id)await S.db.doc("tareas/"+t.id).set(d);else{d.creado=new Date().toISOString();await S.db.collection("tareas").add(d)}
+        closeModal();toast(t.id?"Tarea actualizada":"Tarea creada");render()}catch(x){writeErr(x)}
+    });
+  });
+}
+function formRegistro(t,equipoId){
+  const e=S.eq.get(t?t.equipoId:equipoId);if(!e)return;const cur=curHours(e);
+  const usaHoras=isNum(e.horometro);const ts=tasksOf(e.id);
+  openModal(mhead(t?"Registrar: "+t.nombre:"Registrar intervención")+'<p class="hint" style="margin:-6px 0 0">'+esc(e.codigo+" · "+e.nombre)+'</p>'+
+  '<form id="frm" class="fg" novalidate>'+
+  (t?'':'<label class="f full"><span>Tarea</span><select id="r-tarea"><option value="">Intervención no programada</option>'+ts.map(x=>'<option value="'+esc(x.id)+'">'+esc(x.nombre)+'</option>').join("")+'</select></label>'+
+    '<label class="f full" id="g-rt"><span>Tipo</span><select id="r-tipo"><option>Correctivo</option><option>Inspección</option><option>Mejora</option><option>Predictivo</option></select></label>')+
+  '<label class="f"><span>Fecha *</span><input type="date" id="r-fecha" value="'+todayStr()+'" max="'+todayStr()+'"></label>'+
+  '<label class="f"><span>Horómetro'+(usaHoras?'':' (opcional)')+'</span><input id="r-hm" inputmode="decimal" value="'+(cur.h!==null?Math.round(cur.h):"")+'"></label>'+
+  (cur.est?'<p class="hint full" style="margin:-6px 0 0">El valor propuesto es una estimación: anotá la lectura real del equipo.</p>':'')+
+  '<label class="f"><span>Técnico / operario</span><input id="r-tec" value="'+esc(S.me&&S.me.name||"")+'"></label>'+
+  '<label class="f"><span>Duración del trabajo (h)</span><input id="r-dur" inputmode="decimal" placeholder="ej. 1,5"></label>'+
+  '<label class="f"><span>Horas de máquina detenida</span><input id="r-par" inputmode="decimal" placeholder="0 si no se detuvo"></label>'+
+  '<label class="f"><span>Resultado</span><select id="r-res">'+RESULTADOS.map(x=>'<option>'+x+'</option>').join("")+'</select></label>'+
+  '<label class="f full" id="g-prov" hidden><span>Taller / proveedor al que se envió</span><input id="r-prov"></label>'+
+  '<label class="f full"><span>Repuestos usados</span><input id="r-rep"></label>'+
+  '<label class="f full"><span>Observaciones (qué se encontró, causa de la falla)</span><textarea id="r-obs"></textarea></label>'+
+  '<div class="err full" id="err"></div>'+
+  '<div class="m-acts full"><button type="button" class="btn" data-act="close">Cancelar</button><button type="submit" class="btn primary">Guardar registro</button></div></form>',
+  r=>{
+    const sel=r.querySelector("#r-tarea");if(sel)sel.addEventListener("change",()=>{r.querySelector("#g-rt").hidden=!!sel.value});
+    const rs=r.querySelector("#r-res");rs.addEventListener("change",()=>{r.querySelector("#g-prov").hidden=rs.value!=="Enviado a reparación externa"});
+    r.querySelector("#frm").addEventListener("submit",async ev=>{ev.preventDefault();
+      const tarea=t||(sel&&sel.value?S.ta.get(sel.value):null);
+      const fecha=val("r-fecha");const hm=numVal("r-hm");const par=numVal("r-par");const err=$("#err");
+      if(!fecha){err.textContent="Indicá la fecha.";return}
+      if((hm!==null&&!isFinite(hm))||(par!==null&&!isFinite(par))){err.textContent="Horómetro y parada tienen que ser números.";return}
+      if(tarea&&tarea.modo!=="tiempo"&&hm===null){err.textContent="Esta tarea se programa por horas: anotá el horómetro.";return}
+      const dur=numVal("r-dur");if(dur!==null&&!isFinite(dur)){err.textContent="La duración tiene que ser un número.";return}
+      const resultado=val("r-res");
+      const reg={equipoId:e.id,equipoCodigo:e.codigo,tareaId:tarea?tarea.id:null,tareaNombre:tarea?tarea.nombre:"Intervención no programada",
+        tipo:tarea?"Preventivo":val("r-tipo"),fecha,horometro:hm,tecnico:val("r-tec"),duracion:dur,parada:par,resultado,
+        proveedor:resultado==="Enviado a reparación externa"?val("r-prov"):"",repuestos:val("r-rep"),obs:val("r-obs"),
+        porId:S.me&&S.me.id||null,creado:new Date().toISOString()};
+      if(resultado==="Resuelto")reg.fechaCierre=fecha;
+      if(tarea){const st=status(tarea);reg.atrasoDias=0;reg.atrasoHoras=0;
+        for(const p of st.partes){
+          if(p.k==="t"){reg.venceEl=p.next;reg.atrasoDias=Math.max(0,diffDays(p.next,fecha))}
+          if(p.k==="h"&&hm!==null){reg.venceHoras=p.nextH;reg.atrasoHoras=Math.max(0,Math.round(hm-p.nextH))}
+        }
+        reg.demorada=reg.atrasoDias>0||reg.atrasoHoras>0}
+      try{
+        await S.db.collection("registros").add(reg);
+        const eo={"Enviado a reparación externa":"En reparación externa","Equipo fuera de servicio":"Fuera de servicio","Pendiente de repuesto":"Esperando repuesto","Resuelto":"Operativo"}[resultado];
+        if(eo&&!(tarea&&resultado==="Resuelto")&&(eo!==(e.estadoOp||"Operativo")))await S.db.doc("equipos/"+e.id).update({estadoOp:eo});
+        if(tarea){const up={};
+          if(!tarea.ultimaFecha||fecha>=tarea.ultimaFecha){up.ultimaFecha=fecha;if(hm!==null)up.ultimaHoras=hm}
+          if(Object.keys(up).length)await S.db.doc("tareas/"+tarea.id).update(up)}
+        if(hm!==null)await updHorometro(e,hm,fecha);
+        closeModal();toast("Registro guardado");render();
+      }catch(x){writeErr(x)}
+    });
+  });
+}
+async function updHorometro(e,hm,fecha){
+  if(e.horometroFecha&&fecha<e.horometroFecha)return;
+  const up={horometro:hm,horometroFecha:fecha};
+  if(e.usoAuto!==false&&isNum(e.horometro)&&e.horometroFecha){const d=diffDays(e.horometroFecha,fecha);const dh=hm-Number(e.horometro);
+    if(d>=1&&dh>=0&&dh/d<=24)up.horasDia=Math.round(dh/d*10)/10}
+  await S.db.doc("equipos/"+e.id).update(up);
+}
+function formHorometro(e){
+  const cur=curHours(e);
+  openModal(mhead("Actualizar horómetro")+'<p class="hint" style="margin:-6px 0 0">'+esc(e.codigo+" · "+e.nombre)+'</p>'+
+  '<form id="frm" class="fg" novalidate><label class="f"><span>Lectura (h) *</span><input id="h-v" inputmode="decimal" value="'+(cur.h!==null?Math.round(cur.h):"")+'"></label>'+
+  '<label class="f"><span>Fecha de la lectura</span><input type="date" id="h-f" value="'+todayStr()+'" max="'+todayStr()+'"></label>'+
+  '<p class="hint full" style="margin:0">'+(e.usoAuto===false?'El uso promedio no se recalcula (desactivado en el equipo).':'Con esta lectura se recalcula el uso promedio por día.')+'</p>'+
+  '<div class="err full" id="err"></div><div class="m-acts full"><button type="button" class="btn" data-act="close">Cancelar</button><button type="submit" class="btn primary">Guardar lectura</button></div></form>',
+  r=>r.querySelector("#frm").addEventListener("submit",async ev=>{ev.preventDefault();
+    const v=numVal("h-v"),f=val("h-f")||todayStr();
+    if(v===null||!isFinite(v)){$("#err").textContent="Anotá la lectura del horómetro.";return}
+    if(isNum(e.horometro)&&v<Number(e.horometro)&&f>=(e.horometroFecha||"")){$("#err").textContent="La lectura es menor que la anterior ("+fmtN(e.horometro)+" h). Revisala.";return}
+    try{await updHorometro(e,v,f);closeModal();toast("Horómetro actualizado");render()}catch(x){writeErr(x)}
+  }));
+}
+function insHTML(t){
+  const i=t.instructivo||{};const sec=(h,b)=>b?'<section><h3>'+h+'</h3>'+b+'</section>':"";const p=x=>x?'<p>'+esc(x)+'</p>':"";
+  return sec("Seguridad y EPP",i.seguridad?'<div class="warnbox"><p>'+esc(i.seguridad)+'</p></div>':"")+
+    sec("Herramientas",p(i.herramientas))+sec("Repuestos e insumos",p(i.repuestos))+
+    sec("Pasos",(i.pasos&&i.pasos.length)?'<ol>'+i.pasos.map(s=>'<li>'+esc(s)+'</li>').join("")+'</ol>':"")+
+    sec("Criterio de aceptación",p(i.criterio));
+}
+function showIns(t){
+  const e=S.eq.get(t.equipoId);const i=t.instructivo||{};const body=insHTML(t);
+  openModal(mhead(t.nombre)+'<div class="code">'+esc(e?e.codigo+" · "+e.nombre:"")+'</div>'+
+  '<div class="meta" style="display:flex;gap:6px;flex-wrap:wrap"><span class="chip">'+esc(freqLabel(t))+'</span><span class="chip">'+esc(t.tipo||"")+'</span><span class="chip">'+esc(t.responsable||"")+'</span>'+(isNum(i.minutos)?'<span class="chip">'+esc(i.minutos)+' min</span>':'')+(i.detenido?'<span class="chip">Equipo detenido: '+esc(i.detenido)+'</span>':'')+'</div>'+
+  '<div class="ins" style="display:flex;flex-direction:column;gap:14px">'+(body||'<p class="hint">Esta tarea todavía no tiene instructivo. Usá “Editar” para cargar pasos, EPP y repuestos.</p>')+'</div>'+
+  '<div class="m-acts"><button class="btn" data-act="dl-ins" data-id="'+esc(t.id)+'">Descargar para imprimir</button><button class="btn w" data-act="edit-task" data-id="'+esc(t.id)+'">Editar</button><button class="btn primary w" data-act="reg" data-id="'+esc(t.id)+'">Registrar hecho</button></div>');
+}
+function showTag(e){
+  const link=linkFor(e);const svg=qrSvg(link,5);
+  openModal(mhead("Etiqueta NFC / QR")+'<p class="hint" style="margin:-6px 0 0">'+esc(e.codigo+" · "+e.nombre)+'</p>'+
+  '<div class="tag-wrap"><div class="tag-card">'+(svg?'<div class="qr">'+svg+'</div>':'')+'<div class="tag-code">'+esc(e.codigo)+'</div><div class="tag-name">'+esc(e.nombre)+'</div></div>'+
+  '<div style="min-width:0;flex:1 1 260px;display:flex;flex-direction:column;gap:10px"><label class="f"><span>Link para grabar en el tag NFC</span><input id="tag-link" readonly value="'+esc(link)+'"></label>'+
+  '<button class="btn primary" data-act="copy-link" type="button">Copiar link</button>'+
+  '<div class="ins"><h3>Cómo grabar el tag desde el iPhone</h3><ol><li>Instalá la app gratuita “NFC Tools”.</li><li>Tocá Escribir → Agregar un registro → URL / URI.</li><li>Pegá este link y confirmá.</li><li>Tocá Escribir y acercá el iPhone al tag.</li></ol></div>'+
+  '<p class="hint" style="margin:0">Después, al acercar cualquier iPhone XS o más nuevo al tag (con la pantalla desbloqueada), aparece el aviso para abrir este equipo directamente en su checklist. El QR hace lo mismo con la cámara y sirve de respaldo. En el celular se abre la versión web: hay que haber ingresado una vez con el usuario.</p></div></div>'+
+  '<div class="m-acts"><button class="btn" data-act="dl-tag" data-id="'+esc(e.id)+'">Descargar etiqueta para imprimir</button><button class="btn" data-act="close">Cerrar</button></div>');
+}
+function printableTags(list){
+  const css='body{font-family:Arial,sans-serif;margin:12mm;color:#111}.g{display:grid;grid-template-columns:repeat(3,1fr);gap:6mm}.t{border:1px dashed #999;border-radius:3mm;padding:4mm;text-align:center;page-break-inside:avoid}.t img{width:34mm;height:34mm;image-rendering:pixelated}.c{font-family:monospace;font-weight:bold;font-size:13px;margin-top:2mm}.n{font-size:10px;color:#444;margin-top:1mm}.h{font-size:11px;color:#555;margin-bottom:6mm}';
+  return '<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Etiquetas de equipos</title><style>'+css+'</style></head><body><div class="h">Etiquetas QR · Generadas el '+fmtD(todayStr())+' · Recortá por la línea punteada. El mismo link se graba en el tag NFC.</div><div class="g">'+
+    list.map(e=>{const img=qrImg(linkFor(e));return '<div class="t">'+(img?'<img alt="" src="'+img+'">':'')+'<div class="c">'+esc(e.codigo)+'</div><div class="n">'+esc(e.nombre)+'</div></div>'}).join("")+'</div></body></html>';
+}
+function confirmDel(e){
+  const nt=tasksOf(e.id).length;
+  openModal(mhead("Eliminar carga errónea")+'<p>Usá esta opción solo si el equipo se cargó por error. Si se retiró de la planta usá <b>Dar de baja</b>, y si pasó a otra empresa usá <b>Reubicar / transferir</b>.</p><p>Se va a eliminar <b>'+esc(e.codigo)+' · '+esc(e.nombre)+'</b> y sus '+nt+' tareas. El historial de intervenciones se conserva.</p>'+
+  '<div class="m-acts"><button class="btn" data-act="close">Cancelar</button><button class="btn danger" data-act="del-eq-ok" data-id="'+esc(e.id)+'">Eliminar definitivamente</button></div>');
+}
+
+/* ---------- cierre de reparaciones ---------- */
+function formCierre(r){
+  const e=S.eq.get(r.equipoId);
+  openModal(mhead("Marcar como resuelto")+'<p class="hint" style="margin:-6px 0 0">'+esc((e?e.codigo+" · "+e.nombre:r.equipoCodigo||"")+" · "+r.resultado+" desde "+fmtD(r.fecha))+'</p>'+
+  '<form id="frm" class="fg" novalidate><label class="f"><span>Fecha en que quedó operativo *</span><input type="date" id="c-f" value="'+todayStr()+'" min="'+esc(r.fecha)+'" max="'+todayStr()+'"></label>'+
+  '<label class="f"><span>Horas de parada totales</span><input id="c-par" inputmode="decimal" value="'+esc(isNum(r.parada)?r.parada:"")+'"></label>'+
+  '<label class="f full"><span>Qué se hizo / costo / comentario del taller</span><textarea id="c-obs"></textarea></label>'+
+  '<div class="err full" id="err"></div><div class="m-acts full"><button type="button" class="btn" data-act="close">Cancelar</button><button type="submit" class="btn primary">Guardar cierre</button></div></form>',
+  rt=>rt.querySelector("#frm").addEventListener("submit",async ev=>{ev.preventDefault();
+    const f=val("c-f"),par=numVal("c-par");if(!f){$("#err").textContent="Indicá la fecha.";return}
+    if(par!==null&&!isFinite(par)){$("#err").textContent="Las horas de parada tienen que ser un número.";return}
+    try{await S.db.doc("registros/"+r.id).update({fechaCierre:f,parada:par,cierreObs:val("c-obs"),cierrePorId:S.me&&S.me.id||null});
+      const otros=S.re.filter(x=>x.id!==r.id&&x.equipoId===r.equipoId&&x.resultado&&x.resultado!=="Resuelto"&&!x.fechaCierre);
+      if(e&&!otros.length&&(e.estadoOp||"Operativo")!=="Operativo")await S.db.doc("equipos/"+e.id).update({estadoOp:"Operativo"});
+      closeModal();toast("Reparación cerrada");render()}catch(x){writeErr(x)}
+  }));
+}
+
+/* ---------- informe mensual ---------- */
+const MESES=["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+function mesLabel(m){const [y,mo]=m.split("-").map(Number);return MESES[mo-1]+" "+y}
+function reportData(m){
+  const [y,mo]=m.split("-").map(Number);const a=m+"-01";const b=fromUTC(Date.UTC(y,mo,0));const hoy=todayStr();const fin=b<hoy?b:hoy;
+  const inEmp=id=>{const e=S.eq.get(id);return !S.empresa||(e?e.empresa===S.empresa:false)};
+  const enMes=S.re.filter(r=>r.fecha>=a&&r.fecha<=b).sort((x,z)=>x.fecha<z.fecha?-1:1);
+  const regs=enMes.filter(r=>!MOV.has(r.tipo)&&inEmp(r.equipoId));
+  const movs=enMes.filter(r=>MOV.has(r.tipo)&&(!S.empresa||r.empresaDesde===S.empresa||r.empresaHacia===S.empresa||inEmp(r.equipoId)));
+  const sum=(arr,f)=>arr.reduce((s,x)=>s+(Number(x[f])||0),0);
+  const prev=regs.filter(r=>r.tipo==="Preventivo"),corr=regs.filter(r=>r.tipo==="Correctivo");
+  const medidas=prev.filter(r=>typeof r.demorada==="boolean");const dem=medidas.filter(r=>r.demorada);
+  const eqName=id=>{const e=S.eq.get(id);return e?{codigo:e.codigo,nombre:e.nombre,empresa:e.empresa}:{codigo:"(eliminado)",nombre:"",empresa:""}};
+  const byEq=new Map();regs.forEach(r=>{const o=byEq.get(r.equipoId)||Object.assign({n:0,corr:0,parada:0,trabajo:0},eqName(r.equipoId));
+    o.n++;if(r.tipo==="Correctivo")o.corr++;o.parada+=Number(r.parada)||0;o.trabajo+=Number(r.duracion)||0;byEq.set(r.equipoId,o)});
+  const byEmp={};Object.keys(EMP).forEach(k=>byEmp[k]={n:0,prev:0,corr:0,parada:0,trabajo:0});
+  regs.forEach(r=>{const k=eqName(r.equipoId).empresa;if(!byEmp[k])return;const o=byEmp[k];o.n++;if(r.tipo==="Preventivo")o.prev++;if(r.tipo==="Correctivo")o.corr++;o.parada+=Number(r.parada)||0;o.trabajo+=Number(r.duracion)||0});
+  const reps=S.re.filter(r=>r.resultado&&r.resultado!=="Resuelto"&&r.fecha<=b&&inEmp(r.equipoId)&&(r.fecha>=a||!r.fechaCierre||r.fechaCierre>=a))
+    .map(r=>{const cerr=r.fechaCierre&&r.fechaCierre<=b;return Object.assign({},r,eqName(r.equipoId),{cerrada:!!cerr,dias:diffDays(r.fecha,cerr?r.fechaCierre:fin)})});
+  const venc=[...S.ta.values()].filter(t=>isActivo(S.eq.get(t.equipoId))&&inEmp(t.equipoId)).map(t=>({t,st:status(t)})).filter(x=>x.st.estado==="vencida").map(x=>Object.assign({tarea:x.t.nombre,freq:freqLabel(x.t),txt:partLabel(x.st.gov).big},eqName(x.t.equipoId)));
+  let ck=0;for(const [id,c] of S.ck)if(inEmp(id))for(const it of c.items||[])for(const hh of it.hist||[])if(hh.f>=a&&hh.f<=b)ck++;
+  const fueraServ=[...S.eq.values()].filter(e=>isActivo(e)&&inEmp(e.id)&&e.estadoOp&&e.estadoOp!=="Operativo");
+  const tipos={};regs.forEach(r=>{tipos[r.tipo||"Otro"]=(tipos[r.tipo||"Otro"]||0)+1});
+  const paradaCorr=sum(corr,"parada");
+  return {m,a,b,parcial:b>=hoy,regs,prev,corr,medidas,dem,parada:sum(regs,"parada"),trabajo:sum(regs,"duracion"),
+    mttr:corr.length?paradaCorr/corr.length:null,aTiempo:medidas.length?(medidas.length-dem.length)/medidas.length:null,
+    otsMes:[...S.ot.values()].filter(o=>{const f=String(o.reportado||"").slice(0,10);return f>=a&&f<=b&&(!S.empresa||inEmp(o.equipoId))}),
+    movs,byEq:[...byEq.values()].sort((x,z)=>z.parada-x.parada||z.n-x.n),byEmp,reps,venc,ck,fueraServ,tipos};
+}
+function reportBody(d,print){
+  const k=(v,l,s)=>'<div class="rp-kpi"><b>'+v+'</b><span>'+l+'</span>'+(s?'<small>'+s+'</small>':'')+'</div>';
+  const pct=v=>v===null?"—":Math.round(v*100)+" %";
+  let h='<div class="rp-kpis">'+
+    k(d.regs.length,"Intervenciones",Object.entries(d.tipos).map(([t,c])=>c+" "+t.toLowerCase()).join(" · "))+
+    k(pct(d.aTiempo),"Preventivos a tiempo",d.medidas.length?(d.medidas.length-d.dem.length)+" de "+d.medidas.length:"sin datos de atraso")+
+    k(d.corr.length,"Correctivos",d.prev.length+" preventivos")+
+    k(fmtN(d.parada)+" h","Máquina detenida",d.byEq.filter(x=>x.parada>0).length+" equipos afectados")+
+    k(d.mttr===null?"—":fmtN(Math.round(d.mttr*10)/10)+" h","Tiempo medio de reparación","parada / correctivo")+
+    k(fmtN(d.trabajo)+" h","Horas de trabajo","mano de obra registrada")+
+    k(d.reps.filter(r=>!r.cerrada).length,"Reparaciones abiertas",d.fueraServ.length+" equipos no operativos hoy")+
+    k(d.venc.length,"Tareas vencidas hoy",d.ck+" ítems de checklist en el mes")+'</div>';
+  const tbl=(head,rows,empty)=>rows.length?'<div class="tbl-wrap"><table><thead><tr>'+head.map(x=>'<th>'+x+'</th>').join("")+'</tr></thead><tbody>'+rows.join("")+'</tbody></table></div>':'<p class="hint">'+empty+'</p>';
+  h+='<h3 class="rp-h">Resumen por empresa</h3>'+tbl(["Empresa","Intervenciones","Preventivos","Correctivos","Horas detenida","Horas de trabajo"],
+    Object.entries(d.byEmp).filter(([e])=>!S.empresa||e===S.empresa).map(([e,o])=>'<tr><td>'+esc(e+" · "+EMP[e])+'</td><td class="num">'+o.n+'</td><td class="num">'+o.prev+'</td><td class="num">'+o.corr+'</td><td class="num">'+fmtN(o.parada)+'</td><td class="num">'+fmtN(o.trabajo)+'</td></tr>'),"Sin datos.");
+  const top=d.byEq.filter(x=>x.parada>0).slice(0,10);const mx=Math.max(1,...top.map(x=>x.parada));
+  h+='<h3 class="rp-h">Equipos con más horas detenidos</h3>'+(top.length?'<div class="rp-bars">'+top.map(x=>'<div class="rp-br"><span class="rp-bl"><b>'+esc(x.codigo)+'</b> '+esc(x.nombre)+'</span><span class="rp-bt"><i style="width:'+(x.parada/mx*100).toFixed(1)+'%"></i></span><span class="num">'+fmtN(x.parada)+' h · '+x.corr+' corr.</span></div>').join("")+'</div>':'<p class="hint">No se registraron horas de parada en el mes.</p>');
+  h+='<h3 class="rp-h">Preventivos realizados con demora</h3>'+tbl(["Equipo","Tarea","Vencía","Se hizo","Demora"],
+    d.dem.map(r=>{const e=S.eq.get(r.equipoId);return '<tr><td><span class="code">'+esc(e?e.codigo:r.equipoCodigo)+'</span></td><td>'+esc(r.tareaNombre)+'</td><td class="num">'+(r.venceEl?fmtD(r.venceEl):isNum(r.venceHoras)?fmtN(r.venceHoras)+" h":"—")+'</td><td class="num">'+fmtD(r.fecha)+'</td><td class="num">'+[r.atrasoDias?r.atrasoDias+" días":"",r.atrasoHoras?fmtN(r.atrasoHoras)+" h":""].filter(Boolean).join(" · ")+'</td></tr>'}),"Todos los preventivos registrados se hicieron a tiempo.");
+  h+='<h3 class="rp-h">Enviados a reparar, esperando repuesto o fuera de servicio</h3>'+tbl(["Equipo","Desde","Situación","Taller / proveedor","Días","Estado"],
+    d.reps.map(r=>'<tr><td><span class="code">'+esc(r.codigo)+'</span> '+esc(r.nombre)+'</td><td class="num">'+fmtD(r.fecha)+'</td><td>'+esc(r.resultado)+'</td><td>'+esc(r.proveedor||"—")+'</td><td class="num">'+r.dias+'</td><td>'+(r.cerrada?'Resuelto el '+fmtD(r.fechaCierre):'<b>Abierto</b>')+'</td></tr>'),"No hubo equipos enviados a reparar ni esperando repuestos.");
+  {const om=d.otsMes;const byU={U1:[],U2:[],U3:[],U4:[]};om.forEach(o=>byU[urgOf(o)].push(o));
+   const regOt=new Map(S.re.filter(r=>r.otId).map(r=>[r.otId,r]));
+   h+='<h3 class="rp-h">Fallas reportadas por urgencia</h3>'+tbl(["Urgencia","Reportadas","Cerradas","Abiertas","Respuesta en término","Respuesta promedio","Afectaron entregas"],
+    Object.entries(byU).map(([u,l])=>{const cer=l.filter(o=>o.estado==="Cerrada");const rs=cer.map(o=>regOt.get(o.id)).filter(Boolean);
+      const ok=rs.filter(r=>r.respuestaOk).length;const prom=rs.length?rs.reduce((s2,r)=>s2+(Number(r.respuestaH)||0),0)/rs.length:null;
+      return '<tr><td>'+urgChip(u)+'</td><td class="num">'+l.length+'</td><td class="num">'+cer.length+'</td><td class="num">'+(l.length-cer.length)+'</td><td class="num">'+(rs.length?ok+" de "+rs.length:"—")+'</td><td class="num">'+(prom===null?"—":fmtH(prom))+'</td><td class="num">'+rs.filter(r=>r.afectoEntregas).length+'</td></tr>'}),"Sin fallas reportadas.");}
+  h+='<h3 class="rp-h">Altas, traslados y bajas de equipos</h3>'+tbl(["Fecha","Movimiento","Equipo","Detalle"],
+    d.movs.map(r=>{const e=S.eq.get(r.equipoId);return '<tr><td class="num">'+fmtD(r.fecha)+'</td><td><span class="chip">'+esc(r.tipo)+'</span></td><td><span class="code">'+esc(r.tipo==="Traslado"?(r.desde+" → "+r.hacia):(r.equipoCodigo||""))+'</span> '+esc(e?e.nombre:"")+'</td><td>'+esc([r.tipo==="Baja"?r.tareaNombre.replace(/^Baja: /,""):"",r.recibe?"Recibe: "+r.recibe:"",r.obs].filter(Boolean).join(" · "))+'</td></tr>'}),"No hubo altas, traslados ni bajas en el mes.");
+  h+='<h3 class="rp-h">Tareas vencidas al '+fmtD(todayStr())+'</h3>'+tbl(["Equipo","Tarea","Frecuencia","Situación"],
+    d.venc.map(x=>'<tr><td><span class="code">'+esc(x.codigo)+'</span> '+esc(x.nombre)+'</td><td>'+esc(x.tarea)+'</td><td>'+esc(x.freq)+'</td><td>'+esc(x.txt)+'</td></tr>'),"No hay tareas vencidas.");
+  h+='<h3 class="rp-h">Detalle de intervenciones</h3>'+tbl(["Fecha","Equipo","Tarea / tipo","Resultado","Trabajo","Parada","Técnico"],
+    d.regs.map(r=>{const e=S.eq.get(r.equipoId);return '<tr><td class="num">'+fmtD(r.fecha)+'</td><td><span class="code">'+esc(e?e.codigo:r.equipoCodigo)+'</span></td><td>'+esc(r.tareaNombre)+' ('+esc(r.tipo)+')'+(r.demorada?' · demorada':'')+'</td><td>'+esc(r.resultado||"")+'</td><td class="num">'+(isNum(r.duracion)?fmtN(r.duracion):"—")+'</td><td class="num">'+(isNum(r.parada)?fmtN(r.parada):"—")+'</td><td>'+esc(r.tecnico||"")+'</td></tr>'}),"No hay intervenciones registradas en el mes.");
+  return h;
+}
+function informeKey(){return S.mes+(S.empresa?"_"+S.empresa:"_todas")}
+function viewInforme(){
+  const d=reportData(S.mes);const nota=(S.inf&&S.inf.get(informeKey()))||{};
+  return '<div class="sec-h"><h2>Informe de mantenimiento · '+esc(mesLabel(S.mes))+(S.empresa?' · '+esc(EMP[S.empresa]):'')+'</h2>'+
+    '<div class="inline" style="flex-wrap:wrap"><label class="f" style="flex-direction:row;align-items:center;gap:6px"><span>Mes</span><input type="month" id="inf-mes" value="'+esc(S.mes)+'" max="'+todayStr().slice(0,7)+'" style="width:auto"></label>'+
+    '<button class="btn" data-act="inf-dl">Descargar informe</button><button class="btn" data-act="csv">Detalle CSV</button></div></div>'+
+    (d.parcial?'<div class="banner">Mes en curso: los datos son parciales hasta hoy '+fmtD(todayStr())+'.</div>':'')+
+    (d.medidas.length<d.prev.length?'<p class="hint">Hay preventivos cargados antes de esta versión que no tienen dato de demora; desde ahora se calcula al registrar.</p>':'')+
+    reportBody(d,false)+
+    '<h3 class="rp-h">Conclusiones y acciones del mes</h3><textarea id="inf-nota" class="w-in" style="min-height:110px" placeholder="Problemas recurrentes, repuestos a comprar, mejoras propuestas…">'+esc(nota.texto||"")+'</textarea>'+
+    '<div class="detail-acts"><button class="btn primary w" data-act="inf-save">Guardar conclusiones</button>'+(nota.actualizado?'<span class="hint">Guardado el '+fmtD(String(nota.actualizado).slice(0,10))+'</span>':'')+'</div>';
+}
+function printableInforme(){
+  const d=reportData(S.mes);const nota=(S.inf&&S.inf.get(informeKey()))||{};
+  const css='body{font-family:Arial,sans-serif;color:#111;margin:22px;font-size:12px}h1{font-size:20px;margin:0 0 4px}.sub{color:#555;margin-bottom:14px}.rp-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.rp-kpi{border:1px solid #ccc;border-radius:6px;padding:8px}.rp-kpi b{display:block;font-size:20px}.rp-kpi span{font-size:10px;text-transform:uppercase;color:#555}.rp-kpi small{display:block;color:#666;font-size:10px}.rp-h{font-size:14px;margin:18px 0 6px;border-bottom:2px solid #1D6A73;padding-bottom:3px;page-break-after:avoid}table{border-collapse:collapse;width:100%}td,th{border:1px solid #bbb;padding:4px 6px;text-align:left;vertical-align:top}th{background:#eef2f3}.num{text-align:right;white-space:nowrap}.code{font-family:monospace}.rp-br{display:grid;grid-template-columns:45% 1fr 110px;gap:8px;align-items:center;margin:3px 0}.rp-bt{background:#e3e9eb;height:10px;border-radius:2px;display:block}.rp-bt i{display:block;height:100%;background:#B8322A}.hint{color:#666}.tbl-wrap{page-break-inside:auto}tr{page-break-inside:avoid}';
+  return '<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Informe '+esc(mesLabel(S.mes))+'</title><style>'+css+'</style></head><body><h1>Informe de mantenimiento · '+esc(mesLabel(S.mes))+'</h1><div class="sub">'+(S.empresa?esc(S.empresa+" · "+EMP[S.empresa]):"Todas las empresas del grupo")+' · Período '+fmtD(d.a)+' al '+fmtD(d.b)+(d.parcial?' (parcial)':'')+' · Generado el '+fmtD(todayStr())+(S.me?' por '+esc(S.me.name):'')+'</div>'+
+    reportBody(d,true)+(nota.texto?'<h3 class="rp-h">Conclusiones y acciones</h3><p style="white-space:pre-wrap">'+esc(nota.texto)+'</p>':'')+'<p style="margin-top:28px">Firma responsable de mantenimiento: ______________________________</p></body></html>';
+}
+
+/* ---------- manuales ---------- */
+function searchUrl(e){return "https://www.google.com/search?q="+encodeURIComponent([e.marca,e.modelo,(!e.marca&&!e.modelo)?e.nombre.replace(/^EJEMPLO\s*[–-]\s*/,""):"","manual de mantenimiento pdf"].filter(Boolean).join(" "))}
+function manHref(m){return m.assetId?"/_blob/"+m.assetId:(m.url||"#")}
+function manualTable(list,showEq){
+  return '<div class="tbl-wrap"><table><thead><tr><th>Manual</th><th>Tipo</th><th>Marca / modelo</th>'+(showEq?'<th>Equipos</th>':'')+'<th>Archivo</th><th></th></tr></thead><tbody>'+
+  list.sort((a,b)=>String(a.titulo).localeCompare(String(b.titulo))).map(m=>'<tr><td><a href="'+esc(manHref(m))+'" target="_blank" rel="noopener"><b>'+esc(m.titulo)+'</b></a>'+(m.notas?'<br><span class="hint">'+esc(m.notas)+'</span>':'')+'</td><td>'+esc(m.tipo||"")+(m.idioma?'<br><span class="hint">'+esc(m.idioma)+'</span>':'')+'</td><td>'+esc([m.marca,m.modelo].filter(Boolean).join(" · "))+'</td>'+
+    (showEq?'<td>'+((m.equipoIds||[]).map(id=>S.eq.get(id)).filter(Boolean).map(e=>'<button class="chip linkchip" data-act="open-eq" data-id="'+esc(e.id)+'">'+esc(e.codigo)+'</button>').join(" ")||'<span class="hint">General</span>')+'</td>':'')+
+    '<td>'+(m.assetId?'<span class="chip">PDF'+(m.sizeBytes?' · '+fmtN(Math.round(m.sizeBytes/1048576*10)/10)+' MB':'')+'</span>':'<span class="chip">Link</span>')+'</td>'+
+    '<td><div class="acts"><a class="btn sm" href="'+esc(manHref(m))+'" target="_blank" rel="noopener">Abrir</a><button class="btn sm adm" data-act="man-edit" data-id="'+esc(m.id)+'">Editar</button><button class="btn sm danger adm" data-act="man-del" data-id="'+esc(m.id)+'">Borrar</button></div></td></tr>').join("")+'</tbody></table></div>';
+}
+function viewManuales(){
+  const q=S.q.toLowerCase();
+  const list=[...S.ma.values()].filter(m=>{const eqs=(m.equipoIds||[]).map(id=>S.eq.get(id)).filter(Boolean);
+    if(S.empresa&&eqs.length&&!eqs.some(e=>e.empresa===S.empresa))return false;
+    return !q||[m.titulo,m.marca,m.modelo,m.tipo,m.notas,...eqs.map(e=>e.codigo+" "+e.nombre)].some(x=>x&&String(x).toLowerCase().includes(q))});
+  const conManual=new Set([...S.ma.values()].flatMap(m=>m.equipoIds||[]));
+  const sin=[...S.eq.values()].filter(e=>isActivo(e)&&!conManual.has(e.id)&&(!S.empresa||e.empresa===S.empresa)).sort((a,b)=>String(a.codigo).localeCompare(String(b.codigo)));
+  let h='<div class="sec-h"><h2>Repositorio de manuales</h2><div class="inline"><small>'+list.length+' documentos</small><button class="btn primary adm" data-act="man-new">+ Agregar manual</button></div></div>';
+  h+=list.length?manualTable(list,true):'<div class="empty"><h2>Todavía no hay manuales</h2><p>Subí el PDF del manual (hasta 20 MB) o guardá el link a la página del fabricante, y asocialo a uno o varios equipos. Cada técnico lo abre desde la ficha del equipo.</p></div>';
+  if(sin.length)h+='<div class="sec-h"><h2>Equipos sin manual</h2><small>'+sin.length+' equipos</small></div><div class="tbl-wrap"><table><tbody>'+sin.map(e=>'<tr><td><span class="code">'+esc(e.codigo)+'</span></td><td>'+esc(e.nombre)+(e.marca||e.modelo?'<br><span class="hint">'+esc([e.marca,e.modelo].filter(Boolean).join(" · "))+'</span>':'<br><span class="hint">Cargá marca y modelo para buscarlo mejor</span>')+'</td><td><div class="acts"><a class="btn sm" href="'+esc(searchUrl(e))+'" target="_blank" rel="noopener">Buscar en la web ↗</a><button class="btn sm adm" data-act="man-new" data-id="'+esc(e.id)+'">Agregar</button></div></td></tr>').join("")+'</tbody></table></div>';
+  return h;
+}
+function formManual(m,preEq){
+  m=m||{equipoIds:preEq?[preEq]:[],tipo:MAN_TIPOS[0]};const sel=new Set(m.equipoIds||[]);
+  const pe=preEq&&S.eq.get(preEq);if(pe&&!m.id){m.marca=pe.marca;m.modelo=pe.modelo}
+  const eqs=[...S.eq.values()].filter(e=>isActivo(e)||sel.has(e.id)).sort((a,b)=>String(a.codigo).localeCompare(String(b.codigo)));
+  openModal(mhead(m.id?"Editar manual":"Agregar manual")+
+  '<form id="frm" class="fg" novalidate>'+
+  '<label class="f full"><span>Título *</span><input id="m-tit" value="'+esc(m.titulo)+'" placeholder="Manual de operación y mantenimiento"></label>'+
+  '<label class="f"><span>Tipo</span><select id="m-tipo">'+MAN_TIPOS.map(x=>'<option'+(x===m.tipo?' selected':'')+'>'+x+'</option>').join("")+'</select></label>'+
+  '<label class="f"><span>Idioma</span><input id="m-idi" value="'+esc(m.idioma||"Español")+'"></label>'+
+  '<label class="f"><span>Marca</span><input id="m-mar" value="'+esc(m.marca)+'"></label>'+
+  '<label class="f"><span>Modelo</span><input id="m-mod" value="'+esc(m.modelo)+'"></label>'+
+  '<fieldset class="full"><legend>Archivo o link</legend>'+
+  (m.assetId?'<p class="hint" style="margin:0">Archivo actual: '+esc(m.nombreArchivo||"PDF")+'. Elegí otro solo si querés reemplazarlo.</p>':'')+
+  '<label class="f"><span>Subir PDF o imagen (hasta 20 MB)</span><input type="file" id="m-file" accept="application/pdf,image/*"></label>'+
+  '<label class="f"><span>o link a la web del fabricante / Drive</span><input id="m-url" inputmode="url" value="'+esc(m.url)+'" placeholder="https://"></label></fieldset>'+
+  '<fieldset class="full"><legend>Equipos a los que aplica</legend><div class="eq-pick">'+eqs.map(e=>'<label><input type="checkbox" value="'+esc(e.id)+'"'+(sel.has(e.id)?' checked':'')+'> <span class="code">'+esc(e.codigo)+'</span> '+esc(e.nombre)+'</label>').join("")+'</div><p class="hint" style="margin:0">Sin equipos marcados queda como documento general.</p></fieldset>'+
+  '<label class="f full"><span>Notas (capítulos útiles, páginas, observaciones)</span><textarea id="m-not">'+esc(m.notas)+'</textarea></label>'+
+  '<div class="err full" id="err"></div><div class="m-acts full"><button type="button" class="btn" data-act="close">Cancelar</button><button type="submit" class="btn primary" id="m-save">Guardar manual</button></div></form>',
+  r=>r.querySelector("#frm").addEventListener("submit",async ev=>{ev.preventDefault();
+    const err=$("#err"),btn=$("#m-save");const file=r.querySelector("#m-file").files[0];const url=val("m-url");
+    const d={titulo:val("m-tit"),tipo:val("m-tipo"),idioma:val("m-idi"),marca:val("m-mar"),modelo:val("m-mod"),notas:val("m-not"),
+      equipoIds:[...r.querySelectorAll(".eq-pick input:checked")].map(i=>i.value),url:url||null};
+    if(!d.titulo){err.textContent="Escribí un título.";return}
+    if(!file&&!url&&!m.assetId){err.textContent="Subí un archivo o pegá un link.";return}
+    if(url&&!/^https?:\/\//i.test(url)){err.textContent="El link tiene que empezar con https://";return}
+    if(file&&file.size>20*1048576){err.textContent="El archivo pesa más de 20 MB. Subilo a Google Drive y pegá el link compartido.";return}
+    if(file&&!S.assets){err.textContent="Solo un administrador puede subir archivos.";return}
+    btn.disabled=true;btn.textContent=file?"Subiendo…":"Guardando…";
+    let oldAsset=null;
+    try{
+      if(file){const res=await S.assets.upload(file,file.type?undefined:{type:"application/pdf"});oldAsset=m.assetId||null;
+        Object.assign(d,{assetId:res.id,nombreArchivo:file.name,sizeBytes:res.sizeBytes||file.size})}
+      else if(m.assetId&&!url){Object.assign(d,{assetId:m.assetId,nombreArchivo:m.nombreArchivo||"",sizeBytes:m.sizeBytes||null})}
+      else if(url&&m.assetId&&!file){Object.assign(d,{assetId:m.assetId,nombreArchivo:m.nombreArchivo||"",sizeBytes:m.sizeBytes||null})}
+      if(m.id){d.creado=m.creado||null;d.subidoPorId=m.subidoPorId||null;await S.db.doc("manuales/"+m.id).set(d)}
+      else{d.creado=new Date().toISOString();d.subidoPorId=S.me&&S.me.id||null;await S.db.collection("manuales").add(d)}
+      if(oldAsset)try{await S.assets.delete(oldAsset)}catch(_){}
+      closeModal();toast("Manual guardado");render();
+    }catch(x){btn.disabled=false;btn.textContent="Guardar manual";
+      if(x&&x.code&&["too_large","unsupported_type","invalid_request","not_granted","quota_exceeded"].includes(x.code))err.textContent=x.code==="too_large"?"El archivo es demasiado grande.":x.code==="unsupported_type"?"Ese tipo de archivo no se puede subir: usá PDF o imagen.":x.code==="quota_exceeded"?"Se llenó el espacio de archivos: usá un link de Drive.":"No se pudo subir el archivo.";
+      else writeErr(x)}
+  }));
+}
+function confirmManDel(m){
+  openModal(mhead("Borrar manual")+'<p>Se va a borrar <b>'+esc(m.titulo)+'</b>'+(m.assetId?' y su archivo':'')+' del repositorio.</p><div class="m-acts"><button class="btn" data-act="close">Cancelar</button><button class="btn danger" data-act="man-del-ok" data-id="'+esc(m.id)+'">Borrar</button></div>');
+}
+
+/* ---------- urgencia de fallas ---------- */
+function holgura(e){
+  const p=(e&&e.prod)||{};if(isNum(p.holguraManual))return Number(p.holguraManual);
+  const C=n(p.cap),D=n(p.dem),H=n(p.hdisp),St=n(p.stock)||0,d=isNum(p.dias)?Number(p.dias):5;
+  if(!(C>0)||D===null||!(H>0))return null;
+  return Math.max(0,Math.round((St/C+(H-D/C)*d)*10)/10);
+}
+function calcUrg(f,e){
+  const crit=e&&e.criticidad,res=!!(e&&e.prod&&e.prod.reserva);
+  const p=f.tipo==="menor"?0:(isNum(f.perdida)?Math.min(100,Math.max(0,Number(f.perdida))):100);
+  const T=n(f.tEst),h=holgura(e),lost=T!==null?Math.round(T*p)/100:null;let u,why;
+  if(f.tipo==="seg"){u="U1";why="Hay riesgo para personas, para la inocuidad o para el ambiente."}
+  else if(p===0){u=crit==="A"?"U3":"U4";why="No afecta la producción"+(crit==="A"?", pero es un equipo crítico.":".")}
+  else if(h!==null&&lost!==null){
+    const q=p/100,L=r=>Math.round((r+T)*q*10)/10;
+    if(L(URG.U3.resp)<h){u="U3";why="Aun esperando hasta 3 días para empezar, se pierden "+fmtN(L(URG.U3.resp))+" h y la holgura es de "+fmtN(h)+" h: no se afectan entregas."}
+    else if(L(URG.U2.resp)<h){u="U2";why="Si se espera más de un turno se consume la holgura ("+fmtN(h)+" h); atendiendo en el turno se pierden "+fmtN(L(URG.U2.resp))+" h."}
+    else if(L(URG.U1.resp)<h){u="U1";why="Hay que empezar en menos de 1 h: con la reparación ("+fmtN(T)+" h) casi no queda holgura ("+fmtN(h)+" h)."}
+    else{u="U1";why="Aun atendiendo de inmediato se pierden "+fmtN(L(URG.U1.resp))+" h y la holgura es de "+fmtN(h)+" h: se van a afectar entregas. Avisar a producción y comercial."}
+  }else{u=p>=100?(crit==="A"?"U1":"U2"):"U3";why=h===null?"El equipo no tiene cargados datos de producción y demanda: se decide por criticidad"+(crit?" ("+crit+")":"")+".":"Falta el tiempo estimado de reparación."}
+  if(res&&f.tipo!=="seg"&&(u==="U1"||u==="U2")){u=u==="U1"?"U2":"U3";why+=" Tiene equipo de reserva: baja un nivel."}
+  return {u,why,lost,h,p};
+}
+const urgOf=o=>o.urgManual||o.urg||"U3";
+function hoursSince(iso){return (Date.now()-new Date(iso).getTime())/36e5}
+function fmtH(h){if(h<1)return Math.max(1,Math.round(h*60))+" min";if(h<48)return fmtN(Math.round(h*10)/10)+" h";return Math.round(h/24)+" días"}
+function otState(o){
+  const u=urgOf(o),el=hoursSince(o.reportado),meta=URG[u].resp;
+  const respRef=o.inicio?(new Date(o.inicio)-new Date(o.reportado))/36e5:el;
+  const respOk=respRef<=meta;
+  let riesgo=null;
+  if(isNum(o.holgura)&&o.perdida>0){const rest=Number(o.holgura)-el*o.perdida/100;riesgo=rest<=0?"Ya afecta las entregas":"Entregas en riesgo en "+fmtH(rest*100/o.perdida)}
+  return {u,el,meta,respOk,riesgo};
+}
+function urgChip(u,big){return '<span class="uchip '+u.toLowerCase()+(big?' big':'')+'" title="'+esc(URG[u].l+" · "+URG[u].meta)+'">'+u+' · '+esc(URG[u].l)+'</span>'}
+function otCard(o,showEq){
+  const e=S.eq.get(o.equipoId);const st=otState(o);
+  return '<article class="ot '+st.u.toLowerCase()+'"><div class="ot-top">'+urgChip(st.u)+'<span class="chip">'+esc(o.estado)+'</span>'+(o.urgManual?'<span class="chip" title="'+esc(o.motivoManual||"")+'">Urgencia ajustada a mano</span>':'')+'</div>'+
+    (showEq&&e?'<div class="code">'+esc(e.codigo)+' · '+esc(e.nombre)+'</div>':'')+
+    '<div class="ot-d">'+esc(o.desc)+'</div>'+
+    '<div class="meta"><span>'+esc(fallaLabel(o.tipoFalla))+(o.tipoFalla==="parcial"?' ('+o.perdida+' %)':'')+'</span>'+(isNum(o.tEst)?'<span>Reparación estimada: '+fmtN(o.tEst)+' h</span>':'')+'<span>Reportada hace '+fmtH(st.el)+'</span>'+(o.asignado?'<span>A cargo: '+esc(o.asignado)+'</span>':'')+'</div>'+
+    '<div class="ot-flags">'+(o.estado==="Abierta"?(st.respOk?'<span class="flag ok">Responder antes de '+fmtH(st.meta-st.el)+'</span>':'<span class="flag bad">Tiempo de respuesta vencido ('+URG[st.u].meta.toLowerCase()+')</span>'):'')+
+      (st.riesgo?'<span class="flag '+(st.riesgo.startsWith("Ya")?'bad':'warn')+'">'+esc(st.riesgo)+'</span>':'')+'</div>'+
+    '<div class="acts">'+(o.estado==="Abierta"?'<button class="btn sm w" data-act="ot-start" data-id="'+esc(o.id)+'">Empezar</button>':'')+'<button class="btn sm w" data-act="ot-edit" data-id="'+esc(o.id)+'">Editar</button><button class="btn sm primary w" data-act="ot-close" data-id="'+esc(o.id)+'">Cerrar falla</button></div></article>';
+}
+function openOts(filter){return [...S.ot.values()].filter(o=>o.estado!=="Cerrada"&&(!filter||filter(o))).sort((a,b)=>urgOf(a).localeCompare(urgOf(b))||String(a.reportado).localeCompare(String(b.reportado)))}
+function formFalla(o,eqId){
+  const editing=!!(o&&o.id);o=o||{equipoId:eqId||null,tipoFalla:"total",perdida:100};
+  const pick=!o.equipoId;
+  openModal(mhead(editing?"Editar falla":"Reportar falla")+(o.equipoId?'<p class="hint" style="margin:-6px 0 0">'+esc((S.eq.get(o.equipoId)||{}).codigo+" · "+(S.eq.get(o.equipoId)||{}).nombre)+'</p>':'')+
+  '<form id="frm" class="fg" novalidate>'+
+  (pick?'<label class="f full"><span>Equipo *</span><select id="f-eq"><option value="">Elegí el equipo…</option>'+[...S.eq.values()].filter(isActivo).sort((a,b)=>String(a.codigo).localeCompare(String(b.codigo))).map(x=>'<option value="'+esc(x.id)+'">'+esc(x.codigo+" · "+x.nombre)+'</option>').join("")+'</select></label>':'')+
+  '<label class="f full"><span>¿Qué pasa? *</span><textarea id="f-desc" placeholder="Pierde aceite la unidad hidráulica y la máquina se detuvo">'+esc(o.desc)+'</textarea></label>'+
+  '<fieldset class="full"><legend>¿Cómo afecta?</legend><div class="radios col">'+FALLAS.map(([k,l])=>'<label><input type="radio" name="tf" value="'+k+'"'+(o.tipoFalla===k?' checked':'')+'> '+esc(l)+'</label>').join("")+'</div>'+
+  '<label class="f" id="g-perd"><span>¿Cuánta capacidad se pierde? (%)</span><input id="f-perd" inputmode="numeric" value="'+esc(isNum(o.perdida)?o.perdida:50)+'"></label></fieldset>'+
+  '<label class="f"><span>Tiempo estimado de reparación (h) *</span><input id="f-t" inputmode="decimal" value="'+esc(isNum(o.tEst)?o.tEst:"")+'" placeholder="ej. 3"></label>'+
+  '<label class="f"><span>A cargo</span><input id="f-asig" value="'+esc(o.asignado||"")+'"></label>'+
+  '<div class="urg-prev full" id="f-prev"></div>'+
+  '<details class="full"'+(o.urgManual?' open':'')+'><summary>Cambiar la urgencia a mano</summary><div class="fg" style="margin-top:8px"><label class="f"><span>Urgencia</span><select id="f-man"><option value="">Usar la calculada</option>'+Object.keys(URG).map(k=>'<option value="'+k+'"'+(o.urgManual===k?' selected':'')+'>'+k+' · '+URG[k].l+'</option>').join("")+'</select></label><label class="f"><span>Motivo *</span><input id="f-mot" value="'+esc(o.motivoManual||"")+'" placeholder="Pedido urgente del cliente…"></label></div></details>'+
+  '<div class="err full" id="err"></div><div class="m-acts full"><button type="button" class="btn" data-act="close">Cancelar</button><button type="submit" class="btn primary">'+(editing?'Guardar':'Reportar falla')+'</button></div></form>',
+  r=>{const g=id=>r.querySelector("#"+id);
+    const read=()=>{const tf=r.querySelector('input[name=tf]:checked').value;const eid=pick?g("f-eq").value:o.equipoId;
+      return {eid,tf,f:{tipo:tf,perdida:tf==="parcial"?numVal("f-perd"):tf==="menor"?0:100,tEst:numVal("f-t")}}};
+    const upd=()=>{const x=read();g("g-perd").hidden=x.tf!=="parcial";const e=S.eq.get(x.eid);
+      if(!e){g("f-prev").innerHTML='<span class="hint">Elegí el equipo para calcular la urgencia.</span>';return}
+      const c=calcUrg(x.f,e);const man=g("f-man").value;
+      g("f-prev").innerHTML='<div class="urg-row">'+urgChip(man||c.u,true)+'<div><b>'+esc(URG[man||c.u].meta)+'</b><br><span class="hint">'+esc(URG[man||c.u].accion)+'</span></div></div><p class="hint" style="margin:6px 0 0">'+(man?'Calculada: '+c.u+'. ':'')+esc(c.why)+'</p>'};
+    r.querySelectorAll('input[name=tf]').forEach(x=>x.addEventListener("change",upd));
+    ["f-perd","f-t"].forEach(id=>g(id).addEventListener("input",upd));g("f-man").addEventListener("change",upd);if(pick)g("f-eq").addEventListener("change",upd);upd();
+    g("frm").addEventListener("submit",async ev=>{ev.preventDefault();const err=g("err");
+      const x=read();const e=S.eq.get(x.eid);const desc=val("f-desc");const man=g("f-man").value;
+      const fail=m=>{err.textContent=m;toast(m)};
+      if(!e){fail("Elegí el equipo.");return}if(!desc){fail("Describí la falla.");return}
+      if(x.f.tEst===null||!isFinite(x.f.tEst)||x.f.tEst<0){fail("Indicá el tiempo estimado de reparación en horas (podés corregirlo después).");return}
+      if(x.tf==="parcial"&&!(x.f.perdida>0&&x.f.perdida<=100)){fail("La capacidad perdida tiene que ser entre 1 y 100 %.");return}
+      if(man&&!val("f-mot")){fail("Si cambiás la urgencia a mano, anotá el motivo.");return}
+      const c=calcUrg(x.f,e);
+      const d={equipoId:e.id,equipoCodigo:e.codigo,desc,tipoFalla:x.tf,perdida:c.p,tEst:x.f.tEst,urg:c.u,porQue:c.why,holgura:c.h,
+        urgManual:man||null,motivoManual:man?val("f-mot"):"",asignado:val("f-asig")};
+      try{
+        if(editing)await S.db.doc("ots/"+o.id).update(d);
+        else{Object.assign(d,{estado:"Abierta",reportado:new Date().toISOString(),reportadoPor:S.me&&S.me.id||null,reportadoNombre:S.me&&S.me.name||""});
+          await S.db.collection("ots").add(d);
+          if((x.tf==="total"||x.tf==="seg")&&(e.estadoOp||"Operativo")==="Operativo")await S.db.doc("equipos/"+e.id).update({estadoOp:"Fuera de servicio"})}
+        closeModal();toast(editing?"Falla actualizada":"Falla reportada como "+(man||c.u));render()}catch(z){writeErr(z)}
+    });
+  });
+}
+function formCerrarOT(o){
+  const e=S.eq.get(o.equipoId);const el=hoursSince(o.reportado);
+  const sug=o.perdida>=100?Math.round(el*10)/10:"";
+  openModal(mhead("Cerrar falla")+'<p class="hint" style="margin:-6px 0 0">'+esc((e?e.codigo:o.equipoCodigo)+" · "+o.desc)+'</p>'+
+  '<form id="frm" class="fg" novalidate>'+
+  '<label class="f"><span>Fecha *</span><input type="date" id="o-f" value="'+todayStr()+'" max="'+todayStr()+'"></label>'+
+  '<label class="f"><span>Resultado</span><select id="o-res">'+RESULTADOS.map(x=>'<option>'+x+'</option>').join("")+'</select></label>'+
+  '<label class="f"><span>Horas de trabajo</span><input id="o-dur" inputmode="decimal" value="'+esc(isNum(o.tEst)?o.tEst:"")+'"></label>'+
+  '<label class="f"><span>Horas de máquina detenida</span><input id="o-par" inputmode="decimal" value="'+esc(sug)+'"></label>'+
+  (o.perdida>=100?'<p class="hint full" style="margin:-4px 0 0">Propuesto: el tiempo desde que se reportó la falla ('+fmtH(el)+'). Corregilo si la máquina siguió trabajando.</p>':'')+
+  '<label class="f full" id="g-oprov" hidden><span>Taller / proveedor</span><input id="o-prov"></label>'+
+  '<label class="f full"><span>Causa de la falla</span><input id="o-causa" placeholder="Desgaste, mala operación, falta de lubricación…"></label>'+
+  '<label class="f full"><span>Repuestos usados</span><input id="o-rep"></label>'+
+  '<label class="f full"><span>Qué se hizo</span><textarea id="o-obs"></textarea></label>'+
+  '<div class="err full" id="err"></div><div class="m-acts full"><button type="button" class="btn" data-act="close">Cancelar</button><button type="submit" class="btn primary">Cerrar y registrar</button></div></form>',
+  r=>{const g=id=>r.querySelector("#"+id);g("o-res").addEventListener("change",()=>{g("g-oprov").hidden=g("o-res").value!=="Enviado a reparación externa"});
+    g("frm").addEventListener("submit",async ev=>{ev.preventDefault();
+      const f=val("o-f"),dur=numVal("o-dur"),par=numVal("o-par"),res=val("o-res");
+      if(!f){g("err").textContent="Indicá la fecha.";return}
+      if((dur!==null&&!isFinite(dur))||(par!==null&&!isFinite(par))){g("err").textContent="Las horas tienen que ser números.";return}
+      const respH=Math.round(((o.inicio?new Date(o.inicio):new Date())-new Date(o.reportado))/36e5*10)/10;
+      const u=urgOf(o);const perdidaReal=par!==null?par*(o.perdida||0)/100:null;
+      const reg={equipoId:o.equipoId,equipoCodigo:e?e.codigo:o.equipoCodigo,tareaId:null,tareaNombre:"Falla: "+o.desc.slice(0,80),tipo:"Correctivo",fecha:f,
+        horometro:null,tecnico:o.asignado||(S.me&&S.me.name)||"",duracion:dur,parada:par,resultado:res,proveedor:res==="Enviado a reparación externa"?val("o-prov"):"",
+        repuestos:val("o-rep"),obs:[val("o-causa")?"Causa: "+val("o-causa"):"",val("o-obs")].filter(Boolean).join(" · "),
+        otId:o.id,urgencia:u,respuestaH:respH,respuestaOk:respH<=URG[u].resp,afectoEntregas:isNum(o.holgura)&&perdidaReal!==null?perdidaReal>=Number(o.holgura):null,
+        porId:S.me&&S.me.id||null,creado:new Date().toISOString()};
+      if(res==="Resuelto")reg.fechaCierre=f;
+      try{const ref=await S.db.collection("registros").add(reg);
+        await S.db.doc("ots/"+o.id).update({estado:"Cerrada",cierre:new Date().toISOString(),registroId:ref.id,inicio:o.inicio||null});
+        const eo={"Enviado a reparación externa":"En reparación externa","Equipo fuera de servicio":"Fuera de servicio","Pendiente de repuesto":"Esperando repuesto","Resuelto":"Operativo"}[res];
+        const otrasAbiertas=openOts(x=>x.equipoId===o.equipoId&&x.id!==o.id).length;
+        if(e&&eo&&!(eo==="Operativo"&&otrasAbiertas)&&(e.estadoOp||"Operativo")!==eo)await S.db.doc("equipos/"+e.id).update({estadoOp:eo});
+        closeModal();toast("Falla cerrada y registrada en el historial");render()}catch(z){writeErr(z)}
+    });
+  });
+}
+function urgenciaDoc(){
+  return '<h3 class="rp-h">Códigos de urgencia de fallas</h3><div class="tbl-wrap"><table><thead><tr><th>Código</th><th>Tiempo de respuesta</th><th>Qué se hace</th><th>Cuándo corresponde</th></tr></thead><tbody>'+
+  [["U1","Riesgo para personas, inocuidad o ambiente; o la producción perdida (espera + reparación) supera la holgura si no se empieza en menos de 1 h."],
+   ["U2","La holgura alcanza solo si se atiende dentro del turno."],
+   ["U3","La holgura alcanza aunque se espere hasta 3 días; o equipo crítico (A) sin impacto en la producción."],
+   ["U4","No afecta la producción."]].map(([k,w])=>'<tr><td>'+urgChip(k)+'</td><td>'+esc(URG[k].meta)+'</td><td>'+esc(URG[k].accion)+'</td><td>'+esc(w)+'</td></tr>').join("")+'</tbody></table></div>'+
+  '<ul class="rules" style="margin-top:10px"><li><b>Producción perdida</b> = (tiempo hasta empezar + horas estimadas de reparación) × % de capacidad que se pierde. Se elige la urgencia más baja cuyo tiempo de respuesta todavía deja la pérdida por debajo de la holgura.</li>'+
+  '<li><b>Holgura</b> (por equipo) = stock disponible ÷ capacidad + (horas productivas por día − demanda ÷ capacidad) × días de recuperación. Son las horas de producción que se pueden perder sin dejar de cumplir la demanda. Se carga en “Editar equipo → Producción y demanda”.</li>'+
+  '<li>Si el equipo tiene <b>reserva</b>, la urgencia baja un nivel (salvo riesgo de seguridad).</li><li>Sin datos de producción, se decide por la criticidad A/B/C. La urgencia se puede ajustar a mano dejando el motivo.</li></ul>';
+}
+
+/* ---------- descargas ---------- */
+function printableDoc(e,tasks){
+  const css='body{font-family:Arial,sans-serif;color:#111;margin:24px;font-size:12px}h1{font-size:20px;margin:0}h2{font-size:15px;margin:22px 0 6px;border-bottom:2px solid #1D6A73;padding-bottom:3px}h3{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#555;margin:10px 0 3px}table{border-collapse:collapse;width:100%}td,th{border:1px solid #bbb;padding:5px 7px;text-align:left;vertical-align:top}th{background:#eef2f3}.warnbox{background:#fff4cc;padding:6px 8px;border-radius:4px}p{margin:0;white-space:pre-wrap}.code{font-family:monospace;color:#555}.task{page-break-inside:avoid}.firma td{height:34px}@media print{body{margin:10mm}}';
+  const ficha='<table><tr><th>Código</th><td>'+esc(e.codigo)+'</td><th>Empresa</th><td>'+esc(e.empresa)+' · '+esc(EMP[e.empresa]||"")+'</td></tr><tr><th>Sector</th><td>'+esc(e.sector)+'</td><th>Ubicación</th><td>'+esc(e.ubicacion)+'</td></tr><tr><th>Marca / modelo</th><td>'+esc([e.marca,e.modelo].filter(Boolean).join(" · "))+'</td><th>Criticidad</th><td>'+esc(e.criticidad)+'</td></tr><tr><th>Horómetro</th><td>'+(isNum(e.horometro)?fmtN(e.horometro)+' h ('+fmtD(e.horometroFecha)+')':'—')+'</td><th>Uso promedio</th><td>'+(n(e.horasDia)?fmtN(e.horasDia)+' h/día':'—')+'</td></tr></table>';
+  const resumen=tasks.length>1?'<h2>Plan de mantenimiento</h2><table><tr><th>Tarea</th><th>Frecuencia</th><th>Responsable</th><th>Próxima</th></tr>'+tasks.map(t=>{const st=status(t);const nx=st.partes.map(p=>p.k==="t"?fmtD(p.next):fmtN(p.nextH)+" h").join(" / ")||"—";return '<tr><td>'+esc(t.nombre)+'</td><td>'+esc(freqLabel(t))+'</td><td>'+esc(t.responsable)+'</td><td>'+nx+'</td></tr>'}).join("")+'</table>':"";
+  const body=tasks.map(t=>{const i=t.instructivo||{};return '<div class="task"><h2>Instructivo: '+esc(t.nombre)+'</h2><p>'+esc(freqLabel(t))+' · '+esc(t.tipo)+' · Responsable: '+esc(t.responsable)+(isNum(i.minutos)?' · '+esc(i.minutos)+' min':'')+(i.detenido?' · Equipo detenido: '+esc(i.detenido):'')+'</p>'+insHTML(t)+
+    '<table class="firma" style="margin-top:10px"><tr><th>Fecha</th><th>Horómetro</th><th>Realizó</th><th>Observaciones</th></tr><tr><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td></tr></table></div>'}).join("");
+  return '<!doctype html><html lang="es"><head><meta charset="utf-8"><title>'+esc(e.codigo)+'</title><style>'+css+'</style></head><body><div class="code">'+esc(e.codigo)+'</div><h1>'+esc(e.nombre)+'</h1><p style="color:#555">Generado el '+fmtD(todayStr())+' · Abrí este archivo en el navegador y usá Imprimir (Ctrl+P).</p><h2>Ficha del equipo</h2>'+ficha+resumen+body+'</body></html>';
+}
+async function save(filename,data){
+  if(!S.dl){toast("Las descargas no están disponibles en esta vista.");return}
+  try{await S.dl.save({filename,data})}catch(x){if(x&&x.code==="declined")return;if(x&&x.code==="rate_limited"){toast("Ya hay una descarga esperando confirmación.");return}toast("No se pudo descargar el archivo.")}
+}
+const safe=s=>String(s||"").replace(/[^\w\-áéíóúñÁÉÍÓÚÑ ]+/g,"").trim().replace(/\s+/g,"_").slice(0,60);
+function csv(){
+  const rows=[["Fecha","Código","Equipo","Empresa","Tarea","Tipo","Resultado","Demorada","Horómetro","Técnico","Horas trabajo","Horas parada","Taller / proveedor","Fecha cierre","Repuestos","Observaciones"]];
+  S.re.forEach(r=>{const e=S.eq.get(r.equipoId);if(S.empresa&&(!e||e.empresa!==S.empresa))return;
+    if(S.view==="informe"&&(r.fecha<S.mes+"-01"||r.fecha>S.mes+"-31"))return;
+    rows.push([r.fecha,e?e.codigo:r.equipoCodigo||"",e?e.nombre:"",e?e.empresa:"",r.tareaNombre,r.tipo,r.resultado||"",r.demorada?"Sí":"",r.horometro??"",r.tecnico,r.duracion??"",r.parada??"",r.proveedor||"",r.fechaCierre||"",r.repuestos||"",r.obs])});
+  return "﻿"+rows.map(r=>r.map(c=>'"'+String(c==null?"":c).replace(/"/g,'""')+'"').join(";")).join("\r\n");
+}
+
+/* ---------- eventos ---------- */
+document.addEventListener("click",async ev=>{
+  const go=ev.target.closest("[data-go]");if(go){S.view=go.dataset.go;S.filtroEstado="";closeModal();render();return}
+  const b=ev.target.closest("[data-act]");if(!b)return;const a=b.dataset.act,id=b.dataset.id;
+  if(a==="ov"&&ev.target!==b)return;
+  if(!S.db&&!["ov","close","filtro","open-eq","ins","eqtab","ck-row-add","ck-row-del","tag","copy-link"].includes(a)){toast("Sin conexión con la base de datos.");return}
+  if(ADMIN_ACTS.has(a)&&!S.isAdmin){toast("Solo un administrador puede hacer esto.");return}
+  if(WRITE_ACTS.has(a)&&!canW()){toast("Tu usuario es de solo lectura. Pedile al administrador que te asigne el rol Técnico.");return}
+  switch(a){
+    case "ov":case "close":closeModal();break;
+    case "filtro":S.filtroEstado=S.filtroEstado===b.dataset.k?"":b.dataset.k;render();break;
+    case "new-eq":formEquipo();break;
+    case "open-eq":S.view="equipo";S.eqId=id;S.eqTab="plan";render();window.scrollTo(0,0);break;
+    case "edit-eq":formEquipo(S.eq.get(id));break;
+    case "del-eq":confirmDel(S.eq.get(id));break;
+    case "del-eq-ok":{b.disabled=true;try{for(const t of tasksOf(id))await S.db.doc("tareas/"+t.id).delete();await S.db.doc("equipos/"+id).delete();closeModal();S.view="equipos";toast("Equipo eliminado");render()}catch(x){writeErr(x);b.disabled=false}break}
+    case "new-task":formTarea(null,id||null);break;
+    case "edit-task":formTarea(S.ta.get(id));break;
+    case "del-task":{if(b.dataset.sure){try{await S.db.doc("tareas/"+id).delete();closeModal();toast("Tarea eliminada");render()}catch(x){writeErr(x)}}else{b.dataset.sure="1";b.textContent="Confirmar: eliminar tarea"}break}
+    case "ins":showIns(S.ta.get(id));break;
+    case "reg":formRegistro(S.ta.get(id));break;
+    case "reg-eq":formRegistro(null,id);break;
+    case "hm":formHorometro(S.eq.get(id));break;
+    case "dl-ins":{const t=S.ta.get(id),e=S.eq.get(t.equipoId);save("Instructivo_"+safe(e.codigo)+"_"+safe(t.nombre)+".html",printableDoc(e,[t]));break}
+    case "dl-eq":{const e=S.eq.get(id);save("Ficha_"+safe(e.codigo)+".html",printableDoc(e,tasksOf(id).sort((x,y)=>String(x.nombre).localeCompare(String(y.nombre)))));break}
+    case "eqtab":S.eqTab=b.dataset.k;render();break;
+    case "bajas":S.verBajas=!S.verBajas;render();break;
+    case "falla":formFalla(null,id||null);break;
+    case "ot-edit":formFalla(S.ot.get(id));break;
+    case "ot-close":formCerrarOT(S.ot.get(id));break;
+    case "ot-start":{b.disabled=true;try{await S.db.doc("ots/"+id).update({estado:"En curso",inicio:new Date().toISOString(),asignado:(S.ot.get(id)||{}).asignado||(S.me&&S.me.name)||""});toast("Falla en curso")}catch(z){writeErr(z)}break}
+    case "mover":formMover(S.eq.get(id));break;
+    case "baja":formBaja(S.eq.get(id));break;
+    case "reactivar":b.disabled=true;await reactivar(S.eq.get(id));break;
+    case "cod-new":formCodigo();break;
+    case "close-rep":{const r=S.re.find(x=>x.id===id);if(r)formCierre(r);break}
+    case "inf-dl":save("Informe_mantenimiento_"+S.mes+(S.empresa?"_"+S.empresa:"")+".html",printableInforme());break;
+    case "inf-save":{if(!canW()){toast("Tu usuario es de solo lectura.");break}b.disabled=true;
+      try{await S.db.doc("informes/"+informeKey()).set({mes:S.mes,empresa:S.empresa||"todas",texto:$("#inf-nota").value.trim(),actualizado:new Date().toISOString(),porId:S.me&&S.me.id||null});S.infDraft=null;toast("Conclusiones guardadas")}catch(x){writeErr(x)}
+      b.disabled=false;break}
+    case "man-new":formManual(null,id||null);break;
+    case "man-edit":formManual(S.ma.get(id));break;
+    case "man-del":confirmManDel(S.ma.get(id));break;
+    case "man-del-ok":{const m=S.ma.get(id);b.disabled=true;try{await S.db.doc("manuales/"+id).delete();if(m&&m.assetId&&S.assets)try{await S.assets.delete(m.assetId)}catch(_){}closeModal();toast("Manual borrado");render()}catch(x){writeErr(x);b.disabled=false}break}
+    case "tag":showTag(S.eq.get(id));break;
+    case "copy-link":{const inp=$("#tag-link");try{await navigator.clipboard.writeText(inp.value);toast("Link copiado")}catch(_){inp.focus();inp.select();toast("Seleccioné el link: copialo con Ctrl+C o mantené presionado")}break}
+    case "dl-tag":{const e=S.eq.get(id);save("Etiqueta_"+safe(e.codigo)+".html",printableTags([e]));break}
+    case "tags-all":{const list=[...S.eq.values()].filter(e=>isActivo(e)&&(!S.empresa||e.empresa===S.empresa)).sort((a,c)=>String(a.codigo).localeCompare(String(c.codigo)));if(!list.length){toast("No hay equipos para etiquetar.");break}save("Etiquetas_equipos"+(S.empresa?"_"+S.empresa:"")+".html",printableTags(list));break}
+    case "ck-toggle":toggleItem(b.dataset.eq,id);break;
+    case "ck-plan":b.disabled=true;await itemToPlan(b.dataset.eq,id);render();break;
+    case "ck-edit":formChecklist(id,false);break;
+    case "ck-ai":formChecklist(id,true);break;
+    case "ck-ai-run":suggestAI(id);break;
+    case "ck-row-add":{$("#ck-rows").insertAdjacentHTML("beforeend",ckRow());const ins=$("#ck-rows").lastElementChild.querySelector(".er-t");if(ins)ins.focus();break}
+    case "ck-row-del":b.closest(".ck-er").remove();break;
+    case "ck-dl":{const e=S.eq.get(id);save("Checklist_"+safe(e.codigo)+".html",printableChecklist(e,S.ck.get(id)||{items:[]}));break}
+    case "csv":save("Historial_mantenimiento_"+todayStr()+".csv",csv());break;
+  }
+});
+document.addEventListener("keydown",ev=>{if(ev.key==="Escape")closeModal()});
+$("#btn-new-eq").addEventListener("click",()=>{if(!S.db){toast("Sin conexión con la base de datos.");return}if(!S.isAdmin){toast("Solo un administrador puede crear equipos.");return}formEquipo()});
+document.addEventListener("change",ev=>{if(ev.target&&ev.target.id==="inf-mes"&&ev.target.value){S.mes=ev.target.value;render()}});
+$("#f-empresa").addEventListener("change",ev=>{S.empresa=ev.target.value;render()});
+$("#f-q").addEventListener("keydown",ev=>{if(ev.key!=="Enter")return;const v=ev.target.value.trim();const tok=v.includes("#")?v.split("#").pop():v;const e=findByToken(tok);
+  if(e){ev.preventDefault();ev.target.value="";S.q="";S.view="equipo";S.eqId=e.id;S.eqTab=((S.ck.get(e.id)||{}).items||[]).length?"check":"plan";render();toast("Equipo identificado: "+e.codigo)}});
+$("#f-q").addEventListener("input",ev=>{S.q=ev.target.value.trim();clearTimeout(render.t);render.t=setTimeout(render,150)});
+try{const v=localStorage.getItem("pm-empresa");if(v){S.empresa=v;$("#f-empresa").value=v}}catch(_){}
+$("#f-empresa").addEventListener("change",ev=>{try{localStorage.setItem("pm-empresa",ev.target.value)}catch(_){}});
+
+/* ---------- datos ---------- */
+render();
+const use=window.claude&&window.claude.use?window.claude.use.bind(window.claude):null;
+if(!use){S.dbState="sin";render()}
+else{
+  use("downloads").then(d=>{S.dl=d}).catch(()=>{});
+  use("user").then(async u=>{S.user=u;if(!u){applyRole();return}
+    try{S.me=await u.me();const own=!!(await u.isOwner());S.isAdmin=own||!!(await u.canEdit());const cw=await u.can("data.write");S.canWrite=(own||S.isAdmin)?true:(cw===null?null:!!cw)}catch(_){}
+    applyRole();if(!$("#modal-root").innerHTML)render()}).catch(()=>{});
+  use("assets").then(a=>{S.assets=a}).catch(()=>{});
+  use("sample").then(s=>{S.smp=s;if(s&&S.view==="equipo"&&S.eqTab==="check"&&!$("#modal-root").innerHTML)render()}).catch(()=>{});
+  use("db").then(db=>{
+    if(!db){S.dbState="sin";render();return}
+    S.db=db;S.dbState="ok";
+    const fail=()=>{toast("Se cortó la conexión con los datos. Cerrá y volvé a abrir la aplicación.")};
+    db.collection("equipos").onSnapshot(s=>{S.eq=new Map(s.docs.map(d=>[d.id,Object.assign({id:d.id},d.data())]));S.loaded.eq=true;render();if(pendingTok)openFromHash()},fail);
+    db.collection("tareas").onSnapshot(s=>{S.ta=new Map(s.docs.map(d=>[d.id,Object.assign({id:d.id},d.data())]));S.loaded.ta=true;render()},fail);
+    applyRole();
+    db.collection("ots").onSnapshot(s=>{S.ot=new Map(s.docs.map(d=>[d.id,Object.assign({id:d.id},d.data())]));render()},fail);
+    db.doc("config/codigos").onSnapshot(d=>{S.cfg=d.exists?d.data():null;if(S.view==="codigos")render()},fail);
+    db.collection("manuales").onSnapshot(s=>{S.ma=new Map(s.docs.map(d=>[d.id,Object.assign({id:d.id},d.data())]));render()},fail);
+    db.collection("informes").onSnapshot(s=>{S.inf=new Map(s.docs.map(d=>[d.id,d.data()]));if(S.view!=="informe")return;const ta=$("#inf-nota");if(ta&&document.activeElement===ta)return;render()},fail);
+    db.collection("checklists").onSnapshot(s=>{S.ck=new Map(s.docs.map(d=>[d.id,Object.assign({id:d.id},d.data())]));if(!$("#modal-root").innerHTML||S.view!=="equipo")render()},fail);
+    db.collection("registros").orderBy("fecha","desc").limit(1000).onSnapshot(s=>{S.re=s.docs.map(d=>Object.assign({id:d.id},d.data()));S.loaded.re=true;render()},fail);
+  }).catch(()=>{S.dbState="sin";render()});
+}
+window.addEventListener("hashchange",openFromHash);
+openFromHash();
+setInterval(()=>{if(!$("#modal-root").innerHTML)render()},60*60*1000);
+setInterval(()=>{if(!$("#modal-root").innerHTML&&(S.view==="tablero"||S.view==="equipo")&&openOts().length)render()},60*1000);
+})();
+</script>
+
+</body></html>

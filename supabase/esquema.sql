@@ -1,0 +1,121 @@
+-- =====================================================================
+-- Plan de Mantenimiento · esquema de base de datos para Supabase
+-- Pegar completo en Supabase → SQL Editor → New query → Run.
+-- Se puede volver a ejecutar sin perder datos.
+-- =====================================================================
+
+-- ---------- Perfiles de usuario y roles ----------
+-- rol: 'admin' (todo), 'tecnico' (carga fallas, registros, tareas), 'lectura' (solo ver),
+--      'pendiente' (recién registrado: no ve nada hasta que un administrador lo apruebe)
+create table if not exists public.perfiles (
+  id         uuid primary key references auth.users(id) on delete cascade,
+  nombre     text not null default '',
+  email      text,
+  rol        text not null default 'pendiente' check (rol in ('admin','tecnico','lectura','pendiente')),
+  creado     timestamptz not null default now()
+);
+
+-- Al registrarse un usuario se crea su perfil. El primero de todos queda como administrador;
+-- los demás quedan pendientes de aprobación.
+create or replace function public.nuevo_usuario() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  insert into public.perfiles (id, nombre, email, rol)
+  values (
+    new.id,
+    coalesce(nullif(new.raw_user_meta_data->>'nombre',''), split_part(new.email,'@',1)),
+    new.email,
+    case when exists (select 1 from public.perfiles) then 'pendiente' else 'admin' end
+  )
+  on conflict (id) do nothing;
+  return new;
+end $$;
+
+drop trigger if exists al_crear_usuario on auth.users;
+create trigger al_crear_usuario after insert on auth.users
+  for each row execute function public.nuevo_usuario();
+
+alter table public.perfiles drop constraint if exists perfiles_rol_check;
+alter table public.perfiles add constraint perfiles_rol_check check (rol in ('admin','tecnico','lectura','pendiente'));
+alter table public.perfiles alter column rol set default 'pendiente';
+
+create or replace function public.mi_rol() returns text
+language sql stable security definer set search_path = public as $$
+  select rol from public.perfiles where id = auth.uid()
+$$;
+
+alter table public.perfiles enable row level security;
+drop policy if exists perfiles_ver on public.perfiles;
+create policy perfiles_ver on public.perfiles for select to authenticated using (true);
+drop policy if exists perfiles_admin on public.perfiles;
+create policy perfiles_admin on public.perfiles for update to authenticated
+  using (public.mi_rol() = 'admin') with check (public.mi_rol() = 'admin');
+-- Cada uno puede cambiar su propio nombre, pero no su rol.
+drop policy if exists perfiles_propio on public.perfiles;
+create policy perfiles_propio on public.perfiles for update to authenticated
+  using (id = auth.uid()) with check (id = auth.uid() and rol = public.mi_rol());
+
+-- ---------- Documentos de la aplicación ----------
+-- Cada registro es un documento JSON de una colección:
+-- equipos, tareas, registros, ots (fallas), checklists, manuales, informes, config.
+create table if not exists public.docs (
+  col         text not null,
+  id          text not null,
+  data        jsonb not null default '{}'::jsonb,
+  actualizado timestamptz not null default now(),
+  actualizado_por uuid default auth.uid(),
+  primary key (col, id)
+);
+create index if not exists docs_col on public.docs (col);
+
+alter table public.docs enable row level security;
+drop policy if exists docs_ver on public.docs;
+create policy docs_ver on public.docs for select to authenticated
+  using (public.mi_rol() in ('admin','tecnico','lectura'));
+drop policy if exists docs_crear on public.docs;
+create policy docs_crear on public.docs for insert to authenticated
+  with check (public.mi_rol() in ('admin','tecnico'));
+drop policy if exists docs_modificar on public.docs;
+create policy docs_modificar on public.docs for update to authenticated
+  using (public.mi_rol() in ('admin','tecnico')) with check (public.mi_rol() in ('admin','tecnico'));
+drop policy if exists docs_borrar on public.docs;
+create policy docs_borrar on public.docs for delete to authenticated
+  using (public.mi_rol() = 'admin');
+
+-- Actualización parcial: mezcla los campos nuevos con los existentes (como "update" de la app).
+create or replace function public.doc_update(p_col text, p_id text, p_patch jsonb)
+returns public.docs language plpgsql security invoker set search_path = public as $$
+declare r public.docs;
+begin
+  update public.docs
+     set data = data || p_patch, actualizado = now(), actualizado_por = auth.uid()
+   where col = p_col and id = p_id
+  returning * into r;
+  if r is null then
+    raise exception 'El documento %/% no existe', p_col, p_id using errcode = 'P0002';
+  end if;
+  return r;
+end $$;
+
+-- Tiempo real: las dos computadoras ven los cambios al instante.
+do $$ begin
+  alter publication supabase_realtime add table public.docs;
+exception when duplicate_object then null; end $$;
+do $$ begin
+  alter publication supabase_realtime add table public.perfiles;
+exception when duplicate_object then null; end $$;
+
+-- ---------- Archivos (manuales en PDF) ----------
+insert into storage.buckets (id, name, public, file_size_limit)
+values ('manuales', 'manuales', false, 52428800)
+on conflict (id) do nothing;
+
+drop policy if exists manuales_ver on storage.objects;
+create policy manuales_ver on storage.objects for select to authenticated
+  using (bucket_id = 'manuales' and public.mi_rol() in ('admin','tecnico','lectura'));
+drop policy if exists manuales_subir on storage.objects;
+create policy manuales_subir on storage.objects for insert to authenticated
+  with check (bucket_id = 'manuales' and public.mi_rol() = 'admin');
+drop policy if exists manuales_borrar on storage.objects;
+create policy manuales_borrar on storage.objects for delete to authenticated
+  using (bucket_id = 'manuales' and public.mi_rol() = 'admin');
