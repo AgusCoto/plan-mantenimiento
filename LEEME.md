@@ -80,6 +80,20 @@ Las etiquetas QR/NFC abren el equipo en el celular, y para eso hace falta la ver
 2. En **Actions → Version web → Run workflow** se publica la web en `https://TU-USUARIO.github.io/plan-mantenimiento/`.
 3. Cargá esa dirección en `publicUrl` dentro de `src/config.js`, o en la app desde **tu nombre → Configuración**. Después generá las etiquetas.
 
+## App en el iPhone (y en Android)
+
+Con la versión web publicada (paso 5) se instala como una app más, sin App Store:
+
+1. En el iPhone abrí la dirección web con **Safari** (tiene que ser Safari).
+2. Tocá el botón **Compartir** (cuadrado con flecha) → **Agregar a pantalla de inicio** → **Agregar**.
+3. Aparece el ícono **Mantenimiento**. Se abre a pantalla completa, sin barra del navegador. Ingresá una vez con tu usuario y queda guardado.
+
+En Android: Chrome → menú ⋮ → **Instalar app**.
+
+Las actualizaciones llegan solas: cada vez que se publica la versión web, la app del celular la toma al abrirse.
+
+> Al leer una etiqueta **NFC**, el iPhone siempre abre el link en Safari, no en la app del ícono, y la primera vez pide ingresar también ahí. El **QR** con la cámara se comporta igual.
+
 ## Sugerencias con IA (opcional)
 
 El botón **"Sugerir ítems con IA"** del checklist del fabricante usa la API de Anthropic. Para activarlo, cargá tu clave (`sk-ant-...`, se obtiene en <https://console.anthropic.com>) en **tu nombre → Configuración**. La clave queda guardada solo en esa computadora y cada sugerencia tiene un costo de centavos de dólar.
