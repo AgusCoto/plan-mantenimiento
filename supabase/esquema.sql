@@ -73,11 +73,13 @@ drop policy if exists docs_ver on public.docs;
 create policy docs_ver on public.docs for select to authenticated
   using (public.mi_rol() in ('admin','tecnico','lectura'));
 drop policy if exists docs_crear on public.docs;
+-- La configuración (empresas, áreas, tipos y sus nombres) solo la modifica un administrador.
 create policy docs_crear on public.docs for insert to authenticated
-  with check (public.mi_rol() in ('admin','tecnico'));
+  with check (public.mi_rol() = 'admin' or (public.mi_rol() = 'tecnico' and col <> 'config'));
 drop policy if exists docs_modificar on public.docs;
 create policy docs_modificar on public.docs for update to authenticated
-  using (public.mi_rol() in ('admin','tecnico')) with check (public.mi_rol() in ('admin','tecnico'));
+  using (public.mi_rol() = 'admin' or (public.mi_rol() = 'tecnico' and col <> 'config'))
+  with check (public.mi_rol() = 'admin' or (public.mi_rol() = 'tecnico' and col <> 'config'));
 drop policy if exists docs_borrar on public.docs;
 create policy docs_borrar on public.docs for delete to authenticated
   using (public.mi_rol() = 'admin');
