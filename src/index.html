@@ -1405,18 +1405,53 @@ function viewInforme(){
   const d=reportData(S.mes);const nota=(S.inf&&S.inf.get(informeKey()))||{};
   return '<div class="sec-h"><h2>Informe de mantenimiento · '+esc(mesLabel(S.mes))+(S.empresa?' · '+esc(EMP[S.empresa]):'')+'</h2>'+
     '<div class="inline" style="flex-wrap:wrap"><label class="f" style="flex-direction:row;align-items:center;gap:6px"><span>Mes</span><input type="month" id="inf-mes" value="'+esc(S.mes)+'" max="'+todayStr().slice(0,7)+'" style="width:auto"></label>'+
-    '<button class="btn" data-act="inf-dl">Descargar informe</button><button class="btn" data-act="csv">Detalle CSV</button></div></div>'+
+    '<label class="inline" style="font-size:13px" title="Agrega al informe una hoja por cada intervención del mes, con firmas"><input type="checkbox" id="inf-rem" style="width:auto"'+(S.infRem===false?'':' checked')+'> Incluir remitos (una hoja por intervención)</label><button class="btn" data-act="inf-dl">Descargar informe</button><button class="btn" data-act="inf-rem-dl">Solo remitos</button><button class="btn" data-act="csv">Detalle CSV</button></div></div>'+
     (d.parcial?'<div class="banner">Mes en curso: los datos son parciales hasta hoy '+fmtD(todayStr())+'.</div>':'')+
     (d.medidas.length<d.prev.length?'<p class="hint">Hay preventivos cargados antes de esta versión que no tienen dato de demora; desde ahora se calcula al registrar.</p>':'')+
     reportBody(d,false)+
     '<h3 class="rp-h">Conclusiones y acciones del mes</h3><textarea id="inf-nota" class="w-in" style="min-height:110px" placeholder="Problemas recurrentes, repuestos a comprar, mejoras propuestas…">'+esc(nota.texto||"")+'</textarea>'+
     '<div class="detail-acts"><button class="btn primary w" data-act="inf-save">Guardar conclusiones</button>'+(nota.actualizado?'<span class="hint">Guardado el '+fmtD(String(nota.actualizado).slice(0,10))+'</span>':'')+'</div>';
 }
-function printableInforme(){
+/* ---------- remitos: una hoja por intervención ---------- */
+const REMITO_CSS='.remito{page-break-before:always;break-before:page;border:1.5px solid #333;border-radius:4px;padding:16px 18px;font-size:12px}.remito.first{page-break-before:auto;break-before:auto}'+
+  '.rm-h{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;border-bottom:2px solid #1D6A73;padding-bottom:8px;margin-bottom:10px}.rm-h h2{margin:0;font-size:20px;letter-spacing:.04em}.rm-h .sub{color:#555;font-size:11px}'+
+  '.rm-n{text-align:right}.rm-n b{display:block;font-family:monospace;font-size:16px}.rm-sec{margin:10px 0 4px;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#1D6A73;font-weight:bold}'+
+  '.rm-t{border-collapse:collapse;width:100%}.rm-t th,.rm-t td{border:1px solid #bbb;padding:5px 7px;text-align:left;vertical-align:top}.rm-t th{background:#eef2f3;width:24%;font-weight:600}'+
+  '.rm-box{border:1px solid #bbb;padding:7px 9px;min-height:44px;white-space:pre-wrap}.rm-firmas{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:34px}.rm-firmas div{border-top:1px solid #333;padding-top:4px;text-align:center;font-size:11px;color:#333}'+
+  '.rm-pie{margin-top:12px;font-size:10px;color:#777}@media print{.remito{border:none;padding:0}}';
+function remitosHTML(d,despuesDeInforme){
+  const ots=new Map([...S.ot.values()].map(o=>[o.id,o]));
+  return d.regs.map((r,i)=>{
+    const e=S.eq.get(r.equipoId)||{};const p=eqParts(e);const t=r.tareaId?S.ta.get(r.tareaId):null;const o=r.otId?ots.get(r.otId):null;
+    const nro=S.mes.replace("-","")+"-"+String(i+1).padStart(3,"0");
+    const causa=r.causa!=null?r.causa:causaDeObs(r.obs);const hecho=r.solucion!=null?r.solucion:(r.otId?solDeObs(r.obs):r.obs);
+    const fila=(l,v)=>v!==undefined&&v!==null&&v!==""?'<tr><th>'+l+'</th><td>'+esc(v)+'</td></tr>':'';
+    const h=v=>isNum(v)?fmtN(v)+" h":"";
+    const clase=r.tipo==="Preventivo"?"Mantenimiento preventivo":r.otId?"Correctivo por falla":(r.tipo||"Intervención");
+    return '<section class="remito'+(!despuesDeInforme&&i===0?' first':'')+'">'+
+      '<div class="rm-h"><div><h2>REMITO DE INTERVENCIÓN</h2><div class="sub">Mantenimiento · '+esc(e.empresa?(e.empresa+" · "+(EMP[e.empresa]||"")):"Grupo")+'</div></div>'+
+      '<div class="rm-n"><span class="sub">Nº</span><b>'+esc(nro)+'</b><span class="sub">Fecha: <b style="display:inline;font-size:12px;font-family:inherit">'+fmtD(r.fecha)+'</b></span></div></div>'+
+      '<div class="rm-sec">Equipo</div><table class="rm-t">'+
+        fila("Código",e.codigo||r.equipoCodigo)+fila("ID permanente",e.idActivo)+fila("Equipo",e.nombre)+
+        fila("Área / ubicación",[p.area?p.area+" · "+areaDesc(p.area):e.sector,e.ubicacion].filter(Boolean).join(" · "))+
+        fila("Marca / modelo / serie",[e.marca,e.modelo,e.serie].filter(Boolean).join(" · "))+fila("Horómetro",h(r.horometro))+'</table>'+
+      '<div class="rm-sec">Intervención</div><table class="rm-t">'+
+        fila("Tipo",clase+(t&&t.tipo?" · "+t.tipo:""))+fila(t?"Tarea del plan":"Motivo",t?t.nombre+" ("+freqLabel(t)+")":(o?o.desc:String(r.tareaNombre||"").replace(/^Falla: /,"")))+
+        (o&&URG[o.urgManual||o.urg]?fila("Urgencia",(o.urgManual||o.urg)+" · "+URG[o.urgManual||o.urg].l+(isNum(r.respuestaH)?" · respuesta en "+fmtN(r.respuestaH)+" h":"")):"")+
+        fila("Resultado",r.resultado+(r.proveedor?" · "+r.proveedor:"")+(r.fechaCierre&&r.fechaCierre!==r.fecha?" · resuelto el "+fmtD(r.fechaCierre):""))+
+        fila("Horas de trabajo",h(r.duracion))+fila("Equipo detenido",h(r.parada))+fila("Técnico",r.tecnico)+'</table>'+
+      (causa?'<div class="rm-sec">Causa</div><div class="rm-box">'+esc(causa)+'</div>':'')+
+      '<div class="rm-sec">Trabajo realizado</div><div class="rm-box">'+esc(hecho||"")+'</div>'+
+      '<div class="rm-sec">Repuestos y materiales</div><div class="rm-box" style="min-height:30px">'+esc(r.repuestos||"")+'</div>'+
+      '<div class="rm-firmas"><div>Realizó<br>'+esc(r.tecnico||"")+'</div><div>Conformidad del sector</div><div>Jefe de mantenimiento</div></div>'+
+      '<div class="rm-pie">Remito '+esc(nro)+' · Informe de '+esc(mesLabel(S.mes))+' · '+(i+1)+' de '+d.regs.length+'</div></section>'}).join("");
+}
+function printableInforme(conRemitos){
   const d=reportData(S.mes);const nota=(S.inf&&S.inf.get(informeKey()))||{};
   const css='body{font-family:Arial,sans-serif;color:#111;margin:22px;font-size:12px}h1{font-size:20px;margin:0 0 4px}.sub{color:#555;margin-bottom:14px}.rp-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.rp-kpi{border:1px solid #ccc;border-radius:6px;padding:8px}.rp-kpi b{display:block;font-size:20px}.rp-kpi span{font-size:10px;text-transform:uppercase;color:#555}.rp-kpi small{display:block;color:#666;font-size:10px}.rp-h{font-size:14px;margin:18px 0 6px;border-bottom:2px solid #1D6A73;padding-bottom:3px;page-break-after:avoid}table{border-collapse:collapse;width:100%}td,th{border:1px solid #bbb;padding:4px 6px;text-align:left;vertical-align:top}th{background:#eef2f3}.num{text-align:right;white-space:nowrap}.code{font-family:monospace}.rp-br{display:grid;grid-template-columns:45% 1fr 110px;gap:8px;align-items:center;margin:3px 0}.rp-bt{background:#e3e9eb;height:10px;border-radius:2px;display:block}.rp-bt i{display:block;height:100%;background:#B8322A}.hint{color:#666}.tbl-wrap{page-break-inside:auto}tr{page-break-inside:avoid}';
   return '<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Informe '+esc(mesLabel(S.mes))+'</title><style>'+css+'</style></head><body><h1>Informe de mantenimiento · '+esc(mesLabel(S.mes))+'</h1><div class="sub">'+(S.empresa?esc(S.empresa+" · "+EMP[S.empresa]):"Todas las empresas del grupo")+' · Período '+fmtD(d.a)+' al '+fmtD(d.b)+(d.parcial?' (parcial)':'')+' · Generado el '+fmtD(todayStr())+(S.me?' por '+esc(S.me.name):'')+'</div>'+
-    reportBody(d,true)+(nota.texto?'<h3 class="rp-h">Conclusiones y acciones</h3><p style="white-space:pre-wrap">'+esc(nota.texto)+'</p>':'')+'<p style="margin-top:28px">Firma responsable de mantenimiento: ______________________________</p></body></html>';
+    reportBody(d,true)+(nota.texto?'<h3 class="rp-h">Conclusiones y acciones</h3><p style="white-space:pre-wrap">'+esc(nota.texto)+'</p>':'')+'<p style="margin-top:28px">Firma responsable de mantenimiento: ______________________________</p>'+
+    (conRemitos&&d.regs.length?'<style>'+REMITO_CSS+'</style>'+remitosHTML(d,true):'')+'</body></html>';
 }
 
 /* ---------- manuales ---------- */
@@ -1699,7 +1734,9 @@ document.addEventListener("click",async ev=>{
       const cfg=cfgCopy();if(v)cfg.publicUrl=v;else delete cfg.publicUrl;
       try{await S.db.doc("config/codigos").set(cfg);toast("Dirección guardada")}catch(x){writeErr(x)}break}
     case "close-rep":{const r=S.re.find(x=>x.id===id);if(r)formCierre(r);break}
-    case "inf-dl":save("Informe_mantenimiento_"+S.mes+(S.empresa?"_"+S.empresa:"")+".html",printableInforme());break;
+    case "inf-dl":{const c=$("#inf-rem");S.infRem=c?c.checked:true;save("Informe_mantenimiento_"+S.mes+(S.empresa?"_"+S.empresa:"")+".html",printableInforme(S.infRem));break}
+    case "inf-rem-dl":{const d=reportData(S.mes);if(!d.regs.length){toast("No hay intervenciones en "+mesLabel(S.mes)+".");break}
+      save("Remitos_mantenimiento_"+S.mes+(S.empresa?"_"+S.empresa:"")+".html",'<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Remitos '+esc(mesLabel(S.mes))+'</title><style>'+REMITO_CSS+'body{font-family:Arial,sans-serif;color:#111;margin:22px;font-size:12px}</style></head><body>'+remitosHTML(d,false)+'</body></html>');break}
     case "inf-save":{if(!canW()){toast("Tu usuario es de solo lectura.");break}b.disabled=true;
       try{await S.db.doc("informes/"+informeKey()).set({mes:S.mes,empresa:S.empresa||"todas",texto:$("#inf-nota").value.trim(),actualizado:new Date().toISOString(),porId:S.me&&S.me.id||null});S.infDraft=null;toast("Conclusiones guardadas")}catch(x){writeErr(x)}
       b.disabled=false;break}
