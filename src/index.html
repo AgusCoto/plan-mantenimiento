@@ -233,6 +233,7 @@ td a{color:var(--accent)}
 .tag-code{font-family:var(--f-mono);font-weight:600;font-size:15px;margin-top:6px}
 .tag-name{font-size:12px;color:#566670}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:8px;z-index:60;font-weight:500;max-width:calc(100% - 32px)}
+@media (max-width:1360px){.brand span{display:none}.tab{padding:12px 10px 10px}}
 @media (max-width:760px){
   header.top{position:static}
   .brand h1{font-size:19px}
@@ -256,6 +257,7 @@ td a{color:var(--accent)}
         <button class="tab" role="tab" id="tab-historial" data-go="historial" aria-selected="false">Historial</button>
         <button class="tab" role="tab" id="tab-informe" data-go="informe" aria-selected="false">Informe mensual</button>
         <button class="tab" role="tab" id="tab-manuales" data-go="manuales" aria-selected="false">Manuales</button>
+        <button class="tab" role="tab" id="tab-config" data-go="config" aria-selected="false">Configuración</button>
       </nav>
       <div class="who" id="who" aria-live="polite"><span class="hint">Identificando usuario…</span></div>
     </div>
@@ -269,7 +271,6 @@ td a{color:var(--accent)}
       </select>
       <input type="search" id="f-q" placeholder="Buscar equipo, código o tarea" aria-label="Buscar">
       <button class="btn danger w" data-act="falla" type="button">Reportar falla</button>
-      <button class="btn adm" data-go="codigos" type="button">Empresas y áreas</button>
       <button class="btn primary adm" id="btn-new-eq" type="button">+ Equipo</button>
     </div>
   </div>
@@ -308,7 +309,7 @@ const RESULTADOS=["Resuelto","Pendiente de repuesto","Enviado a reparación exte
 const MAN_TIPOS=["Operación y mantenimiento","Despiece / repuestos","Eléctrico / esquemas","Manual de servicio","Ficha técnica","Otro"];
 const canW=()=>!!S.db&&S.canWrite!==false;
 const WRITE_ACTS=new Set(["falla","ot-edit","ot-close","ot-start","reg","reg-eq","hm","new-task","edit-task","ck-toggle","ck-plan","ck-edit","ck-ai","ck-ai-run","close-rep"]);
-const ADMIN_ACTS=new Set(["mover","baja","reactivar","cod-new","cod-ren","new-eq","edit-eq","del-eq","del-eq-ok","del-task","man-new","man-edit","man-del","man-del-ok"]);
+const ADMIN_ACTS=new Set(["mover","baja","reactivar","cod-new","cod-ren","cfg-pub","new-eq","edit-eq","del-eq","del-eq-ok","del-task","man-new","man-edit","man-del","man-del-ok"]);
 function applyRole(){
   document.body.classList.toggle("ro",!canW());
   document.body.classList.toggle("noadm",!S.isAdmin);
@@ -324,15 +325,16 @@ async function resolveNames(ids){
 }
 const UNIT_OPTS=[["dias","días"],["semanas","semanas"],["meses","meses"],["anios","años"],["horas","horas de uso"]];
 const UNIT_DAYS={dias:1,semanas:7,meses:30.4,anios:365};
-const BASE=(window.PM_PUBLIC_URL||(!window.__TAURI__&&/^https?:/.test(location.protocol)?location.origin+location.pathname:"")).replace(/#.*$/,"");
+function baseUrl(){return ((S.cfg&&S.cfg.publicUrl)||window.PM_PUBLIC_URL||(!window.__TAURI__&&/^https?:/.test(location.protocol)?location.origin+location.pathname:"")).replace(/#.*$/,"")}
 const RESERVED=/^(settings|sidebar|customize|upgrade|downloads|comment-)/i;
 const nombres=k=>((S.cfg&&S.cfg.nombres)||{})[k]||{};
-function areas(){const m=new Map(AREAS0);((S.cfg&&S.cfg.areas)||[]).forEach(a=>{if(a&&a.c&&!m.has(a.c))m.set(a.c,a.d)});const ren=nombres("areas");for(const k of m.keys())if(ren[k])m.set(k,ren[k]);return [...m]}
+function areas(){if(S.cfg&&Array.isArray(S.cfg.areasLista))return S.cfg.areasLista.map(x=>[x.c,x.d]);const m=new Map(AREAS0);((S.cfg&&S.cfg.areas)||[]).forEach(a=>{if(a&&a.c&&!m.has(a.c))m.set(a.c,a.d)});const ren=nombres("areas");for(const k of m.keys())if(ren[k])m.set(k,ren[k]);return [...m]}
 function tipos(){const m=new Map(TIPOS0.map(t=>[t[0],{d:t[1],movil:!!t[2]}]));((S.cfg&&S.cfg.tipos)||[]).forEach(t=>{if(t&&t.c&&!m.has(t.c))m.set(t.c,{d:t.d,movil:!!t.movil})});const ren=nombres("tipos");for(const [k,i] of m)if(ren[k])m.set(k,{d:ren[k],movil:i.movil});return [...m]}
 function applyCfg(){
   for(const k of Object.keys(EMP))delete EMP[k];
-  Object.assign(EMP,EMP0);((S.cfg&&S.cfg.empresas)||[]).forEach(x=>{if(x&&x.c&&!(x.c in EMP))EMP[x.c]=x.d});
-  const ren=nombres("emp");for(const k of Object.keys(EMP))if(ren[k])EMP[k]=ren[k];
+  if(S.cfg&&Array.isArray(S.cfg.empresasLista))S.cfg.empresasLista.forEach(x=>{if(x&&x.c)EMP[x.c]=x.d});
+  else{Object.assign(EMP,EMP0);((S.cfg&&S.cfg.empresas)||[]).forEach(x=>{if(x&&x.c&&!(x.c in EMP))EMP[x.c]=x.d});
+    const ren=nombres("emp");for(const k of Object.keys(EMP))if(ren[k])EMP[k]=ren[k]}
   const sel=$("#f-empresa");if(!sel)return;
   if(S.empresa&&!(S.empresa in EMP))S.empresa="";
   sel.innerHTML='<option value="">Todas las empresas</option>'+Object.entries(EMP).filter(([k])=>k!=="GR").map(([k,v])=>'<option value="'+esc(k)+'">'+esc(k+" · "+v)+'</option>').join("");
@@ -349,7 +351,7 @@ function eqParts(e){const p=parseCode(e.codigo)||{};return {empresa:e.empresa||p
 function nextNum(tipo,exceptId){let mx=0;for(const e of S.eq.values()){if(e.id===exceptId)continue;const p=eqParts(e);if(p.tipo===tipo&&p.numero>mx)mx=p.numero}return mx+1}
 const isActivo=e=>!!e&&e.estado!=="Baja";
 function tokenFor(e){if(e.idActivo&&/^[A-Za-z0-9._~-]+$/.test(e.idActivo))return e.idActivo;const c=String(e.codigo||"");return /^[A-Za-z0-9._~-]+$/.test(c)&&!RESERVED.test(c)?c:e.id}
-function linkFor(e){return BASE+"#"+tokenFor(e)}
+function linkFor(e){return baseUrl()+"#"+tokenFor(e)}
 function findByToken(tok){if(!tok)return null;const t=tok.toUpperCase();
   for(const e of S.eq.values()){if(String(e.idActivo||"").toUpperCase()===t||String(e.codigo||"").toUpperCase()===t||e.id===tok)return e}
   for(const e of S.eq.values()){if((e.codigosAnteriores||[]).some(c=>String(c).toUpperCase()===t))return e}return null}
@@ -462,20 +464,20 @@ function eqWorst(id){let w="sin";const c={vencida:0,proxima:0,ok:0,sin:0};
 
 /* ---------- render ---------- */
 function render(){
-  document.querySelectorAll(".tab").forEach(b=>b.setAttribute("aria-selected",String(S.view.startsWith(b.dataset.go)||(b.dataset.go==="equipos"&&S.view==="codigos"&&false)||(b.dataset.go==="equipos"&&S.view==="equipo"))));
+  document.querySelectorAll(".tab").forEach(b=>b.setAttribute("aria-selected",String(S.view.startsWith(b.dataset.go)||(b.dataset.go==="equipos"&&S.view==="equipo"))));
   applyRole();
   const m=$("#main");
   const ta0=$("#inf-nota");if(ta0)S.infDraft={k:ta0.dataset.k,v:ta0.value,f:document.activeElement===ta0,s:ta0.selectionStart};
   if(S.dbState==="sin"){m.innerHTML='<div class="empty"><h2>No hay conexión con la base de datos</h2><p>Revisá la conexión a internet y los datos de la base en Cuenta → Configuración.</p></div>';return}
   const loading=!(S.loaded.eq&&S.loaded.ta);
   if(loading){m.innerHTML='<div class="empty"><h2>Cargando equipos…</h2><p>Acá vas a ver las tareas ordenadas por lo que vence primero.</p></div>';return}
-  if(!S.eq.size&&!["historial","informe","manuales","codigos"].includes(S.view)){m.innerHTML='<div class="empty"><h2>Todavía no hay equipos cargados</h2><p>Cargá el primer equipo con su horómetro y después sus tareas de mantenimiento. El tablero te va a mostrar cuánto falta para cada una.</p><p><button class="btn primary adm" data-act="new-eq">+ Cargar primer equipo</button></p></div>';return}
+  if(!S.eq.size&&!["historial","informe","manuales","config"].includes(S.view)){m.innerHTML='<div class="empty"><h2>Todavía no hay equipos cargados</h2><p>Cargá el primer equipo con su horómetro y después sus tareas de mantenimiento. El tablero te va a mostrar cuánto falta para cada una.</p><p><button class="btn primary adm" data-act="new-eq">+ Cargar primer equipo</button></p></div>';return}
   if(S.view==="tablero")m.innerHTML=viewTablero();
   else if(S.view==="equipos")m.innerHTML=viewEquipos();
   else if(S.view==="equipo")m.innerHTML=viewEquipo();
   else if(S.view==="informe")m.innerHTML=viewInforme();
   else if(S.view==="manuales")m.innerHTML=viewManuales();
-  else if(S.view==="codigos")m.innerHTML=viewCodigos();
+  else if(S.view==="config")m.innerHTML=viewConfig();
   else m.innerHTML=viewHistorial();
   applyRole();
   const ta1=$("#inf-nota");
@@ -516,7 +518,7 @@ function viewEquipos(){
   const nBaja=all.filter(e=>!isActivo(e)).length;
   const eqs=all.filter(e=>S.verBajas?!isActivo(e):isActivo(e));
   eqs.sort((a,b)=>RANK[eqWorst(a.id).w]-RANK[eqWorst(b.id).w]||String(a.codigo).localeCompare(String(b.codigo)));
-  let h='<div class="sec-h"><h2>'+(S.verBajas?'Equipos dados de baja':'Equipos')+'</h2><small>'+eqs.length+' equipos · <button class="btn link" data-act="bajas">'+(S.verBajas?'Ver equipos activos':'Ver dados de baja ('+nBaja+')')+'</button> · <button class="btn link" data-go="codigos">Empresas, áreas y códigos</button> · <button class="btn link" data-act="tags-all">Descargar etiquetas QR</button></small></div>';
+  let h='<div class="sec-h"><h2>'+(S.verBajas?'Equipos dados de baja':'Equipos')+'</h2><small>'+eqs.length+' equipos · <button class="btn link" data-act="bajas">'+(S.verBajas?'Ver equipos activos':'Ver dados de baja ('+nBaja+')')+'</button> · <button class="btn link" data-act="tags-all">Descargar etiquetas QR</button></small></div>';
   if(!eqs.length)return h+'<div class="empty"><p>Ningún equipo coincide con el filtro.</p></div>';
   h+='<div class="grid">'+eqs.map(e=>{const w=eqWorst(e.id);
     const cnt=[["vencida","vencidas"],["proxima","próximas"],["ok","al día"],["sin","sin datos"]].filter(([k])=>w.c[k]).map(([k,l])=>'<span class="chip st-'+k+'">'+w.c[k]+' '+l+'</span>').join("")||'<span class="chip">Sin tareas</span>';
@@ -867,25 +869,82 @@ async function reactivar(e){
     await S.db.collection("registros").add({equipoId:e.id,equipoCodigo:e.codigo,tareaId:null,tareaNombre:"Reactivación",tipo:"Reactivación",fecha:todayStr(),empresaHacia:e.empresa,obs:"",porId:S.me&&S.me.id||null,creado:new Date().toISOString()});
     toast("Equipo reactivado");render()}catch(x){writeErr(x)}
 }
-function viewCodigos(){
+function viewConfig(){
   const tb=(rows,cols)=>'<div class="tbl-wrap"><table><thead><tr>'+cols.map(c=>'<th>'+c+'</th>').join("")+'</tr></thead><tbody>'+rows.join("")+'</tbody></table></div>';
   const cnt={};for(const e of S.eq.values()){const p=eqParts(e);if(p.tipo)cnt[p.tipo]=Math.max(cnt[p.tipo]||0,p.numero||0)}
-  return '<p><button class="btn link" data-go="equipos">← Equipos</button></p>'+
-  '<div class="sec-h"><h2>Empresas y áreas</h2><button class="btn primary adm" data-act="cod-new">+ Agregar empresa, área o tipo</button></div>'+
-  '<p class="hint" style="margin:-4px 0 10px">Con “Cambiar nombre” corregís el nombre; el código (IP, SER…) no cambia, así que los equipos y las etiquetas siguen valiendo. Solo el administrador puede modificarlos.</p>'+
-  '<h3 class="rp-h" style="margin-top:6px">Empresas</h3>'+tb(Object.entries(EMP).map(([k,v])=>'<tr><td class="num"><b>'+esc(k)+'</b></td><td>'+esc(v)+'</td><td>'+renBtn("emp",k)+'</td></tr>'),["Código","Empresa",""])+
-  '<h3 class="rp-h">Áreas</h3>'+tb(areas().map(([k,v])=>'<tr><td class="num"><b>'+esc(k)+'</b></td><td>'+esc(v)+'</td><td>'+renBtn("areas",k)+'</td></tr>'),["Código","Área",""])+
-  '<div class="sec-h" style="margin-top:32px"><h2>Norma de codificación y urgencias</h2></div>'+
+  const usos=(f,k)=>{const n=[...S.eq.values()].filter(e=>eqParts(e)[f]===k).length;return n+(n===1?" equipo":" equipos")};
+  const tab=S.cfgTab||"empresas";
+  const st=(k,l)=>'<button class="subtab" role="tab" data-act="cfgtab" data-k="'+k+'" aria-selected="'+(tab===k)+'">'+l+'</button>';
+  let h='<div class="sec-h" style="margin-top:0"><h2>Configuración</h2>'+(S.isAdmin?'':'<small>Solo lectura: los cambios los hace el administrador</small>')+'</div>'+
+  '<nav class="subtabs" role="tablist" aria-label="Secciones de configuración" style="margin-top:0">'+st("empresas","Empresas y áreas")+st("ident","Identificación de equipos")+st("urg","Urgencias")+'</nav>';
+  if(tab==="empresas"){
+    h+='<div class="sec-h" style="margin-top:0"><p class="hint" style="margin:0;max-width:75ch">Con “Editar” cambiás el código o el nombre. Si cambiás un código, los equipos de esa empresa o área se recodifican solos (IP-SER-COM-007 → nuevo código) y sus etiquetas NFC/QR siguen funcionando.</p><button class="btn primary adm" data-act="cod-new" data-k="empresas">+ Agregar empresa o área</button></div>'+
+    '<h3 class="rp-h" style="margin-top:6px">Empresas</h3>'+tb(Object.entries(EMP).map(([k,v])=>'<tr><td class="num"><b>'+esc(k)+'</b></td><td>'+esc(v)+'</td><td class="num">'+usos("empresa",k)+'</td><td>'+renBtn("emp",k)+'</td></tr>'),["Código","Empresa","Uso",""])+
+    '<h3 class="rp-h">Áreas</h3>'+tb(areas().map(([k,v])=>'<tr><td class="num"><b>'+esc(k)+'</b></td><td>'+esc(v)+'</td><td class="num">'+usos("area",k)+'</td><td>'+renBtn("areas",k)+'</td></tr>'),["Código","Área","Uso",""]);
+  }else if(tab==="ident"){
+    h+='<div class="sec-h" style="margin-top:0"><h2>Norma de codificación</h2><button class="btn adm" data-act="cod-new" data-k="tipos">+ Agregar tipo de equipo</button></div>'+
   '<section class="code-spec"><div class="code-anat"><span><b>IP</b><small>Empresa</small></span><i>-</i><span><b>SER</b><small>Área</small></span><i>-</i><span class="perm"><b>COM</b><small>Tipo</small></span><i>-</i><span class="perm"><b>007</b><small>Número</small></span></div>'+
   '<ul class="rules"><li><b>Código de ubicación</b> (IP-SER-COM-007): dice dónde está el equipo hoy. Cambia si se traslada a otra empresa o área.</li>'+
   '<li><b>ID permanente</b> (COM-007): tipo + número correlativo único en todo el grupo. Es el que se graba en la etiqueta NFC/QR y no cambia nunca, aunque el equipo rote entre empresas.</li>'+
   '<li>Los números no se reutilizan: un equipo dado de baja conserva el suyo y el siguiente toma el próximo libre.</li>'+
   '<li>Los equipos móviles (apiladoras, herramientas, compresores portátiles, motores, soldadoras) sin destino fijo van a <b>GR</b> (pañol del grupo) mientras no estén asignados.</li>'+
   '<li>Retirado para siempre → <b>Dar de baja</b>. Pasa a otra empresa del grupo → <b>Reubicar / transferir</b>. Cargado por error → <b>Eliminar</b>.</li></ul></section>'+
-  urgenciaDoc()+
-  '<h3 class="rp-h">Tipos de equipo</h3>'+tb(tipos().map(([k,i])=>'<tr><td class="num"><b>'+esc(k)+'</b></td><td>'+esc(i.d)+'</td><td>'+(i.movil?'<span class="chip">Móvil</span>':'Fijo')+'</td><td class="num">'+(cnt[k]?'último '+esc(idAct(k,cnt[k]))+' · próximo '+esc(idAct(k,cnt[k]+1)):'próximo '+esc(idAct(k,1)))+'</td><td>'+renBtn("tipos",k)+'</td></tr>'),["Código","Tipo","Movilidad","Numeración",""]);
+      '<h3 class="rp-h">Tipos de equipo</h3>'+tb(tipos().map(([k,i])=>'<tr><td class="num"><b>'+esc(k)+'</b></td><td>'+esc(i.d)+'</td><td>'+(i.movil?'<span class="chip">Móvil</span>':'Fijo')+'</td><td class="num">'+(cnt[k]?'último '+esc(idAct(k,cnt[k]))+' · próximo '+esc(idAct(k,cnt[k]+1)):'próximo '+esc(idAct(k,1)))+'</td><td>'+renBtn("tipos",k)+'</td></tr>'),["Código","Tipo","Movilidad","Numeración",""]);
+    const pub=(S.cfg&&S.cfg.publicUrl)||"";
+    h+='<h3 class="rp-h">Etiquetas NFC / QR</h3><section class="code-spec">'+
+      '<p style="margin:0">Las etiquetas abren el equipo en el celular a través de la versión web. Dirección actual: <b>'+esc(baseUrl()||"sin configurar")+'</b></p>'+
+      '<div class="inline adm" style="flex-wrap:wrap"><input id="cfg-pub" inputmode="url" placeholder="https://tu-usuario.github.io/plan-mantenimiento/" value="'+esc(pub)+'" style="flex:1 1 320px"><button class="btn primary" data-act="cfg-pub">Guardar dirección</button></div>'+
+      '<p class="hint" style="margin:0">Se guarda para todas las computadoras. Cambiarla no invalida el ID permanente de cada equipo, pero las etiquetas ya grabadas apuntan a la dirección vieja.</p>'+
+      '<div><button class="btn" data-act="tags-all">Descargar etiquetas QR de todos los equipos</button></div></section>';
+  }else h+=urgenciaDoc();
+  return h;
 }
-function renBtn(tab,k){return '<button class="btn sm adm" data-act="cod-ren" data-k="'+esc(tab)+'" data-id="'+esc(k)+'">Cambiar nombre</button>'}
+function renBtn(tab,k){return '<button class="btn sm adm" data-act="cod-ren" data-k="'+esc(tab)+'" data-id="'+esc(k)+'">'+(tab==="tipos"?"Cambiar nombre":"Editar")+'</button>'}
+async function saveCfgLista(tab,list){
+  const cfg=cfgCopy();
+  if(tab==="emp"){cfg.empresasLista=list.map(([c,d])=>({c,d}));delete cfg.empresas;if(cfg.nombres)delete cfg.nombres.emp}
+  else{cfg.areasLista=list.map(([c,d])=>({c,d}));delete cfg.areas;if(cfg.nombres)delete cfg.nombres.areas}
+  await S.db.doc("config/codigos").set(cfg);
+}
+function formEditCodigo(tab,k){
+  const isEmp=tab==="emp",len=isEmp?2:3,f=isEmp?"empresa":"area",lbl=isEmp?"empresa":"área";
+  const nombre=isEmp?EMP[k]:areaDesc(k);
+  const afect=[...S.eq.values()].filter(e=>eqParts(e)[f]===k);
+  openModal(mhead("Editar "+lbl)+'<form id="frm" class="fg" novalidate>'+
+  '<label class="f"><span>Código ('+len+' letras) *</span><input id="ec-c" maxlength="'+len+'" value="'+esc(k)+'" style="text-transform:uppercase"></label>'+
+  '<label class="f"><span>Nombre *</span><input id="ec-d" value="'+esc(nombre)+'"></label>'+
+  '<div class="code-prev full" id="ec-prev"></div>'+
+  '<div class="err full" id="err"></div><div class="m-acts full"><button type="button" class="btn" data-act="close">Cancelar</button><button type="submit" class="btn primary" id="ec-save">Guardar</button></div></form>',
+  r=>{const g=id=>r.querySelector("#"+id);
+    const upd=()=>{const c=g("ec-c").value.trim().toUpperCase();
+      if(c===k||!c){g("ec-prev").innerHTML='<span class="hint">'+(afect.length?afect.length+' equipos usan el código '+esc(k)+'.':'Ningún equipo usa este código todavía.')+'</span>';return}
+      const ej=afect[0];
+      g("ec-prev").innerHTML='<b>Se van a recodificar '+afect.length+(afect.length===1?' equipo.':' equipos.')+'</b>'+(ej?' <span class="hint">Ejemplo:</span> <span class="code">'+esc(ej.codigo)+'</span> → <b class="code">'+esc((()=>{const p=eqParts(ej);return codeOf(isEmp?c:p.empresa,isEmp?p.area:c,p.tipo,p.numero)})())+'</b>':'')+
+        '<br><span class="hint">El ID permanente no cambia y el código anterior queda guardado, así que las etiquetas NFC/QR siguen funcionando. El historial conserva los códigos con los que se registró.</span>'};
+    g("ec-c").addEventListener("input",upd);upd();
+    g("frm").addEventListener("submit",async ev=>{ev.preventDefault();
+      const err=g("err"),btn=g("ec-save");const c=g("ec-c").value.trim().toUpperCase(),d=g("ec-d").value.trim();
+      if(!new RegExp("^[A-Z]{"+len+"}$").test(c)){err.textContent="El código tiene que tener exactamente "+len+" letras.";return}
+      if(!d){err.textContent="Escribí el nombre.";return}
+      const lista=isEmp?Object.entries(EMP):areas();
+      if(c!==k&&lista.some(([x])=>x===c)){err.textContent="El código "+c+" ya existe.";return}
+      btn.disabled=true;
+      try{
+        if(c!==k){let i=0;
+          for(const e of afect){i++;btn.textContent="Recodificando "+i+"/"+afect.length+"…";
+            const p=eqParts(e);const em=isEmp?c:p.empresa,ar=isEmp?p.area:c;const nuevo=codeOf(em,ar,p.tipo,p.numero);
+            const up={empresa:em,area:ar,codigo:nuevo,codigosAnteriores:[...new Set([...(e.codigosAnteriores||[]),e.codigo].filter(Boolean))]};
+            if(!isEmp)up.sector=d;
+            await S.db.doc("equipos/"+e.id).update(up)}
+        }
+        btn.textContent="Guardando…";
+        await saveCfgLista(tab,lista.map(([x,y])=>x===k?[c,d]:[x,y]));
+        if(isEmp&&S.empresa===k){S.empresa=c;try{localStorage.setItem("pm-empresa",c)}catch(_){}}
+        closeModal();toast(c!==k?"Código "+k+" → "+c+" · "+afect.length+" equipos recodificados":"Nombre actualizado");render();
+      }catch(x){btn.disabled=false;btn.textContent="Guardar";writeErr(x);err.textContent="No se completó el cambio. Volvé a intentar: los equipos que ya se recodificaron no se tocan de nuevo."}
+    });
+  });
+}
 function formRenombrar(tab,k){
   const lbl={emp:"empresa",areas:"área",tipos:"tipo de equipo"}[tab];
   const actual=tab==="emp"?EMP[k]:tab==="areas"?areaDesc(k):((tipoInfo(k)||{}).d||"");
@@ -902,12 +961,12 @@ function formRenombrar(tab,k){
     try{await S.db.doc("config/codigos").set(cfg);closeModal();toast("Nombre actualizado");render()}catch(x){writeErr(x)}
   }));
 }
-function formCodigo(){
+function formCodigo(pre){
   openModal(mhead("Agregar código")+'<form id="frm" class="fg" novalidate>'+
-  '<label class="f"><span>Tabla</span><select id="cd-t"><option value="empresas">Empresa</option><option value="areas" selected>Área</option><option value="tipos">Tipo de equipo</option></select></label>'+
-  '<label class="f"><span id="cd-cl">Código (3 letras) *</span><input id="cd-c" maxlength="3" style="text-transform:uppercase"></label>'+
+  '<label class="f"><span>Tabla</span><select id="cd-t"><option value="empresas"'+(pre==="tipos"?'':' selected')+'>Empresa</option><option value="areas">Área</option><option value="tipos"'+(pre==="tipos"?' selected':'')+'>Tipo de equipo</option></select></label>'+
+  '<label class="f"><span id="cd-cl">Código ('+(pre==="tipos"?3:2)+' letras) *</span><input id="cd-c" maxlength="'+(pre==="tipos"?3:2)+'" style="text-transform:uppercase"></label>'+
   '<label class="f full"><span>Descripción *</span><input id="cd-d"></label>'+
-  '<label class="f full" id="cd-mv-w" style="flex-direction:row;align-items:center;gap:8px;color:var(--fg)" hidden><input type="checkbox" id="cd-mv" style="width:auto"> Es un tipo de equipo móvil</label>'+
+  '<label class="f full" id="cd-mv-w" style="flex-direction:row;align-items:center;gap:8px;color:var(--fg)"'+(pre==="tipos"?'':' hidden')+'><input type="checkbox" id="cd-mv" style="width:auto"> Es un tipo de equipo móvil</label>'+
   '<div class="err full" id="err"></div><div class="m-acts full"><button type="button" class="btn" data-act="close">Cancelar</button><button type="submit" class="btn primary">Agregar</button></div></form>',
   r=>{const g=id=>r.querySelector("#"+id);g("cd-t").addEventListener("change",()=>{const t=g("cd-t").value;g("cd-mv-w").hidden=t!=="tipos";g("cd-c").maxLength=t==="empresas"?2:3;g("cd-cl").textContent="Código ("+(t==="empresas"?2:3)+" letras) *"});
     g("frm").addEventListener("submit",async ev=>{ev.preventDefault();
@@ -917,9 +976,11 @@ function formCodigo(){
       if(!d){g("err").textContent="Escribí la descripción.";return}
       const exists=(t==="empresas"?Object.keys(EMP):t==="areas"?areas().map(a=>a[0]):tipos().map(x=>x[0])).includes(c);
       if(exists){g("err").textContent="El código "+c+" ya existe en esa tabla.";return}
-      const cfg=cfgCopy();cfg[t]=cfg[t]||[];
-      if(t==="tipos")cfg.tipos.push({c,d,movil:g("cd-mv").checked});else cfg[t].push({c,d});
-      try{await S.db.doc("config/codigos").set(cfg);closeModal();toast("Código "+c+" agregado");render()}catch(x){writeErr(x)}
+      try{
+        if(t==="tipos"){const cfg=cfgCopy();cfg.tipos=cfg.tipos||[];cfg.tipos.push({c,d,movil:g("cd-mv").checked});await S.db.doc("config/codigos").set(cfg)}
+        else if(t==="empresas")await saveCfgLista("emp",[...Object.entries(EMP),[c,d]]);
+        else await saveCfgLista("areas",[...areas(),[c,d]]);
+        closeModal();toast("Código "+c+" agregado");render()}catch(x){writeErr(x)}
     });
   });
 }
@@ -1450,8 +1511,12 @@ document.addEventListener("click",async ev=>{
     case "mover":formMover(S.eq.get(id));break;
     case "baja":formBaja(S.eq.get(id));break;
     case "reactivar":b.disabled=true;await reactivar(S.eq.get(id));break;
-    case "cod-new":formCodigo();break;
-    case "cod-ren":formRenombrar(b.dataset.k,id);break;
+    case "cod-new":formCodigo(b.dataset.k);break;
+    case "cod-ren":if(b.dataset.k==="tipos")formRenombrar("tipos",id);else formEditCodigo(b.dataset.k,id);break;
+    case "cfgtab":S.cfgTab=b.dataset.k;render();break;
+    case "cfg-pub":{const v=val("cfg-pub");if(v&&!/^https:\/\//i.test(v)){toast("La dirección tiene que empezar con https://");break}
+      const cfg=cfgCopy();if(v)cfg.publicUrl=v;else delete cfg.publicUrl;
+      try{await S.db.doc("config/codigos").set(cfg);toast("Dirección guardada")}catch(x){writeErr(x)}break}
     case "close-rep":{const r=S.re.find(x=>x.id===id);if(r)formCierre(r);break}
     case "inf-dl":save("Informe_mantenimiento_"+S.mes+(S.empresa?"_"+S.empresa:"")+".html",printableInforme());break;
     case "inf-save":{if(!canW()){toast("Tu usuario es de solo lectura.");break}b.disabled=true;

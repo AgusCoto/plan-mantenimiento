@@ -148,17 +148,15 @@
       <p class="hint">Copiá estos datos de Supabase → <b>Project Settings → API</b>. Se piden una sola vez en esta computadora.</p>
       ${field("pm-url", "Project URL", 'placeholder="https://xxxx.supabase.co" required inputmode="url"')}
       ${field("pm-key", "Clave anon public", 'required')}
-      ${field("pm-pub", "Dirección de la versión web (opcional, para QR/NFC)", 'placeholder="https://..." inputmode="url"')}
       <div class="pm-err" id="pm-err">${esc(msg || "")}</div>
       <div class="pm-row"><button class="btn primary" type="submit">Guardar y continuar</button></div></form>`);
     el.querySelector("#pm-url").value = CFG.supabaseUrl;
     el.querySelector("#pm-key").value = CFG.supabaseAnonKey;
-    el.querySelector("#pm-pub").value = CFG.publicUrl;
     el.querySelector("#pm-setup").addEventListener("submit", (ev) => {
       ev.preventDefault();
       const url = normalizeUrl(el.querySelector("#pm-url").value);
       if (!/^https:\/\/.+/i.test(url)) { el.querySelector("#pm-err").textContent = "La dirección tiene que empezar con https://"; return; }
-      writeCfg({ supabaseUrl: url, supabaseAnonKey: el.querySelector("#pm-key").value.trim(), publicUrl: el.querySelector("#pm-pub").value.trim() });
+      writeCfg({ supabaseUrl: url, supabaseAnonKey: el.querySelector("#pm-key").value.trim() });
       location.reload();
     });
   }
@@ -544,7 +542,7 @@
         <div class="tbl-wrap"><table class="pm-users"><thead><tr><th>Nombre</th><th>Email</th><th>Rol</th></tr></thead><tbody>${(data || []).map((p) => `<tr><td>${esc(p.nombre)}</td><td>${esc(p.email || "")}</td><td><select data-uid="${esc(p.id)}" ${p.id === me.id ? "disabled title=\"No podés cambiar tu propio rol\"" : ""}>${["admin", "tecnico", "lectura", "pendiente"].map((r) => `<option value="${r}" ${r === p.rol ? "selected" : ""}>${rolLabel(r)}</option>`).join("")}</select></td></tr>`).join("")}</tbody></table></div>
         <div class="pm-err" id="pm-err"></div>`;
     } else {
-      body = `${field("pm-pub", "Dirección de la versión web (para QR/NFC)", 'placeholder="https://..." inputmode="url"')}
+      body = `<p class="hint">Empresas, áreas, códigos y la dirección de las etiquetas NFC/QR están en la pestaña <b>Configuración</b> del programa.</p>
         ${field("pm-ak", "Clave de API de Anthropic (opcional, para “Sugerir ítems con IA”)", 'type="password" placeholder="sk-ant-..."')}
         <p class="hint">La clave de IA queda guardada solo en esta computadora. Base de datos conectada: ${esc(CFG.supabaseUrl)}</p>
         <div class="pm-err" id="pm-err"></div>
@@ -572,11 +570,10 @@
         errEl.textContent = error ? error.message : "Rol actualizado.";
       }));
     } else if (tab === "config") {
-      el.querySelector("#pm-pub").value = CFG.publicUrl;
       el.querySelector("#pm-ak").value = CFG.anthropicKey;
       el.querySelector("#pm-db").addEventListener("click", () => setupScreen());
       el.querySelector("#pm-save").addEventListener("click", () => {
-        writeCfg({ publicUrl: el.querySelector("#pm-pub").value.trim(), anthropicKey: el.querySelector("#pm-ak").value.trim() });
+        writeCfg({ anthropicKey: el.querySelector("#pm-ak").value.trim() });
         location.reload();
       });
     }
