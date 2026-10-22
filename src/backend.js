@@ -270,6 +270,22 @@
       isOwner: async () => me.rol === "admin",
       canEdit: async () => me.rol === "admin",
       can: async (perm) => (perm === "data.write" ? me.rol !== "lectura" : null),
+      // Técnicos y administradores que pueden firmar cambios
+      firmantes: async () => {
+        const { data, error } = await sb.from("perfiles").select("id,nombre,email,rol").in("rol", ["admin", "tecnico"]).order("nombre");
+        if (error) throw error;
+        return data || [];
+      },
+      // Verifica email y contraseña con una sesión aparte (no cambia el usuario conectado en esta computadora)
+      verificar: async (email, password) => {
+        const c = window.supabase.createClient(CFG.supabaseUrl, CFG.supabaseAnonKey, { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false, storageKey: "pm-firma" } });
+        const { data, error } = await c.auth.signInWithPassword({ email, password });
+        if (error) throw { code: /Invalid login/i.test(error.message) ? "bad_password" : "error", message: traducir(error) };
+        const { data: prof } = await c.from("perfiles").select("nombre,rol").eq("id", data.user.id).maybeSingle();
+        const cerrar = () => c.auth.signOut({ scope: "local" }).catch(() => {});
+        if (!prof || !["admin", "tecnico"].includes(prof.rol)) { cerrar(); throw { code: "not_granted", message: "Ese usuario no tiene rol Técnico ni Administrador." }; }
+        return { id: data.user.id, name: prof.nombre || email, rol: prof.rol, cliente: c, cerrar };
+      },
       profiles: async (ids) => {
         const { data, error } = await sb.from("perfiles").select("id,nombre").in("id", ids);
         if (error) throw error;
@@ -308,6 +324,8 @@
     function err(e) {
       const msg = (e && e.message) || String(e);
       const code = e && e.code;
+      if (/FIRMA:/.test(msg)) return { code: "firma", message: msg.replace(/^.*FIRMA:\s*/, "") };
+      if (code === "23505") return { code: "already_exists", message: msg };
       if (code === "42501" || /row-level security|permission denied/i.test(msg)) return { code: "invalid_argument", message: "Sin permiso" };
       if (/Failed to fetch|NetworkError|Load failed/i.test(msg)) return { code: "unavailable", message: "Sin conexión" };
       if (code === "P0002") return { code: "not_found", message: msg };
@@ -360,18 +378,19 @@
 
     function docSnap(id, data) { return { id, exists: data !== undefined, data: () => clone(data) }; }
 
-    function query(col, opts) {
+    function query(col, opts, cli) {
+      const c = cli || sb;
       return {
-        orderBy: (f, dir) => query(col, Object.assign({}, opts, { order: [f, dir || "asc"] })),
-        limit: (n) => query(col, Object.assign({}, opts, { limit: n })),
+        orderBy: (f, dir) => query(col, Object.assign({}, opts, { order: [f, dir || "asc"] }), cli),
+        limit: (n) => query(col, Object.assign({}, opts, { limit: n }), cli),
         add: async (data) => {
           const id = newId();
-          const { error } = await sb.from("docs").insert({ col, id, data });
+          const { data: row, error } = await c.from("docs").insert({ col, id, data }).select("data").single();
           if (error) throw err(error);
-          applyLocal(col, id, clone(data));
+          applyLocal(col, id, (row && row.data) || clone(data));
           return { id };
         },
-        doc: (id) => docRef(col, id),
+        doc: (id) => docRef(col, id, cli),
         onSnapshot(cb, onErr) {
           let active = true;
           const emit = () => {
@@ -397,22 +416,29 @@
         }
       };
     }
-    function docRef(col, id) {
+    function docRef(col, id, cli) {
       const key = col + "/" + id;
+      const c = cli || sb;
       return {
         id,
+        // Crea el documento con este id; falla con "already_exists" si ya está
+        async create(data) {
+          const { data: row, error } = await c.from("docs").insert({ col, id, data }).select("data").single();
+          if (error) throw err(error);
+          applyLocal(col, id, (row && row.data) || clone(data));
+        },
         async set(data) {
-          const { error } = await sb.from("docs").upsert({ col, id, data, actualizado: new Date().toISOString() });
+          const { error } = await c.from("docs").upsert({ col, id, data, actualizado: new Date().toISOString() });
           if (error) throw err(error);
           applyLocal(col, id, clone(data));
         },
         async update(patch) {
-          const { data, error } = await sb.rpc("doc_update", { p_col: col, p_id: id, p_patch: patch });
+          const { data, error } = await c.rpc("doc_update", { p_col: col, p_id: id, p_patch: patch });
           if (error) throw err(error);
           applyLocal(col, id, data && data.data);
         },
         async delete() {
-          const { error } = await sb.from("docs").delete().eq("col", col).eq("id", id);
+          const { error } = await c.from("docs").delete().eq("col", col).eq("id", id);
           if (error) throw err(error);
           applyLocal(col, id, undefined);
         },
@@ -430,10 +456,12 @@
         }
       };
     }
-    return {
-      collection: (col) => query(col, {}),
-      doc: (path) => { const i = path.lastIndexOf("/"); return docRef(path.slice(0, i), path.slice(i + 1)); }
-    };
+    const api = (cli) => ({
+      collection: (col) => query(col, {}, cli),
+      doc: (path) => { const i = path.lastIndexOf("/"); return docRef(path.slice(0, i), path.slice(i + 1), cli); }
+    });
+    // as(cliente): mismas operaciones, pero firmadas con la sesión de otro usuario
+    return Object.assign(api(null), { as: (cli) => api(cli) });
   }
 
   /* ---------- archivos (manuales) ---------- */

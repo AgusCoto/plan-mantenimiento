@@ -1,6 +1,6 @@
 {
   "name": "plan-mantenimiento",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "private": true,
   "description": "Plan de Mantenimiento: aplicación de escritorio (Mac y Windows) con base de datos en Supabase",
   "scripts": {

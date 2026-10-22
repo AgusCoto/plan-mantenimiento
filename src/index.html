@@ -247,6 +247,23 @@ mark{background:var(--warn-soft);color:inherit;border-radius:2px;padding:0 1px}
 .sim-box{background:var(--accent-soft);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:8px}
 .sim-box h3{margin:0;font-family:var(--f-display);font-size:14px}
 .sim-box .caso{border-left-width:4px;padding:8px 10px}
+.kb-bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.kb{display:grid;grid-template-columns:repeat(4,minmax(220px,1fr));gap:12px;align-items:start;overflow-x:auto;padding-bottom:8px}
+.kcol{background:var(--surface-2);border-radius:10px;padding:10px;min-height:220px;display:flex;flex-direction:column;gap:8px;border:2px dashed transparent}
+.kcol.over{border-color:var(--accent);background:var(--accent-soft)}
+.kcol h3{margin:0 0 2px;font-family:var(--f-display);font-size:15px;display:flex;justify-content:space-between;align-items:center}
+.kcol h3 .cnt{font-family:var(--f-mono);font-size:12px;background:var(--surface);border-radius:10px;padding:1px 8px;color:var(--muted)}
+.kcard{background:var(--surface);border:1px solid var(--line);border-left:5px solid var(--none);border-radius:8px;padding:9px 10px;display:flex;flex-direction:column;gap:4px;cursor:pointer;min-width:0}
+.kcard[draggable=true]{cursor:grab}
+.kcard.dragging{opacity:.45}
+.kcard.u1{border-left-color:var(--bad)} .kcard.u2{border-left-color:var(--warn-bar)} .kcard.u3{border-left-color:var(--accent)} .kcard.prev{border-left-color:var(--ok)}
+.kcard .ot-n{font-family:var(--f-mono);font-weight:600;font-size:13px}
+.kcard .kd{font-weight:600;font-size:13px;overflow-wrap:anywhere}
+.kcard .meta{font-size:11px;color:var(--muted);display:flex;flex-wrap:wrap;gap:2px 8px}
+.kcard .kh{font-size:11px;color:var(--muted);border-top:1px solid var(--line);padding-top:4px}
+.ot-num{font-family:var(--f-mono);font-weight:600;font-size:12px;background:var(--fg);color:var(--bg);border-radius:4px;padding:1px 6px}
+#firma-root .overlay{z-index:70}
+@media (max-width:760px){.kb{grid-template-columns:repeat(4,minmax(240px,82vw))}}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:8px;z-index:60;font-weight:500;max-width:calc(100% - 32px)}
 @media (max-width:1360px){.brand span{display:none}.tab{padding:12px 10px 10px}}
 @media (max-width:760px){
@@ -268,6 +285,7 @@ mark{background:var(--warn-soft);color:inherit;border-radius:2px;padding:0 1px}
       <div class="brand"><h1>Plan de Mantenimiento</h1><span>Grupo · 4 plantas</span></div>
       <nav class="tabs" role="tablist" aria-label="Secciones">
         <button class="tab" role="tab" id="tab-tablero" data-go="tablero" aria-selected="true">Tablero</button>
+        <button class="tab" role="tab" id="tab-ordenes" data-go="ordenes" aria-selected="false">Órdenes</button>
         <button class="tab" role="tab" id="tab-equipos" data-go="equipos" aria-selected="false">Equipos</button>
         <button class="tab" role="tab" id="tab-historial" data-go="historial" aria-selected="false">Historial</button>
         <button class="tab" role="tab" id="tab-informe" data-go="informe" aria-selected="false">Informe mensual</button>
@@ -292,6 +310,7 @@ mark{background:var(--warn-soft);color:inherit;border-radius:2px;padding:0 1px}
 </header>
 <main class="wrap" id="main"></main>
 <div id="modal-root"></div>
+<div id="firma-root"></div>
 <div id="toast-root"></div>
 
 <script src="vendor/qrcode.js"></script>
@@ -323,7 +342,7 @@ Object.assign(S,{ot:new Map(),ma:new Map(),user:null,me:null,canWrite:null,isAdm
 const RESULTADOS=["Resuelto","Pendiente de repuesto","Enviado a reparación externa","Equipo fuera de servicio"];
 const MAN_TIPOS=["Operación y mantenimiento","Despiece / repuestos","Eléctrico / esquemas","Manual de servicio","Ficha técnica","Otro"];
 const canW=()=>!!S.db&&S.canWrite!==false;
-const WRITE_ACTS=new Set(["falla","ot-edit","ot-close","ot-start","reg","reg-eq","hm","new-task","edit-task","ck-toggle","ck-plan","ck-edit","ck-ai","ck-ai-run","close-rep"]);
+const WRITE_ACTS=new Set(["ot-mover","falla","ot-edit","ot-close","ot-start","reg","reg-eq","hm","new-task","edit-task","ck-toggle","ck-plan","ck-edit","ck-ai","ck-ai-run","close-rep"]);
 const ADMIN_ACTS=new Set(["mover","baja","reactivar","cod-new","cod-ren","cfg-pub","tipo-del","new-eq","edit-eq","del-eq","del-eq-ok","del-task","man-new","man-edit","man-del","man-del-ok"]);
 function applyRole(){
   document.body.classList.toggle("ro",!canW());
@@ -489,13 +508,14 @@ function render(){
   if(S.dbState==="sin"){m.innerHTML='<div class="empty"><h2>No hay conexión con la base de datos</h2><p>Revisá la conexión a internet y los datos de la base en Cuenta → Configuración.</p></div>';return}
   const loading=!(S.loaded.eq&&S.loaded.ta);
   if(loading){m.innerHTML='<div class="empty"><h2>Cargando equipos…</h2><p>Acá vas a ver las tareas ordenadas por lo que vence primero.</p></div>';return}
-  if(!S.eq.size&&!["historial","informe","manuales","config"].includes(S.view)){m.innerHTML='<div class="empty"><h2>Todavía no hay equipos cargados</h2><p>Cargá el primer equipo con su horómetro y después sus tareas de mantenimiento. El tablero te va a mostrar cuánto falta para cada una.</p><p><button class="btn primary adm" data-act="new-eq">+ Cargar primer equipo</button></p></div>';return}
+  if(!S.eq.size&&!["historial","informe","manuales","config","ordenes"].includes(S.view)){m.innerHTML='<div class="empty"><h2>Todavía no hay equipos cargados</h2><p>Cargá el primer equipo con su horómetro y después sus tareas de mantenimiento. El tablero te va a mostrar cuánto falta para cada una.</p><p><button class="btn primary adm" data-act="new-eq">+ Cargar primer equipo</button></p></div>';return}
   if(S.view==="tablero")m.innerHTML=viewTablero();
   else if(S.view==="equipos")m.innerHTML=viewEquipos();
   else if(S.view==="equipo")m.innerHTML=viewEquipo();
   else if(S.view==="informe")m.innerHTML=viewInforme();
   else if(S.view==="manuales")m.innerHTML=viewManuales();
   else if(S.view==="config")m.innerHTML=viewConfig();
+  else if(S.view==="ordenes")m.innerHTML=viewOrdenes();
   else m.innerHTML=viewHistorial();
   applyRole();
   const ta1=$("#inf-nota");
@@ -723,7 +743,7 @@ function solDeObs(o){return String(o||"").replace(/^Causa: .*?(?: · |$)/,"")}
 /* Cada falla (cerrada o abierta) y cada intervención correctiva suelta es un "caso" */
 function casosFalla(){
   const byId=new Map(S.re.map(r=>[r.id,r]));const usados=new Set();const out=[];
-  for(const o of S.ot.values()){
+  for(const o of S.ot.values()){if(esPrev(o))continue;
     const r=(o.registroId&&byId.get(o.registroId))||S.re.find(x=>x.otId===o.id);if(r)usados.add(r.id);
     out.push({k:"ot"+o.id,fecha:(r&&r.fecha)||String(o.reportado||"").slice(0,10),equipoId:o.equipoId,equipoCodigo:o.equipoCodigo,desc:o.desc||"",
       causa:r?(r.causa!=null?r.causa:causaDeObs(r.obs)):"",solucion:r?(r.solucion!=null?r.solucion:solDeObs(r.obs)):"",repuestos:r?r.repuestos||"":"",
@@ -787,6 +807,82 @@ function viewFallas(){
     '<p class="hint" style="margin:-6px 0 12px">Busca en la descripción, la causa, lo que se hizo, los repuestos, el técnico y los datos del equipo. Escribí varias palabras para afinar: tienen que aparecer todas.</p>'+
     '<div id="fs-res-box">'+resultadosFallas()+'</div>';
 }
+/* Cada tarea preventiva que entra en aviso (próxima o vencida) genera su orden de trabajo.
+   El id depende de la última realización, así dos computadoras no la duplican. */
+const prevIntentos=new Set();
+function syncPrev(){clearTimeout(syncPrev.t);syncPrev.t=setTimeout(async()=>{
+  if(!S.loaded.ot||!S.loaded.ta||!S.loaded.eq||!canW()||!S.me)return;
+  for(const t of S.ta.values()){
+    const e=S.eq.get(t.equipoId);if(!isActivo(e))continue;
+    const st=status(t);if(st.estado!=="vencida"&&st.estado!=="proxima")continue;
+    if([...S.ot.values()].some(o=>esPrev(o)&&o.tareaId===t.id&&o.estado!=="Cerrada"))continue;
+    const id="prev-"+t.id+"-"+(t.ultimaFecha||"0")+"-"+(isNum(t.ultimaHoras)?t.ultimaHoras:"0");
+    if(S.ot.has(id)||prevIntentos.has(id))continue;prevIntentos.add(id);
+    const l=st.gov?partLabel(st.gov).big:"";
+    try{await S.db.doc("ots/"+id).create({tipo:"preventivo",tareaId:t.id,equipoId:e.id,equipoCodigo:e.codigo,desc:t.nombre,estado:"Abierta",
+      reportado:new Date().toISOString(),vence:l,asignado:"",historial:[{fecha:new Date().toISOString(),accion:"Generada por el plan preventivo ("+l+")",porId:S.me.id,porNombre:S.me.name}]})}
+    catch(x){/* ya la creó otra computadora, o sin permiso */}
+  }
+},800)}
+function kCard(o){
+  const e=S.eq.get(o.equipoId);const prev=esPrev(o);const u=prev?null:urgOf(o);const last=(o.historial||[]).slice(-1)[0];
+  const tp=prev&&o.estado!=="Cerrada"&&S.ta.get(o.tareaId);const stp=tp&&status(tp);const vence=stp&&stp.gov?partLabel(stp.gov).big:o.vence;
+  const drag=o.estado!=="Cerrada"&&canW();
+  return '<article class="kcard '+(prev?'prev':u.toLowerCase())+'" data-act="ot-ver" data-id="'+esc(o.id)+'"'+(drag?' draggable="true" data-ot="'+esc(o.id)+'"':'')+'>'+
+    '<div class="inline" style="justify-content:space-between"><span class="ot-n">'+esc(otNum(o))+'</span>'+(prev?'<span class="chip st-ok">Preventivo</span>':urgChip(u))+'</div>'+
+    '<div class="code">'+esc(e?e.codigo:o.equipoCodigo||"")+'</div><div class="kd">'+esc(o.desc||"")+'</div>'+
+    '<div class="meta">'+(prev&&vence?'<span>'+esc(vence)+'</span>':'')+(o.asignado?'<span>A cargo: '+esc(o.asignado)+'</span>':'')+'<span>'+(o.estado==="Cerrada"&&o.cierre?'Terminada '+fmtD(String(o.cierre).slice(0,10)):'Creada hace '+fmtH(hoursSince(o.reportado)))+'</span></div>'+
+    (last?'<div class="kh">'+esc(last.accion)+' · '+esc(last.porNombre||"")+'</div>':'')+'</article>';
+}
+function viewOrdenes(){
+  const tipo=S.kbTipo||"";const hace30=new Date(Date.now()-30*864e5).toISOString();
+  const all=[...S.ot.values()].filter(o=>{const e=S.eq.get(o.equipoId);
+    if(S.empresa&&(!e||e.empresa!==S.empresa))return false;
+    if(tipo&&(tipo==="preventivo")!==esPrev(o))return false;
+    if(o.estado==="Cerrada"&&String(o.cierre||o.reportado)<hace30)return false;
+    if(S.q){const q=S.q.toLowerCase();if(![otNum(o),o.desc,e&&e.codigo,e&&e.nombre,o.asignado].some(x=>x&&String(x).toLowerCase().includes(q)))return false}
+    return true});
+  const ord=(a,b)=>(esPrev(a)?"U9":urgOf(a)).localeCompare(esPrev(b)?"U9":urgOf(b))||(a.numero||0)-(b.numero||0);
+  const ch=(k,l)=>'<button class="btn sm'+(tipo===k?' primary':'')+'" data-act="kb-tipo" data-k="'+k+'">'+l+'</button>';
+  return '<div class="sec-h" style="margin-top:0"><h2>Órdenes de trabajo</h2><small>Arrastrá una tarjeta a otra columna para cambiar su estado. Cada cambio pide la firma (contraseña) del técnico responsable.</small></div>'+
+    '<div class="kb-bar">'+ch("","Todas")+ch("falla","Fallas")+ch("preventivo","Preventivas")+'<button class="btn sm danger w" data-act="falla">Reportar falla</button></div>'+
+    '<div class="kb">'+OT_EST.map(([k,l])=>{const list=all.filter(o=>(o.estado||"Abierta")===k).sort(k==="Cerrada"?(a,b)=>String(b.cierre).localeCompare(String(a.cierre)):ord);
+      return '<section class="kcol" data-col="'+esc(k)+'"><h3>'+esc(l)+(k==="Cerrada"?' <small class="hint" style="font-weight:400">(30 días)</small>':'')+'<span class="cnt">'+list.length+'</span></h3>'+list.map(kCard).join("")+
+        (list.length?'':'<p class="hint" style="margin:6px 2px">Sin órdenes</p>')+'</section>'}).join("")+'</div>';
+}
+function verOT(id){
+  const o=S.ot.get(id);if(!o)return;const e=S.eq.get(o.equipoId);const prev=esPrev(o);const t=prev?S.ta.get(o.tareaId):null;
+  const h=(o.historial||[]).slice().reverse();
+  const destinos=OT_EST.filter(([k])=>k!==o.estado);
+  openModal(mhead(otNum(o)+" · "+(prev?"Preventivo":"Falla"))+
+    '<div class="ot-top">'+(prev?'<span class="chip st-ok">Preventivo</span>':urgChip(urgOf(o)))+'<span class="chip">'+esc(estLbl(o.estado))+'</span></div>'+
+    '<dl class="kv" style="margin-top:0">'+[["Equipo",e?e.codigo+" · "+e.nombre:o.equipoCodigo],[prev?"Tarea":"Falla",o.desc],["Frecuencia",t?freqLabel(t):""],["Vencimiento",o.vence],["A cargo",o.asignado],["Creada",fmtD(String(o.reportado||"").slice(0,10))+(o.reportadoNombre?" por "+o.reportadoNombre:"")]].filter(x=>x[1]).map(([k,v])=>'<div><dt>'+esc(k)+'</dt><dd>'+esc(v)+'</dd></div>').join("")+'</dl>'+
+    (o.estado!=="Cerrada"?'<div class="inline w" style="flex-wrap:wrap"><select id="ov-dest" style="width:auto"><option value="">Mover a…</option>'+destinos.map(([k,l])=>'<option value="'+esc(k)+'">'+esc(l)+'</option>').join("")+'</select><button class="btn primary" data-act="ot-mover" data-id="'+esc(o.id)+'">Mover (con firma)</button>'+
+      (prev?'':'<button class="btn" data-act="ot-edit" data-id="'+esc(o.id)+'">Editar</button><button class="btn" data-act="ot-sim" data-id="'+esc(o.id)+'">Casos parecidos</button>')+'</div>':'')+
+    '<h3 class="rp-h">Historial de la orden</h3>'+(h.length?'<div class="tbl-wrap"><table><thead><tr><th>Fecha y hora</th><th>Acción</th><th>Responsable</th></tr></thead><tbody>'+
+      h.map(x=>'<tr><td class="num">'+esc(new Date(x.fecha).toLocaleString("es-AR",{dateStyle:"short",timeStyle:"short"}))+'</td><td>'+esc(x.accion)+(x.resultado?' · '+esc(x.resultado):'')+'</td><td>'+esc(x.porNombre||"")+'</td></tr>').join("")+'</tbody></table></div>':'<p class="hint">Sin movimientos registrados.</p>')+
+    '<div class="m-acts" style="margin-top:12px"><button class="btn" data-act="close">Cerrar</button></div>');
+}
+async function moverOT(id,dest){
+  const o=S.ot.get(id);if(!o||dest===o.estado)return;
+  if(o.estado==="Cerrada"){toast("Las órdenes terminadas no se modifican.");return}
+  if(!canW()){toast("Tu usuario es de solo lectura.");return}
+  if(dest==="Cerrada"){closeModal();
+    if(esPrev(o)){const t=S.ta.get(o.tareaId);formRegistro(t||null,o.equipoId,o)}else formCerrarOT(o);return}
+  try{
+    const ok=await conFirma("mover "+otNum(o),otDetalle(o)+'<br><span class="hint">'+esc(estLbl(o.estado))+' → <b>'+esc(estLbl(dest))+'</b></span>',(db,f)=>{
+      const up={estado:dest,historial:addHist(o,histEntry(f,estLbl(o.estado)+" → "+estLbl(dest)))};
+      if(dest==="En curso"&&!o.inicio){up.inicio=new Date().toISOString();if(!o.asignado)up.asignado=f.name}
+      return db.doc("ots/"+id).update(up)});
+    if(ok){closeModal();toast(otNum(o)+": "+estLbl(dest));render()}
+  }catch(x){firmaErr(x)}
+}
+/* arrastrar y soltar */
+document.addEventListener("dragstart",ev=>{const c=ev.target.closest&&ev.target.closest(".kcard[draggable=true]");if(!c)return;ev.dataTransfer.setData("text/plain",c.dataset.ot);ev.dataTransfer.effectAllowed="move";c.classList.add("dragging")});
+document.addEventListener("dragend",ev=>{document.querySelectorAll(".kcard.dragging,.kcol.over").forEach(x=>x.classList.remove("dragging","over"))});
+document.addEventListener("dragover",ev=>{const col=ev.target.closest&&ev.target.closest(".kcol");if(!col)return;ev.preventDefault();document.querySelectorAll(".kcol.over").forEach(x=>{if(x!==col)x.classList.remove("over")});col.classList.add("over")});
+document.addEventListener("drop",ev=>{const col=ev.target.closest&&ev.target.closest(".kcol");if(!col)return;ev.preventDefault();col.classList.remove("over");
+  const id=ev.dataTransfer.getData("text/plain");if(id)moverOT(id,col.dataset.col)});
 function viewHistorial(){
   const ht=S.histTab||"fallas";
   const st=(k,l)=>'<button class="subtab" role="tab" data-act="histtab" data-k="'+k+'" aria-selected="'+(ht===k)+'">'+l+'</button>';
@@ -1208,10 +1304,11 @@ function formTarea(t,equipoId){
     });
   });
 }
-function formRegistro(t,equipoId){
+function formRegistro(t,equipoId,ot){
   const e=S.eq.get(t?t.equipoId:equipoId);if(!e)return;const cur=curHours(e);
+  ot=ot||(t&&[...S.ot.values()].find(x=>esPrev(x)&&x.tareaId===t.id&&x.estado!=="Cerrada"))||null;
   const usaHoras=isNum(e.horometro);const ts=tasksOf(e.id);
-  openModal(mhead(t?"Registrar: "+t.nombre:"Registrar intervención")+'<p class="hint" style="margin:-6px 0 0">'+esc(e.codigo+" · "+e.nombre)+'</p>'+
+  openModal(mhead(t?"Registrar: "+t.nombre:"Registrar intervención")+'<p class="hint" style="margin:-6px 0 0">'+(ot?'<span class="ot-num">'+esc(otNum(ot))+'</span> ':'')+esc(e.codigo+" · "+e.nombre)+(ot?' · se cierra la orden de trabajo (pide firma)':'')+'</p>'+
   '<form id="frm" class="fg" novalidate>'+
   (t?'':'<label class="f full"><span>Tarea</span><select id="r-tarea"><option value="">Intervención no programada</option>'+ts.map(x=>'<option value="'+esc(x.id)+'">'+esc(x.nombre)+'</option>').join("")+'</select></label>'+
     '<label class="f full" id="g-rt"><span>Tipo</span><select id="r-tipo"><option>Correctivo</option><option>Inspección</option><option>Mejora</option><option>Predictivo</option></select></label>')+
@@ -1249,25 +1346,31 @@ function formRegistro(t,equipoId){
           if(p.k==="h"&&hm!==null){reg.venceHoras=p.nextH;reg.atrasoHoras=Math.max(0,Math.round(hm-p.nextH))}
         }
         reg.demorada=reg.atrasoDias>0||reg.atrasoHoras>0}
-      try{
-        await S.db.collection("registros").add(reg);
+      const guardar=async(db,f)=>{
+        if(f){reg.porId=f.id;reg.otId=ot.id;reg.otNumero=ot.numero||null}
+        const ref=await db.collection("registros").add(reg);
         const eo={"Enviado a reparación externa":"En reparación externa","Equipo fuera de servicio":"Fuera de servicio","Pendiente de repuesto":"Esperando repuesto","Resuelto":"Operativo"}[resultado];
-        if(eo&&!(tarea&&resultado==="Resuelto")&&(eo!==(e.estadoOp||"Operativo")))await S.db.doc("equipos/"+e.id).update({estadoOp:eo});
+        if(eo&&!(tarea&&resultado==="Resuelto")&&(eo!==(e.estadoOp||"Operativo")))await db.doc("equipos/"+e.id).update({estadoOp:eo});
         if(tarea){const up={};
           if(!tarea.ultimaFecha||fecha>=tarea.ultimaFecha){up.ultimaFecha=fecha;if(hm!==null)up.ultimaHoras=hm}
-          if(Object.keys(up).length)await S.db.doc("tareas/"+tarea.id).update(up)}
-        if(hm!==null)await updHorometro(e,hm,fecha);
-        closeModal();toast("Registro guardado");render();
-      }catch(x){writeErr(x)}
+          if(Object.keys(up).length)await db.doc("tareas/"+tarea.id).update(up)}
+        if(hm!==null)await updHorometro(e,hm,fecha,db);
+        if(f)await db.doc("ots/"+ot.id).update({estado:"Cerrada",cierre:new Date().toISOString(),registroId:ref.id,historial:addHist(ot,histEntry(f,estLbl(ot.estado)+" → Terminada",{resultado}))});
+      };
+      try{
+        if(ot){const ok=await conFirma("terminar "+otNum(ot),otDetalle(ot),guardar);if(!ok)return}
+        else await guardar(S.db,null);
+        closeModal();toast(ot?otNum(ot)+" terminada y registrada":"Registro guardado");render();
+      }catch(x){firmaErr(x)}
     });
   });
 }
-async function updHorometro(e,hm,fecha){
+async function updHorometro(e,hm,fecha,db){db=db||S.db;
   if(e.horometroFecha&&fecha<e.horometroFecha)return;
   const up={horometro:hm,horometroFecha:fecha};
   if(e.usoAuto!==false&&isNum(e.horometro)&&e.horometroFecha){const d=diffDays(e.horometroFecha,fecha);const dh=hm-Number(e.horometro);
     if(d>=1&&dh>=0&&dh/d<=24)up.horasDia=Math.round(dh/d*10)/10}
-  await S.db.doc("equipos/"+e.id).update(up);
+  await db.doc("equipos/"+e.id).update(up);
 }
 function formHorometro(e){
   const cur=curHours(e);
@@ -1362,7 +1465,7 @@ function reportData(m){
   const paradaCorr=sum(corr,"parada");
   return {m,a,b,parcial:b>=hoy,regs,prev,corr,medidas,dem,parada:sum(regs,"parada"),trabajo:sum(regs,"duracion"),
     mttr:corr.length?paradaCorr/corr.length:null,aTiempo:medidas.length?(medidas.length-dem.length)/medidas.length:null,
-    otsMes:[...S.ot.values()].filter(o=>{const f=String(o.reportado||"").slice(0,10);return f>=a&&f<=b&&(!S.empresa||inEmp(o.equipoId))}),
+    otsMes:[...S.ot.values()].filter(o=>{if(esPrev(o))return false;const f=String(o.reportado||"").slice(0,10);return f>=a&&f<=b&&(!S.empresa||inEmp(o.equipoId))}),
     movs,byEq:[...byEq.values()].sort((x,z)=>z.parada-x.parada||z.n-x.n),byEmp,reps,venc,ck,fueraServ,tipos};
 }
 function reportBody(d,print){
@@ -1436,7 +1539,7 @@ function remitosHTML(d,despuesDeInforme){
         fila("Área / ubicación",[p.area?p.area+" · "+areaDesc(p.area):e.sector,e.ubicacion].filter(Boolean).join(" · "))+
         fila("Marca / modelo / serie",[e.marca,e.modelo,e.serie].filter(Boolean).join(" · "))+fila("Horómetro",h(r.horometro))+'</table>'+
       '<div class="rm-sec">Intervención</div><table class="rm-t">'+
-        fila("Tipo",clase+(t&&t.tipo?" · "+t.tipo:""))+fila(t?"Tarea del plan":"Motivo",t?t.nombre+" ("+freqLabel(t)+")":(o?o.desc:String(r.tareaNombre||"").replace(/^Falla: /,"")))+
+        (o?fila("Orden de trabajo",otNum(o)):"")+fila("Tipo",clase+(t&&t.tipo?" · "+t.tipo:""))+fila(t?"Tarea del plan":"Motivo",t?t.nombre+" ("+freqLabel(t)+")":(o?o.desc:String(r.tareaNombre||"").replace(/^Falla: /,"")))+
         (o&&URG[o.urgManual||o.urg]?fila("Urgencia",(o.urgManual||o.urg)+" · "+URG[o.urgManual||o.urg].l+(isNum(r.respuestaH)?" · respuesta en "+fmtN(r.respuestaH)+" h":"")):"")+
         fila("Resultado",r.resultado+(r.proveedor?" · "+r.proveedor:"")+(r.fechaCierre&&r.fechaCierre!==r.fecha?" · resuelto el "+fmtD(r.fechaCierre):""))+
         fila("Horas de trabajo",h(r.duracion))+fila("Equipo detenido",h(r.parada))+fila("Técnico",r.tecnico)+'</table>'+
@@ -1560,15 +1663,57 @@ function otState(o){
 function urgChip(u,big){return '<span class="uchip '+u.toLowerCase()+(big?' big':'')+'" title="'+esc(URG[u].l+" · "+URG[u].meta)+'">'+u+' · '+esc(URG[u].l)+'</span>'}
 function otCard(o,showEq){
   const e=S.eq.get(o.equipoId);const st=otState(o);
-  return '<article class="ot '+st.u.toLowerCase()+'"><div class="ot-top">'+urgChip(st.u)+'<span class="chip">'+esc(o.estado)+'</span>'+(o.urgManual?'<span class="chip" title="'+esc(o.motivoManual||"")+'">Urgencia ajustada a mano</span>':'')+'</div>'+
+  return '<article class="ot '+st.u.toLowerCase()+'"><div class="ot-top"><span class="ot-num">'+esc(otNum(o))+'</span>'+urgChip(st.u)+'<span class="chip">'+esc(estLbl(o.estado))+'</span>'+(o.urgManual?'<span class="chip" title="'+esc(o.motivoManual||"")+'">Urgencia ajustada a mano</span>':'')+'</div>'+
     (showEq&&e?'<div class="code">'+esc(e.codigo)+' · '+esc(e.nombre)+'</div>':'')+
     '<div class="ot-d">'+esc(o.desc)+'</div>'+
     '<div class="meta"><span>'+esc(fallaLabel(o.tipoFalla))+(o.tipoFalla==="parcial"?' ('+o.perdida+' %)':'')+'</span>'+(isNum(o.tEst)?'<span>Reparación estimada: '+fmtN(o.tEst)+' h</span>':'')+'<span>Reportada hace '+fmtH(st.el)+'</span>'+(o.asignado?'<span>A cargo: '+esc(o.asignado)+'</span>':'')+'</div>'+
     '<div class="ot-flags">'+(o.estado==="Abierta"?(st.respOk?'<span class="flag ok">Responder antes de '+fmtH(st.meta-st.el)+'</span>':'<span class="flag bad">Tiempo de respuesta vencido ('+URG[st.u].meta.toLowerCase()+')</span>'):'')+
       (st.riesgo?'<span class="flag '+(st.riesgo.startsWith("Ya")?'bad':'warn')+'">'+esc(st.riesgo)+'</span>':'')+'</div>'+
-    '<div class="acts">'+(o.estado==="Abierta"?'<button class="btn sm w" data-act="ot-start" data-id="'+esc(o.id)+'">Empezar</button>':'')+'<button class="btn sm" data-act="ot-sim" data-id="'+esc(o.id)+'">Casos parecidos</button><button class="btn sm w" data-act="ot-edit" data-id="'+esc(o.id)+'">Editar</button><button class="btn sm primary w" data-act="ot-close" data-id="'+esc(o.id)+'">Cerrar falla</button></div></article>';
+    '<div class="acts">'+(o.estado==="Abierta"?'<button class="btn sm w" data-act="ot-start" data-id="'+esc(o.id)+'">Empezar</button>':'')+'<button class="btn sm" data-act="ot-ver" data-id="'+esc(o.id)+'">Historial</button><button class="btn sm" data-act="ot-sim" data-id="'+esc(o.id)+'">Casos parecidos</button><button class="btn sm w" data-act="ot-edit" data-id="'+esc(o.id)+'">Editar</button><button class="btn sm primary w" data-act="ot-close" data-id="'+esc(o.id)+'">Cerrar falla</button></div></article>';
 }
-function openOts(filter){return [...S.ot.values()].filter(o=>o.estado!=="Cerrada"&&(!filter||filter(o))).sort((a,b)=>urgOf(a).localeCompare(urgOf(b))||String(a.reportado).localeCompare(String(b.reportado)))}
+/* ---------- órdenes de trabajo ---------- */
+const OT_EST=[["Abierta","Pendiente"],["En curso","En curso"],["Esperando repuesto","Esperando repuesto"],["Cerrada","Terminada"]];
+const estLbl=e=>(OT_EST.find(x=>x[0]===e)||[0,e])[1];
+const otNum=o=>o&&isNum(o.numero)?"OT-"+String(o.numero).padStart(6,"0"):"OT s/n";
+const esPrev=o=>o&&o.tipo==="preventivo";
+const histEntry=(f,accion,extra)=>Object.assign({fecha:new Date().toISOString(),accion,porId:f.id,porNombre:f.name},extra||{});
+const addHist=(o,h)=>[...((o&&o.historial)||[]),h];
+/* Pide usuario y contraseña del técnico que hace el cambio. Devuelve {db,id,name,cerrar} o null si se cancela */
+function firmar(titulo,detalle){
+  return new Promise(async resolve=>{
+    const root=$("#firma-root");let lista=[];
+    try{lista=S.user?await S.user.firmantes():[]}catch(_){}
+    const done=v=>{root.innerHTML="";resolve(v)};
+    const def=lista.find(x=>S.me&&x.id===S.me.id)?S.me.id:"";
+    root.innerHTML='<div class="overlay"><div class="modal" role="dialog" aria-modal="true" style="max-width:460px">'+mhead("Firmar: "+titulo).replace('data-act="close"','data-act="firma-cancel"')+
+      '<form id="fz" class="fg" novalidate>'+(detalle?'<div class="code-prev full">'+detalle+'</div>':'')+
+      '<label class="f full"><span>Técnico responsable *</span><select id="fz-u"><option value="">Elegí…</option>'+lista.map(x=>'<option value="'+esc(x.id)+'"'+(x.id===def?' selected':'')+'>'+esc(x.nombre||x.email)+(x.rol==="admin"?" (administrador)":"")+'</option>').join("")+'</select></label>'+
+      '<label class="f full"><span>Contraseña *</span><input type="password" id="fz-p" autocomplete="off"></label>'+
+      '<p class="hint full" style="margin:0">El cambio queda registrado a nombre de quien firma, con fecha y hora. Es la misma contraseña con la que entra al programa.</p>'+
+      '<div class="err full" id="fz-err"></div><div class="m-acts full"><button type="button" class="btn" data-act="firma-cancel">Cancelar</button><button type="submit" class="btn primary" id="fz-ok">Firmar y guardar</button></div></form></div></div>';
+    const g=id=>root.querySelector("#"+id);
+    root.querySelectorAll('[data-act="firma-cancel"]').forEach(b=>b.addEventListener("click",ev=>{ev.stopPropagation();done(null)}));
+    (def?g("fz-p"):g("fz-u")).focus();
+    g("fz").addEventListener("submit",async ev=>{ev.preventDefault();ev.stopPropagation();
+      const u=lista.find(x=>x.id===g("fz-u").value);const pw=g("fz-p").value;
+      if(!u){g("fz-err").textContent="Elegí quién firma.";return}
+      if(!pw){g("fz-err").textContent="Escribí la contraseña.";return}
+      g("fz-ok").disabled=true;g("fz-ok").textContent="Verificando…";
+      try{const v=await S.user.verificar(u.email,pw);done({id:v.id,name:v.name,db:S.db.as(v.cliente),cerrar:v.cerrar})}
+      catch(x){g("fz-ok").disabled=false;g("fz-ok").textContent="Firmar y guardar";g("fz-p").value="";g("fz-p").focus();
+        g("fz-err").textContent=x&&x.code==="bad_password"?"Contraseña incorrecta.":(x&&x.message)||"No se pudo verificar."}
+    });
+  });
+}
+/* Ejecuta fn(db, firmante) con la sesión del técnico que firmó; devuelve false si se canceló */
+async function conFirma(titulo,detalle,fn){
+  const f=await firmar(titulo,detalle);if(!f)return false;
+  try{await fn(f.db,f)}finally{f.cerrar()}
+  return true;
+}
+function firmaErr(x){if(x&&x.code==="firma")toast("No se guardó: "+x.message);else writeErr(x)}
+function otDetalle(o){const e=S.eq.get(o.equipoId);return '<b>'+esc(otNum(o))+'</b> · '+esc(e?e.codigo:o.equipoCodigo||"")+' · '+esc(o.desc||"")}
+function openOts(filter){return [...S.ot.values()].filter(o=>o.estado!=="Cerrada"&&!esPrev(o)&&(!filter||filter(o))).sort((a,b)=>urgOf(a).localeCompare(urgOf(b))||String(a.reportado).localeCompare(String(b.reportado)))}
 function formFalla(o,eqId){
   const editing=!!(o&&o.id);o=o||{equipoId:eqId||null,tipoFalla:"total",perdida:100};
   const pick=!o.equipoId;
@@ -1608,11 +1753,14 @@ function formFalla(o,eqId){
       const d={equipoId:e.id,equipoCodigo:e.codigo,desc,tipoFalla:x.tf,perdida:c.p,tEst:x.f.tEst,urg:c.u,porQue:c.why,holgura:c.h,
         urgManual:man||null,motivoManual:man?val("f-mot"):"",asignado:val("f-asig")};
       try{
-        if(editing)await S.db.doc("ots/"+o.id).update(d);
-        else{Object.assign(d,{estado:"Abierta",reportado:new Date().toISOString(),reportadoPor:S.me&&S.me.id||null,reportadoNombre:S.me&&S.me.name||""});
+        if(editing){
+          const ok=await conFirma("editar "+otNum(o),otDetalle(o),(db,f)=>db.doc("ots/"+o.id).update(Object.assign(d,{historial:addHist(o,histEntry(f,"Editó la orden"))})));
+          if(!ok)return}
+        else{Object.assign(d,{tipo:"falla",estado:"Abierta",reportado:new Date().toISOString(),reportadoPor:S.me&&S.me.id||null,reportadoNombre:S.me&&S.me.name||"",
+            historial:[{fecha:new Date().toISOString(),accion:"Reportó la falla",porId:S.me&&S.me.id||null,porNombre:S.me&&S.me.name||""}]});
           await S.db.collection("ots").add(d);
           if((x.tf==="total"||x.tf==="seg")&&(e.estadoOp||"Operativo")==="Operativo")await S.db.doc("equipos/"+e.id).update({estadoOp:"Fuera de servicio"})}
-        closeModal();toast(editing?"Falla actualizada":"Falla reportada como "+(man||c.u));render()}catch(z){writeErr(z)}
+        closeModal();toast(editing?"Orden actualizada":"Falla reportada como "+(man||c.u));render()}catch(z){firmaErr(z)}
     });
   });
 }
@@ -1644,12 +1792,15 @@ function formCerrarOT(o){
         otId:o.id,urgencia:u,respuestaH:respH,respuestaOk:respH<=URG[u].resp,afectoEntregas:isNum(o.holgura)&&perdidaReal!==null?perdidaReal>=Number(o.holgura):null,
         porId:S.me&&S.me.id||null,creado:new Date().toISOString()};
       if(res==="Resuelto")reg.fechaCierre=f;
-      try{const ref=await S.db.collection("registros").add(reg);
-        await S.db.doc("ots/"+o.id).update({estado:"Cerrada",cierre:new Date().toISOString(),registroId:ref.id,inicio:o.inicio||null});
-        const eo={"Enviado a reparación externa":"En reparación externa","Equipo fuera de servicio":"Fuera de servicio","Pendiente de repuesto":"Esperando repuesto","Resuelto":"Operativo"}[res];
-        const otrasAbiertas=openOts(x=>x.equipoId===o.equipoId&&x.id!==o.id).length;
-        if(e&&eo&&!(eo==="Operativo"&&otrasAbiertas)&&(e.estadoOp||"Operativo")!==eo)await S.db.doc("equipos/"+e.id).update({estadoOp:eo});
-        closeModal();toast("Falla cerrada y registrada en el historial");render()}catch(z){writeErr(z)}
+      try{const ok=await conFirma("terminar "+otNum(o),otDetalle(o)+'<br><span class="hint">'+esc(estLbl(o.estado))+' → Terminada · '+esc(res)+'</span>',async(db,f)=>{
+          reg.porId=f.id;if(!o.asignado)reg.tecnico=f.name;reg.otNumero=o.numero||null;
+          const ref=await db.collection("registros").add(reg);
+          await db.doc("ots/"+o.id).update({estado:"Cerrada",cierre:new Date().toISOString(),registroId:ref.id,inicio:o.inicio||null,historial:addHist(o,histEntry(f,estLbl(o.estado)+" → Terminada",{resultado:res}))});
+          const eo={"Enviado a reparación externa":"En reparación externa","Equipo fuera de servicio":"Fuera de servicio","Pendiente de repuesto":"Esperando repuesto","Resuelto":"Operativo"}[res];
+          const otrasAbiertas=openOts(x=>x.equipoId===o.equipoId&&x.id!==o.id).length;
+          if(e&&eo&&!(eo==="Operativo"&&otrasAbiertas)&&(e.estadoOp||"Operativo")!==eo)await db.doc("equipos/"+e.id).update({estadoOp:eo})});
+        if(!ok)return;
+        closeModal();toast(otNum(o)+" terminada y registrada en el historial");render()}catch(z){firmaErr(z)}
     });
   });
 }
@@ -1722,7 +1873,10 @@ document.addEventListener("click",async ev=>{
     case "falla":formFalla(null,id||null);break;
     case "ot-edit":formFalla(S.ot.get(id));break;
     case "ot-close":formCerrarOT(S.ot.get(id));break;
-    case "ot-start":{b.disabled=true;try{await S.db.doc("ots/"+id).update({estado:"En curso",inicio:new Date().toISOString(),asignado:(S.ot.get(id)||{}).asignado||(S.me&&S.me.name)||""});toast("Falla en curso")}catch(z){writeErr(z)}break}
+    case "ot-start":moverOT(id,"En curso");break;
+    case "ot-ver":verOT(id);break;
+    case "ot-mover":{const sel=$("#ov-dest");if(sel&&sel.value)moverOT(id,sel.value);break}
+    case "kb-tipo":S.kbTipo=b.dataset.k;render();break;
     case "mover":formMover(S.eq.get(id));break;
     case "baja":formBaja(S.eq.get(id));break;
     case "reactivar":b.disabled=true;await reactivar(S.eq.get(id));break;
@@ -1759,7 +1913,7 @@ document.addEventListener("click",async ev=>{
     case "csv":save("Historial_mantenimiento_"+todayStr()+".csv",csv());break;
   }
 });
-document.addEventListener("keydown",ev=>{if(ev.key==="Escape")closeModal()});
+document.addEventListener("keydown",ev=>{if(ev.key!=="Escape")return;const fc=$('#firma-root [data-act="firma-cancel"]');if(fc){fc.click();return}closeModal()});
 $("#btn-new-eq").addEventListener("click",()=>{if(!S.db){toast("Sin conexión con la base de datos.");return}if(!S.isAdmin){toast("Solo un administrador puede crear equipos.");return}formEquipo()});
 document.addEventListener("change",ev=>{if(ev.target&&ev.target.id==="inf-mes"&&ev.target.value){S.mes=ev.target.value;render()}
   if(ev.target&&(ev.target.id==="fs-tipo"||ev.target.id==="fs-res")){S.fs=Object.assign({},S.fs,{tipo:$("#fs-tipo").value,resueltas:$("#fs-res").checked});const b=$("#fs-res-box");if(b)b.innerHTML=resultadosFallas()}});
@@ -1787,9 +1941,9 @@ else{
     S.db=db;S.dbState="ok";
     const fail=()=>{toast("Se cortó la conexión con los datos. Cerrá y volvé a abrir la aplicación.")};
     db.collection("equipos").onSnapshot(s=>{S.eq=new Map(s.docs.map(d=>[d.id,Object.assign({id:d.id},d.data())]));S.loaded.eq=true;render();if(pendingTok)openFromHash()},fail);
-    db.collection("tareas").onSnapshot(s=>{S.ta=new Map(s.docs.map(d=>[d.id,Object.assign({id:d.id},d.data())]));S.loaded.ta=true;render()},fail);
+    db.collection("tareas").onSnapshot(s=>{S.ta=new Map(s.docs.map(d=>[d.id,Object.assign({id:d.id},d.data())]));S.loaded.ta=true;render();syncPrev()},fail);
     applyRole();
-    db.collection("ots").onSnapshot(s=>{S.ot=new Map(s.docs.map(d=>[d.id,Object.assign({id:d.id},d.data())]));render()},fail);
+    db.collection("ots").onSnapshot(s=>{S.ot=new Map(s.docs.map(d=>[d.id,Object.assign({id:d.id},d.data())]));S.loaded.ot=true;render();syncPrev()},fail);
     db.doc("config/codigos").onSnapshot(d=>{S.cfg=d.exists?d.data():null;applyCfg();if(!$("#modal-root").innerHTML)render()},fail);
     db.collection("manuales").onSnapshot(s=>{S.ma=new Map(s.docs.map(d=>[d.id,Object.assign({id:d.id},d.data())]));render()},fail);
     db.collection("informes").onSnapshot(s=>{S.inf=new Map(s.docs.map(d=>[d.id,d.data()]));if(S.view!=="informe")return;const ta=$("#inf-nota");if(ta&&document.activeElement===ta)return;render()},fail);
@@ -1799,7 +1953,7 @@ else{
 }
 window.addEventListener("hashchange",openFromHash);
 openFromHash();
-setInterval(()=>{if(!$("#modal-root").innerHTML)render()},60*60*1000);
+setInterval(()=>{syncPrev();if(!$("#modal-root").innerHTML)render()},60*60*1000);
 setInterval(()=>{if(!$("#modal-root").innerHTML&&(S.view==="tablero"||S.view==="equipo")&&openOts().length)render()},60*1000);
 })();
 </script>
