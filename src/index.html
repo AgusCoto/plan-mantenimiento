@@ -285,7 +285,9 @@ td a{color:var(--accent)}
 <script>
 (function(){
 "use strict";
-const EMP={IP:"Inyectora de plásticos",LH:"Limpieza hogar",PH:"Pinturas",AL:"Alimentos",GR:"Grupo (pañol / sin asignar)"};
+const EMP0={IP:"Inyectora de plásticos",LH:"Limpieza hogar",PH:"Pinturas",AL:"Alimentos",GR:"Grupo (pañol / sin asignar)"};
+/* EMP se rearma con la configuración guardada (empresas agregadas y nombres modificados) */
+const EMP=Object.assign({},EMP0);
 const AREAS0=[["INY","Inyección"],["SOP","Soplado"],["MOL","Molienda / recuperado"],["ELA","Elaboración / mezcla"],["ENV","Envasado / llenado"],["EMP","Etiquetado y empaque"],["DEP","Depósito / logística"],["SER","Servicios generales (aire, agua, vapor, energía)"],["LAB","Calidad / laboratorio"],["EFL","Efluentes"],["EDI","Edilicio"],["TAL","Taller / pañol de mantenimiento"]];
 const TIPOS0=[["INY","Inyectora",0],["SOP","Sopladora",0],["MOL","Molino",0],["MDE","Molde / matriz",1],["CHI","Chiller / enfriador",0],["COM","Compresor",1],["SEC","Secador / deshumidificador",0],["MEZ","Mezclador / agitador",0],["DIS","Dispersor",0],["MAR","Marmita / reactor",0],["BOM","Bomba",1],["LLE","Llenadora / envasadora",0],["TAP","Tapadora",0],["ETQ","Etiquetadora",0],["CIN","Cinta transportadora",0],["TAN","Tanque / recipiente",0],["CAL","Caldera",0],["INT","Intercambiador / pasteurizador",0],["TAB","Tablero eléctrico",0],["MOT","Motor eléctrico / motorreductor",1],["API","Apiladora",1],["AUT","Autoelevador / zorra",1],["HER","Herramienta eléctrica",1],["SOL","Soldadora",1],["GEN","Grupo electrógeno",1],["BAL","Balanza",0],["EXT","Extracción / ventilación",0],["ROB","Robot / manipulador",0],["OTR","Otro",0]];
 const MOV=new Set(["Alta","Traslado","Baja","Reactivación"]);
@@ -305,7 +307,7 @@ const RESULTADOS=["Resuelto","Pendiente de repuesto","Enviado a reparación exte
 const MAN_TIPOS=["Operación y mantenimiento","Despiece / repuestos","Eléctrico / esquemas","Manual de servicio","Ficha técnica","Otro"];
 const canW=()=>!!S.db&&S.canWrite!==false;
 const WRITE_ACTS=new Set(["falla","ot-edit","ot-close","ot-start","reg","reg-eq","hm","new-task","edit-task","ck-toggle","ck-plan","ck-edit","ck-ai","ck-ai-run","close-rep"]);
-const ADMIN_ACTS=new Set(["mover","baja","reactivar","cod-new","new-eq","edit-eq","del-eq","del-eq-ok","del-task","man-new","man-edit","man-del","man-del-ok"]);
+const ADMIN_ACTS=new Set(["mover","baja","reactivar","cod-new","cod-ren","new-eq","edit-eq","del-eq","del-eq-ok","del-task","man-new","man-edit","man-del","man-del-ok"]);
 function applyRole(){
   document.body.classList.toggle("ro",!canW());
   document.body.classList.toggle("noadm",!S.isAdmin);
@@ -323,8 +325,19 @@ const UNIT_OPTS=[["dias","días"],["semanas","semanas"],["meses","meses"],["anio
 const UNIT_DAYS={dias:1,semanas:7,meses:30.4,anios:365};
 const BASE=(window.PM_PUBLIC_URL||(!window.__TAURI__&&/^https?:/.test(location.protocol)?location.origin+location.pathname:"")).replace(/#.*$/,"");
 const RESERVED=/^(settings|sidebar|customize|upgrade|downloads|comment-)/i;
-function areas(){const m=new Map(AREAS0);((S.cfg&&S.cfg.areas)||[]).forEach(a=>{if(a&&a.c&&!m.has(a.c))m.set(a.c,a.d)});return [...m]}
-function tipos(){const m=new Map(TIPOS0.map(t=>[t[0],{d:t[1],movil:!!t[2]}]));((S.cfg&&S.cfg.tipos)||[]).forEach(t=>{if(t&&t.c&&!m.has(t.c))m.set(t.c,{d:t.d,movil:!!t.movil})});return [...m]}
+const nombres=k=>((S.cfg&&S.cfg.nombres)||{})[k]||{};
+function areas(){const m=new Map(AREAS0);((S.cfg&&S.cfg.areas)||[]).forEach(a=>{if(a&&a.c&&!m.has(a.c))m.set(a.c,a.d)});const ren=nombres("areas");for(const k of m.keys())if(ren[k])m.set(k,ren[k]);return [...m]}
+function tipos(){const m=new Map(TIPOS0.map(t=>[t[0],{d:t[1],movil:!!t[2]}]));((S.cfg&&S.cfg.tipos)||[]).forEach(t=>{if(t&&t.c&&!m.has(t.c))m.set(t.c,{d:t.d,movil:!!t.movil})});const ren=nombres("tipos");for(const [k,i] of m)if(ren[k])m.set(k,{d:ren[k],movil:i.movil});return [...m]}
+function applyCfg(){
+  for(const k of Object.keys(EMP))delete EMP[k];
+  Object.assign(EMP,EMP0);((S.cfg&&S.cfg.empresas)||[]).forEach(x=>{if(x&&x.c&&!(x.c in EMP))EMP[x.c]=x.d});
+  const ren=nombres("emp");for(const k of Object.keys(EMP))if(ren[k])EMP[k]=ren[k];
+  const sel=$("#f-empresa");if(!sel)return;
+  if(S.empresa&&!(S.empresa in EMP))S.empresa="";
+  sel.innerHTML='<option value="">Todas las empresas</option>'+Object.entries(EMP).filter(([k])=>k!=="GR").map(([k,v])=>'<option value="'+esc(k)+'">'+esc(k+" · "+v)+'</option>').join("");
+  sel.value=S.empresa||"";
+}
+function cfgCopy(){return JSON.parse(JSON.stringify(S.cfg||{}))}
 const areaDesc=c=>(areas().find(a=>a[0]===c)||[])[1]||"";
 const tipoInfo=c=>(tipos().find(t=>t[0]===c)||[])[1]||null;
 const pad3=v=>String(v).padStart(3,"0");
@@ -502,7 +515,7 @@ function viewEquipos(){
   const nBaja=all.filter(e=>!isActivo(e)).length;
   const eqs=all.filter(e=>S.verBajas?!isActivo(e):isActivo(e));
   eqs.sort((a,b)=>RANK[eqWorst(a.id).w]-RANK[eqWorst(b.id).w]||String(a.codigo).localeCompare(String(b.codigo)));
-  let h='<div class="sec-h"><h2>'+(S.verBajas?'Equipos dados de baja':'Equipos')+'</h2><small>'+eqs.length+' equipos · <button class="btn link" data-act="bajas">'+(S.verBajas?'Ver equipos activos':'Ver dados de baja ('+nBaja+')')+'</button> · <button class="btn link" data-go="codigos">Norma de codificación</button> · <button class="btn link" data-act="tags-all">Descargar etiquetas QR</button></small></div>';
+  let h='<div class="sec-h"><h2>'+(S.verBajas?'Equipos dados de baja':'Equipos')+'</h2><small>'+eqs.length+' equipos · <button class="btn link" data-act="bajas">'+(S.verBajas?'Ver equipos activos':'Ver dados de baja ('+nBaja+')')+'</button> · <button class="btn link" data-go="codigos">Empresas, áreas y códigos</button> · <button class="btn link" data-act="tags-all">Descargar etiquetas QR</button></small></div>';
   if(!eqs.length)return h+'<div class="empty"><p>Ningún equipo coincide con el filtro.</p></div>';
   h+='<div class="grid">'+eqs.map(e=>{const w=eqWorst(e.id);
     const cnt=[["vencida","vencidas"],["proxima","próximas"],["ok","al día"],["sin","sin datos"]].filter(([k])=>w.c[k]).map(([k,l])=>'<span class="chip st-'+k+'">'+w.c[k]+' '+l+'</span>').join("")||'<span class="chip">Sin tareas</span>';
@@ -645,7 +658,7 @@ async function suggestAI(eqId){
   btn.disabled=true;btn.textContent="Generando sugerencias…";msg.textContent="";
   const existentes=[...document.querySelectorAll("#ck-rows .er-t")].map(i=>i.value.trim()).filter(Boolean);
   const prompt="Sos un jefe de mantenimiento industrial en Argentina. Armá el checklist de mantenimiento preventivo que suelen recomendar los fabricantes para este equipo.\n"+
-    "Equipo: "+e.nombre+"\nMarca: "+(e.marca||"no indicada")+"\nModelo: "+(e.modelo||"no indicado")+"\nEmpresa / rubro: "+(EMP[e.empresa]||e.empresa)+"\nSector: "+(e.sector||"")+"\nNotas: "+(e.notas||"")+
+    "Equipo: "+e.nombre+"\nMarca: "+(e.marca||"no indicada")+"\nModelo: "+(e.modelo||"no indicado")+"\nEmpresa / rubro: "+(EMP[e.empresa]||e.empresa)+"\nSector: "+(areaDesc(eqParts(e).area)||e.sector||"")+"\nNotas: "+(e.notas||"")+
     (existentes.length?"\nÍtems ya cargados (no los repitas): "+existentes.join("; "):"")+
     "\n\nReglas: entre 8 y 20 ítems, en español rioplatense, cada uno una acción concreta y corta. Usá intervalos típicos de manuales de fabricantes para este tipo de equipo. Si el equipo tiene horómetro (compresores, motores, bombas grandes), usá horas de uso para cambios de filtros, aceite y componentes. No inventes valores numéricos específicos de un modelo: si el valor depende del manual, escribí 'según manual'. "+
     "Respondé SOLO con un arreglo JSON de objetos con estas claves: texto (string), cada (número entero mayor a 0), unidad (uno de: dias, semanas, meses, anios, horas), detalle (string corto con el valor de referencia o criterio, puede ser vacío).";
@@ -731,6 +744,14 @@ function formEquipo(e){
   '<label class="f"><span>o holgura conocida (h)</span><input id="p-hm" inputmode="decimal" value="'+v("holguraManual")+'" placeholder="opcional"></label>'+
   '<label class="f full" style="flex-direction:row;align-items:center;gap:8px;color:var(--fg)"><input type="checkbox" id="p-res" style="width:auto"'+(pr.reserva?' checked':'')+'> Hay un equipo de reserva que puede reemplazarlo</label>'+
   '<div class="code-prev full" id="p-prev"></div></div></fieldset>'})()+
+  (()=>{const ms=editing?[...S.ma.values()].filter(m=>(m.equipoIds||[]).includes(e.id)):[];
+  return '<fieldset class="full"><legend>Manual del equipo</legend><div class="fg">'+
+  (ms.length?'<div class="full hint">Manuales cargados: '+ms.map(m=>'<a href="'+esc(manHref(m))+'" target="_blank" rel="noopener">'+esc(m.titulo)+'</a>').join(" · ")+'. Podés agregar otro.</div>':'')+
+  '<label class="f"><span>Subir PDF o imagen (hasta 20 MB)</span><input type="file" id="e-mfile" accept="application/pdf,image/*"></label>'+
+  '<label class="f"><span>o link al manual (fabricante / Drive)</span><input id="e-murl" inputmode="url" placeholder="https://"></label>'+
+  '<label class="f"><span>Título del manual</span><input id="e-mtit" placeholder="Manual de operación y mantenimiento"></label>'+
+  '<label class="f"><span>Tipo</span><select id="e-mtipo">'+MAN_TIPOS.map(x=>'<option>'+esc(x)+'</option>').join("")+'</select></label>'+
+  '<p class="hint full" style="margin:0">Opcional. Queda en la pestaña “Manuales” del equipo y en el repositorio general.</p></div></fieldset>'})()+
   '<label class="f full"><span>Notas</span><textarea id="e-notas">'+esc(e.notas)+'</textarea></label>'+
   '<div class="err full" id="err"></div>'+
   '<div class="m-acts full"><button type="button" class="btn" data-act="close">Cancelar</button><button type="submit" class="btn primary">'+(editing?'Guardar cambios':'Dar de alta')+'</button></div></form>',
@@ -764,12 +785,32 @@ function formEquipo(e){
       if(hm!==null&&!isFinite(hm)){err.textContent="La lectura del horómetro tiene que ser un número.";return}
       if(hm!==null&&hm!==n(e.horometro)){d.horometro=hm;d.horometroFecha=todayStr()}else if(hm===null)d.horometro=null;
       if(editing&&e.codigo&&e.codigo!==d.codigo)d.codigosAnteriores=[...new Set([...(e.codigosAnteriores||[]),e.codigo])];
+      const mfile=g("e-mfile").files[0],murl=val("e-murl");
+      if(murl&&!/^https?:\/\//i.test(murl)){err.textContent="El link del manual tiene que empezar con https://";return}
+      if(mfile&&mfile.size>20*1048576){err.textContent="El manual pesa más de 20 MB. Subilo a Google Drive y pegá el link compartido.";return}
+      if(mfile&&!S.assets){err.textContent="Solo un administrador puede subir archivos.";return}
+      const sub=g("frm").querySelector("button[type=submit]");sub.disabled=true;
+      let eqId=e.id;
       try{
         if(editing)await S.db.doc("equipos/"+e.id).update(d);
         else{d.estado="Activo";d.creado=new Date().toISOString();const ref=await S.db.collection("equipos").add(d);
           await S.db.collection("registros").add({equipoId:ref.id,equipoCodigo:d.codigo,tareaId:null,tareaNombre:"Alta de equipo "+d.idActivo,tipo:"Alta",fecha:todayStr(),empresaHacia:em,hacia:d.codigo,obs:"",porId:S.me&&S.me.id||null,creado:new Date().toISOString()});
-          S.eqId=ref.id;S.view="equipo";S.eqTab="plan"}
-        closeModal();toast(editing?"Equipo actualizado":"Equipo dado de alta: "+d.codigo);render()}catch(x){writeErr(x)}
+          eqId=ref.id;S.eqId=ref.id;S.view="equipo";S.eqTab="plan"}
+      }catch(x){sub.disabled=false;writeErr(x);return}
+      let manErr="";
+      if(mfile||murl){
+        sub.textContent=mfile?"Subiendo manual…":"Guardando manual…";
+        try{
+          const md={titulo:val("e-mtit")||("Manual "+d.nombre),tipo:val("e-mtipo"),idioma:"Español",marca:d.marca,modelo:d.modelo,notas:"",equipoIds:[eqId],url:murl||null,
+            creado:new Date().toISOString(),subidoPorId:S.me&&S.me.id||null};
+          if(mfile){const res=await S.assets.upload(mfile,mfile.type?undefined:{type:"application/pdf"});Object.assign(md,{assetId:res.id,nombreArchivo:mfile.name,sizeBytes:res.sizeBytes||mfile.size})}
+          await S.db.collection("manuales").add(md);
+        }catch(x){manErr=x&&x.code==="too_large"?"el archivo es demasiado grande":x&&x.code==="unsupported_type"?"ese tipo de archivo no se puede subir":"no se pudo subir"}
+      }
+      closeModal();
+      if(manErr)toast("Equipo guardado, pero el manual "+manErr+". Probá de nuevo desde la pestaña Manuales.");
+      else toast((editing?"Equipo actualizado":"Equipo dado de alta: "+d.codigo)+(mfile||murl?" · manual cargado":""));
+      render()
     });
   });
 }
@@ -829,33 +870,51 @@ function viewCodigos(){
   const tb=(rows,cols)=>'<div class="tbl-wrap"><table><thead><tr>'+cols.map(c=>'<th>'+c+'</th>').join("")+'</tr></thead><tbody>'+rows.join("")+'</tbody></table></div>';
   const cnt={};for(const e of S.eq.values()){const p=eqParts(e);if(p.tipo)cnt[p.tipo]=Math.max(cnt[p.tipo]||0,p.numero||0)}
   return '<p><button class="btn link" data-go="equipos">← Equipos</button></p>'+
-  '<div class="sec-h"><h2>Norma de codificación y urgencias</h2><button class="btn adm" data-act="cod-new">+ Agregar área o tipo</button></div>'+
+  '<div class="sec-h"><h2>Norma de codificación y urgencias</h2><button class="btn adm" data-act="cod-new">+ Agregar empresa, área o tipo</button></div>'+
   '<section class="code-spec"><div class="code-anat"><span><b>IP</b><small>Empresa</small></span><i>-</i><span><b>SER</b><small>Área</small></span><i>-</i><span class="perm"><b>COM</b><small>Tipo</small></span><i>-</i><span class="perm"><b>007</b><small>Número</small></span></div>'+
   '<ul class="rules"><li><b>Código de ubicación</b> (IP-SER-COM-007): dice dónde está el equipo hoy. Cambia si se traslada a otra empresa o área.</li>'+
   '<li><b>ID permanente</b> (COM-007): tipo + número correlativo único en todo el grupo. Es el que se graba en la etiqueta NFC/QR y no cambia nunca, aunque el equipo rote entre empresas.</li>'+
   '<li>Los números no se reutilizan: un equipo dado de baja conserva el suyo y el siguiente toma el próximo libre.</li>'+
   '<li>Los equipos móviles (apiladoras, herramientas, compresores portátiles, motores, soldadoras) sin destino fijo van a <b>GR</b> (pañol del grupo) mientras no estén asignados.</li>'+
   '<li>Retirado para siempre → <b>Dar de baja</b>. Pasa a otra empresa del grupo → <b>Reubicar / transferir</b>. Cargado por error → <b>Eliminar</b>.</li></ul></section>'+
-  urgenciaDoc()+'<h3 class="rp-h">Empresas</h3>'+tb(Object.entries(EMP).map(([k,v])=>'<tr><td class="num"><b>'+k+'</b></td><td>'+esc(v)+'</td></tr>'),["Código","Empresa"])+
-  '<h3 class="rp-h">Áreas</h3>'+tb(areas().map(([k,v])=>'<tr><td class="num"><b>'+esc(k)+'</b></td><td>'+esc(v)+'</td></tr>'),["Código","Área"])+
-  '<h3 class="rp-h">Tipos de equipo</h3>'+tb(tipos().map(([k,i])=>'<tr><td class="num"><b>'+esc(k)+'</b></td><td>'+esc(i.d)+'</td><td>'+(i.movil?'<span class="chip">Móvil</span>':'Fijo')+'</td><td class="num">'+(cnt[k]?'último '+esc(idAct(k,cnt[k]))+' · próximo '+esc(idAct(k,cnt[k]+1)):'próximo '+esc(idAct(k,1)))+'</td></tr>'),["Código","Tipo","Movilidad","Numeración"]);
+  urgenciaDoc()+'<h3 class="rp-h">Empresas</h3>'+tb(Object.entries(EMP).map(([k,v])=>'<tr><td class="num"><b>'+esc(k)+'</b></td><td>'+esc(v)+'</td><td>'+renBtn("emp",k)+'</td></tr>'),["Código","Empresa",""])+
+  '<h3 class="rp-h">Áreas</h3>'+tb(areas().map(([k,v])=>'<tr><td class="num"><b>'+esc(k)+'</b></td><td>'+esc(v)+'</td><td>'+renBtn("areas",k)+'</td></tr>'),["Código","Área",""])+
+  '<h3 class="rp-h">Tipos de equipo</h3>'+tb(tipos().map(([k,i])=>'<tr><td class="num"><b>'+esc(k)+'</b></td><td>'+esc(i.d)+'</td><td>'+(i.movil?'<span class="chip">Móvil</span>':'Fijo')+'</td><td class="num">'+(cnt[k]?'último '+esc(idAct(k,cnt[k]))+' · próximo '+esc(idAct(k,cnt[k]+1)):'próximo '+esc(idAct(k,1)))+'</td><td>'+renBtn("tipos",k)+'</td></tr>'),["Código","Tipo","Movilidad","Numeración",""]);
+}
+function renBtn(tab,k){return '<button class="btn sm adm" data-act="cod-ren" data-k="'+esc(tab)+'" data-id="'+esc(k)+'">Cambiar nombre</button>'}
+function formRenombrar(tab,k){
+  const lbl={emp:"empresa",areas:"área",tipos:"tipo de equipo"}[tab];
+  const actual=tab==="emp"?EMP[k]:tab==="areas"?areaDesc(k):((tipoInfo(k)||{}).d||"");
+  const orig=tab==="emp"?(EMP0[k]||((S.cfg&&S.cfg.empresas||[]).find(x=>x.c===k)||{}).d):tab==="areas"?((AREAS0.find(a=>a[0]===k)||[])[1]||((S.cfg&&S.cfg.areas||[]).find(x=>x.c===k)||{}).d):((TIPOS0.find(t=>t[0]===k)||[])[1]||((S.cfg&&S.cfg.tipos||[]).find(x=>x.c===k)||{}).d);
+  openModal(mhead("Cambiar nombre de "+lbl)+'<form id="frm" class="fg" novalidate>'+
+  '<label class="f"><span>Código</span><input value="'+esc(k)+'" disabled></label>'+
+  '<label class="f full"><span>Nombre *</span><input id="rn-d" value="'+esc(actual)+'"></label>'+
+  '<p class="hint full" style="margin:0">El código no cambia, así que los códigos de los equipos y las etiquetas siguen valiendo. El nombre nuevo se ve en toda la aplicación y en los informes.'+(orig&&orig!==actual?' Nombre original: '+esc(orig)+'.':'')+'</p>'+
+  '<div class="err full" id="err"></div><div class="m-acts full"><button type="button" class="btn" data-act="close">Cancelar</button><button type="submit" class="btn primary">Guardar</button></div></form>',
+  r=>r.querySelector("#frm").addEventListener("submit",async ev=>{ev.preventDefault();
+    const d=val("rn-d");if(!d){r.querySelector("#err").textContent="Escribí el nombre.";return}
+    const cfg=cfgCopy();cfg.nombres=cfg.nombres||{};cfg.nombres[tab]=cfg.nombres[tab]||{};
+    if(orig&&d===orig)delete cfg.nombres[tab][k];else cfg.nombres[tab][k]=d;
+    try{await S.db.doc("config/codigos").set(cfg);closeModal();toast("Nombre actualizado");render()}catch(x){writeErr(x)}
+  }));
 }
 function formCodigo(){
   openModal(mhead("Agregar código")+'<form id="frm" class="fg" novalidate>'+
-  '<label class="f"><span>Tabla</span><select id="cd-t"><option value="areas">Área</option><option value="tipos">Tipo de equipo</option></select></label>'+
-  '<label class="f"><span>Código (3 letras) *</span><input id="cd-c" maxlength="3" style="text-transform:uppercase"></label>'+
+  '<label class="f"><span>Tabla</span><select id="cd-t"><option value="empresas">Empresa</option><option value="areas" selected>Área</option><option value="tipos">Tipo de equipo</option></select></label>'+
+  '<label class="f"><span id="cd-cl">Código (3 letras) *</span><input id="cd-c" maxlength="3" style="text-transform:uppercase"></label>'+
   '<label class="f full"><span>Descripción *</span><input id="cd-d"></label>'+
   '<label class="f full" id="cd-mv-w" style="flex-direction:row;align-items:center;gap:8px;color:var(--fg)" hidden><input type="checkbox" id="cd-mv" style="width:auto"> Es un tipo de equipo móvil</label>'+
   '<div class="err full" id="err"></div><div class="m-acts full"><button type="button" class="btn" data-act="close">Cancelar</button><button type="submit" class="btn primary">Agregar</button></div></form>',
-  r=>{const g=id=>r.querySelector("#"+id);g("cd-t").addEventListener("change",()=>{g("cd-mv-w").hidden=g("cd-t").value!=="tipos"});
+  r=>{const g=id=>r.querySelector("#"+id);g("cd-t").addEventListener("change",()=>{const t=g("cd-t").value;g("cd-mv-w").hidden=t!=="tipos";g("cd-c").maxLength=t==="empresas"?2:3;g("cd-cl").textContent="Código ("+(t==="empresas"?2:3)+" letras) *"});
     g("frm").addEventListener("submit",async ev=>{ev.preventDefault();
       const t=g("cd-t").value,c=g("cd-c").value.trim().toUpperCase(),d=g("cd-d").value.trim();
-      if(!/^[A-Z]{3}$/.test(c)){g("err").textContent="El código tiene que tener exactamente 3 letras.";return}
+      const len=t==="empresas"?2:3;
+      if(!new RegExp("^[A-Z]{"+len+"}$").test(c)){g("err").textContent="El código tiene que tener exactamente "+len+" letras.";return}
       if(!d){g("err").textContent="Escribí la descripción.";return}
-      const exists=(t==="areas"?areas().map(a=>a[0]):tipos().map(x=>x[0])).includes(c);
+      const exists=(t==="empresas"?Object.keys(EMP):t==="areas"?areas().map(a=>a[0]):tipos().map(x=>x[0])).includes(c);
       if(exists){g("err").textContent="El código "+c+" ya existe en esa tabla.";return}
-      const cfg={areas:[...((S.cfg&&S.cfg.areas)||[])],tipos:[...((S.cfg&&S.cfg.tipos)||[])]};
-      if(t==="areas")cfg.areas.push({c,d});else cfg.tipos.push({c,d,movil:g("cd-mv").checked});
+      const cfg=cfgCopy();cfg[t]=cfg[t]||[];
+      if(t==="tipos")cfg.tipos.push({c,d,movil:g("cd-mv").checked});else cfg[t].push({c,d});
       try{await S.db.doc("config/codigos").set(cfg);closeModal();toast("Código "+c+" agregado");render()}catch(x){writeErr(x)}
     });
   });
@@ -1334,7 +1393,7 @@ function urgenciaDoc(){
 /* ---------- descargas ---------- */
 function printableDoc(e,tasks){
   const css='body{font-family:Arial,sans-serif;color:#111;margin:24px;font-size:12px}h1{font-size:20px;margin:0}h2{font-size:15px;margin:22px 0 6px;border-bottom:2px solid #1D6A73;padding-bottom:3px}h3{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#555;margin:10px 0 3px}table{border-collapse:collapse;width:100%}td,th{border:1px solid #bbb;padding:5px 7px;text-align:left;vertical-align:top}th{background:#eef2f3}.warnbox{background:#fff4cc;padding:6px 8px;border-radius:4px}p{margin:0;white-space:pre-wrap}.code{font-family:monospace;color:#555}.task{page-break-inside:avoid}.firma td{height:34px}@media print{body{margin:10mm}}';
-  const ficha='<table><tr><th>Código</th><td>'+esc(e.codigo)+'</td><th>Empresa</th><td>'+esc(e.empresa)+' · '+esc(EMP[e.empresa]||"")+'</td></tr><tr><th>Sector</th><td>'+esc(e.sector)+'</td><th>Ubicación</th><td>'+esc(e.ubicacion)+'</td></tr><tr><th>Marca / modelo</th><td>'+esc([e.marca,e.modelo].filter(Boolean).join(" · "))+'</td><th>Criticidad</th><td>'+esc(e.criticidad)+'</td></tr><tr><th>Horómetro</th><td>'+(isNum(e.horometro)?fmtN(e.horometro)+' h ('+fmtD(e.horometroFecha)+')':'—')+'</td><th>Uso promedio</th><td>'+(n(e.horasDia)?fmtN(e.horasDia)+' h/día':'—')+'</td></tr></table>';
+  const ficha='<table><tr><th>Código</th><td>'+esc(e.codigo)+'</td><th>Empresa</th><td>'+esc(e.empresa)+' · '+esc(EMP[e.empresa]||"")+'</td></tr><tr><th>Sector</th><td>'+esc(areaDesc(eqParts(e).area)||e.sector)+'</td><th>Ubicación</th><td>'+esc(e.ubicacion)+'</td></tr><tr><th>Marca / modelo</th><td>'+esc([e.marca,e.modelo].filter(Boolean).join(" · "))+'</td><th>Criticidad</th><td>'+esc(e.criticidad)+'</td></tr><tr><th>Horómetro</th><td>'+(isNum(e.horometro)?fmtN(e.horometro)+' h ('+fmtD(e.horometroFecha)+')':'—')+'</td><th>Uso promedio</th><td>'+(n(e.horasDia)?fmtN(e.horasDia)+' h/día':'—')+'</td></tr></table>';
   const resumen=tasks.length>1?'<h2>Plan de mantenimiento</h2><table><tr><th>Tarea</th><th>Frecuencia</th><th>Responsable</th><th>Próxima</th></tr>'+tasks.map(t=>{const st=status(t);const nx=st.partes.map(p=>p.k==="t"?fmtD(p.next):fmtN(p.nextH)+" h").join(" / ")||"—";return '<tr><td>'+esc(t.nombre)+'</td><td>'+esc(freqLabel(t))+'</td><td>'+esc(t.responsable)+'</td><td>'+nx+'</td></tr>'}).join("")+'</table>':"";
   const body=tasks.map(t=>{const i=t.instructivo||{};return '<div class="task"><h2>Instructivo: '+esc(t.nombre)+'</h2><p>'+esc(freqLabel(t))+' · '+esc(t.tipo)+' · Responsable: '+esc(t.responsable)+(isNum(i.minutos)?' · '+esc(i.minutos)+' min':'')+(i.detenido?' · Equipo detenido: '+esc(i.detenido):'')+'</p>'+insHTML(t)+
     '<table class="firma" style="margin-top:10px"><tr><th>Fecha</th><th>Horómetro</th><th>Realizó</th><th>Observaciones</th></tr><tr><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td></tr></table></div>'}).join("");
@@ -1388,6 +1447,7 @@ document.addEventListener("click",async ev=>{
     case "baja":formBaja(S.eq.get(id));break;
     case "reactivar":b.disabled=true;await reactivar(S.eq.get(id));break;
     case "cod-new":formCodigo();break;
+    case "cod-ren":formRenombrar(b.dataset.k,id);break;
     case "close-rep":{const r=S.re.find(x=>x.id===id);if(r)formCierre(r);break}
     case "inf-dl":save("Informe_mantenimiento_"+S.mes+(S.empresa?"_"+S.empresa:"")+".html",printableInforme());break;
     case "inf-save":{if(!canW()){toast("Tu usuario es de solo lectura.");break}b.disabled=true;
@@ -1441,7 +1501,7 @@ else{
     db.collection("tareas").onSnapshot(s=>{S.ta=new Map(s.docs.map(d=>[d.id,Object.assign({id:d.id},d.data())]));S.loaded.ta=true;render()},fail);
     applyRole();
     db.collection("ots").onSnapshot(s=>{S.ot=new Map(s.docs.map(d=>[d.id,Object.assign({id:d.id},d.data())]));render()},fail);
-    db.doc("config/codigos").onSnapshot(d=>{S.cfg=d.exists?d.data():null;if(S.view==="codigos")render()},fail);
+    db.doc("config/codigos").onSnapshot(d=>{S.cfg=d.exists?d.data():null;applyCfg();if(!$("#modal-root").innerHTML)render()},fail);
     db.collection("manuales").onSnapshot(s=>{S.ma=new Map(s.docs.map(d=>[d.id,Object.assign({id:d.id},d.data())]));render()},fail);
     db.collection("informes").onSnapshot(s=>{S.inf=new Map(s.docs.map(d=>[d.id,d.data()]));if(S.view!=="informe")return;const ta=$("#inf-nota");if(ta&&document.activeElement===ta)return;render()},fail);
     db.collection("checklists").onSnapshot(s=>{S.ck=new Map(s.docs.map(d=>[d.id,Object.assign({id:d.id},d.data())]));if(!$("#modal-root").innerHTML||S.view!=="equipo")render()},fail);
