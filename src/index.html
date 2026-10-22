@@ -232,6 +232,21 @@ td a{color:var(--accent)}
 .tag-card .qr svg{width:100%;height:auto;display:block}
 .tag-code{font-family:var(--f-mono);font-weight:600;font-size:15px;margin-top:6px}
 .tag-name{font-size:12px;color:#566670}
+.fs-bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:14px}
+.fs-bar input[type=search]{flex:1 1 320px;min-width:0;font-size:15px}
+.fs-bar select{width:auto}
+.caso{background:var(--surface);border:1px solid var(--line);border-left:5px solid var(--ok);border-radius:8px;padding:12px 14px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.caso.abierta{border-left-color:var(--warn-bar)} .caso.pend{border-left-color:var(--none)}
+.caso-top{display:flex;gap:8px;flex-wrap:wrap;align-items:baseline}
+.caso-p{font-weight:600;overflow-wrap:anywhere}
+.caso dl{display:grid;grid-template-columns:auto minmax(0,1fr);gap:3px 12px;margin:0;font-size:13px}
+.caso dt{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.05em;padding-top:2px}
+.caso dd{margin:0;overflow-wrap:anywhere;white-space:pre-wrap}
+.caso .meta{font-size:12px;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 12px}
+mark{background:var(--warn-soft);color:inherit;border-radius:2px;padding:0 1px}
+.sim-box{background:var(--accent-soft);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:8px}
+.sim-box h3{margin:0;font-family:var(--f-display);font-size:14px}
+.sim-box .caso{border-left-width:4px;padding:8px 10px}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:8px;z-index:60;font-weight:500;max-width:calc(100% - 32px)}
 @media (max-width:1360px){.brand span{display:none}.tab{padding:12px 10px 10px}}
 @media (max-width:760px){
@@ -309,7 +324,7 @@ const RESULTADOS=["Resuelto","Pendiente de repuesto","Enviado a reparación exte
 const MAN_TIPOS=["Operación y mantenimiento","Despiece / repuestos","Eléctrico / esquemas","Manual de servicio","Ficha técnica","Otro"];
 const canW=()=>!!S.db&&S.canWrite!==false;
 const WRITE_ACTS=new Set(["falla","ot-edit","ot-close","ot-start","reg","reg-eq","hm","new-task","edit-task","ck-toggle","ck-plan","ck-edit","ck-ai","ck-ai-run","close-rep"]);
-const ADMIN_ACTS=new Set(["mover","baja","reactivar","cod-new","cod-ren","cfg-pub","new-eq","edit-eq","del-eq","del-eq-ok","del-task","man-new","man-edit","man-del","man-del-ok"]);
+const ADMIN_ACTS=new Set(["mover","baja","reactivar","cod-new","cod-ren","cfg-pub","tipo-del","new-eq","edit-eq","del-eq","del-eq-ok","del-task","man-new","man-edit","man-del","man-del-ok"]);
 function applyRole(){
   document.body.classList.toggle("ro",!canW());
   document.body.classList.toggle("noadm",!S.isAdmin);
@@ -329,7 +344,7 @@ function baseUrl(){return ((S.cfg&&S.cfg.publicUrl)||window.PM_PUBLIC_URL||(!win
 const RESERVED=/^(settings|sidebar|customize|upgrade|downloads|comment-)/i;
 const nombres=k=>((S.cfg&&S.cfg.nombres)||{})[k]||{};
 function areas(){if(S.cfg&&Array.isArray(S.cfg.areasLista))return S.cfg.areasLista.map(x=>[x.c,x.d]);const m=new Map(AREAS0);((S.cfg&&S.cfg.areas)||[]).forEach(a=>{if(a&&a.c&&!m.has(a.c))m.set(a.c,a.d)});const ren=nombres("areas");for(const k of m.keys())if(ren[k])m.set(k,ren[k]);return [...m]}
-function tipos(){const m=new Map(TIPOS0.map(t=>[t[0],{d:t[1],movil:!!t[2]}]));((S.cfg&&S.cfg.tipos)||[]).forEach(t=>{if(t&&t.c&&!m.has(t.c))m.set(t.c,{d:t.d,movil:!!t.movil})});const ren=nombres("tipos");for(const [k,i] of m)if(ren[k])m.set(k,{d:ren[k],movil:i.movil});return [...m]}
+function tipos(){if(S.cfg&&Array.isArray(S.cfg.tiposLista))return S.cfg.tiposLista.map(x=>[x.c,{d:x.d,movil:!!x.movil}]);const m=new Map(TIPOS0.map(t=>[t[0],{d:t[1],movil:!!t[2]}]));((S.cfg&&S.cfg.tipos)||[]).forEach(t=>{if(t&&t.c&&!m.has(t.c))m.set(t.c,{d:t.d,movil:!!t.movil})});const ren=nombres("tipos");for(const [k,i] of m)if(ren[k])m.set(k,{d:ren[k],movil:i.movil});return [...m]}
 function applyCfg(){
   for(const k of Object.keys(EMP))delete EMP[k];
   if(S.cfg&&Array.isArray(S.cfg.empresasLista))S.cfg.empresasLista.forEach(x=>{if(x&&x.c)EMP[x.c]=x.d});
@@ -348,7 +363,10 @@ const idAct=(t,v)=>t+"-"+pad3(v);
 const codeOf=(em,ar,t,v)=>em+"-"+ar+"-"+t+"-"+pad3(v);
 function parseCode(c){const m=/^([A-Z]{2})-([A-Z]{3})-([A-Z]{3})-(\d{1,4})$/.exec(String(c||""));return m?{empresa:m[1],area:m[2],tipo:m[3],numero:Number(m[4])}:null}
 function eqParts(e){const p=parseCode(e.codigo)||{};return {empresa:e.empresa||p.empresa||"",area:e.area||p.area||"",tipo:e.tipo||p.tipo||"",numero:isNum(e.numero)?Number(e.numero):(p.numero||null)}}
-function nextNum(tipo,exceptId){let mx=0;for(const e of S.eq.values()){if(e.id===exceptId)continue;const p=eqParts(e);if(p.tipo===tipo&&p.numero>mx)mx=p.numero}return mx+1}
+function nextNum(tipo,exceptId){let mx=0;const re=new RegExp("(^|-)"+tipo+"-(\\d{1,4})$");
+  for(const e of S.eq.values()){if(e.id===exceptId)continue;const p=eqParts(e);if(p.tipo===tipo&&p.numero>mx)mx=p.numero;
+    for(const c of (e.codigosAnteriores||[])){const m=re.exec(String(c));if(m&&Number(m[2])>mx)mx=Number(m[2])}}
+  return mx+1}
 const isActivo=e=>!!e&&e.estado!=="Baja";
 function tokenFor(e){if(e.idActivo&&/^[A-Za-z0-9._~-]+$/.test(e.idActivo))return e.idActivo;const c=String(e.codigo||"");return /^[A-Za-z0-9._~-]+$/.test(c)&&!RESERVED.test(c)?c:e.id}
 function linkFor(e){return baseUrl()+"#"+tokenFor(e)}
@@ -696,7 +714,87 @@ function tablaRegs(regs,showEq){
       '<td class="num">'+(isNum(r.horometro)?fmtN(r.horometro)+' h':'—')+'</td><td class="num">'+(isNum(r.duracion)?fmtN(r.duracion)+' h':'—')+'</td><td class="num">'+(isNum(r.parada)?fmtN(r.parada)+' h':'—')+'</td>'+
       '<td>'+esc(r.tecnico||"")+(r.porId&&S.names[r.porId]?'<br><span class="hint">cargó '+esc(S.names[r.porId])+'</span>':'')+'</td><td>'+esc(r.obs||"")+(r.repuestos?'<br><span class="hint">Repuestos: '+esc(r.repuestos)+'</span>':'')+'</td></tr>'}).join("")+'</tbody></table></div>';
 }
+/* ---------- buscador de fallas anteriores ---------- */
+const normT=t=>String(t||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+const STOP=new Set("el la los las lo un una unos unas de del al a en y e o u que se no si con por para es son esta este estan hay muy mas menos pero como sin sobre cuando cuanto desde hasta entre ya le les su sus mi tu fue era tiene tenia hace".split(" "));
+const palabras=t=>normT(t).split(/[^a-z0-9ñ]+/).filter(w=>w.length>=3&&!STOP.has(w));
+function causaDeObs(o){const m=/^Causa: (.*?)(?: · |$)/.exec(String(o||""));return m?m[1]:""}
+function solDeObs(o){return String(o||"").replace(/^Causa: .*?(?: · |$)/,"")}
+/* Cada falla (cerrada o abierta) y cada intervención correctiva suelta es un "caso" */
+function casosFalla(){
+  const byId=new Map(S.re.map(r=>[r.id,r]));const usados=new Set();const out=[];
+  for(const o of S.ot.values()){
+    const r=(o.registroId&&byId.get(o.registroId))||S.re.find(x=>x.otId===o.id);if(r)usados.add(r.id);
+    out.push({k:"ot"+o.id,fecha:(r&&r.fecha)||String(o.reportado||"").slice(0,10),equipoId:o.equipoId,equipoCodigo:o.equipoCodigo,desc:o.desc||"",
+      causa:r?(r.causa!=null?r.causa:causaDeObs(r.obs)):"",solucion:r?(r.solucion!=null?r.solucion:solDeObs(r.obs)):"",repuestos:r?r.repuestos||"":"",
+      resultado:r?r.resultado:"",duracion:r&&r.duracion,parada:r&&r.parada,tecnico:(r&&r.tecnico)||o.asignado||"",urg:o.urgManual||o.urg,abierta:o.estado!=="Cerrada"});
+  }
+  for(const r of S.re){
+    if(usados.has(r.id)||r.tareaId||MOV.has(r.tipo)||(r.otId&&S.ot.has(r.otId)))continue;
+    const d=String(r.tareaNombre||"").replace(/^Falla: /,"");
+    out.push({k:"re"+r.id,fecha:r.fecha,equipoId:r.equipoId,equipoCodigo:r.equipoCodigo,desc:d==="Intervención no programada"?"":d,
+      causa:r.causa!=null?r.causa:causaDeObs(r.obs),solucion:r.solucion!=null?r.solucion:solDeObs(r.obs),repuestos:r.repuestos||"",
+      resultado:r.resultado,duracion:r.duracion,parada:r.parada,tecnico:r.tecnico||"",urg:r.urgencia||"",abierta:false});
+  }
+  for(const c of out){const e=S.eq.get(c.equipoId);const ti=e&&tipoInfo(eqParts(e).tipo);
+    c.eq=e;c.tipo=e?eqParts(e).tipo:"";
+    c.txt=normT([c.desc,c.causa,c.solucion,c.repuestos,c.tecnico,e&&e.nombre,e&&e.codigo,c.equipoCodigo,e&&e.marca,e&&e.modelo,ti&&ti.d].filter(Boolean).join(" "));}
+  return out;
+}
+/* Búsqueda por palabras clave: todas tienen que aparecer (sin importar acentos ni mayúsculas) */
+function buscarCasos(q,f){
+  const terms=normT(q).split(/\s+/).filter(Boolean);
+  let list=casosFalla().filter(c=>(!f.tipo||c.tipo===f.tipo)&&(!f.resueltas||(!c.abierta&&(c.solucion||c.causa)))&&(!S.empresa||(c.eq&&c.eq.empresa===S.empresa)));
+  if(terms.length)list=list.filter(c=>terms.every(t=>c.txt.includes(t)));
+  return {terms,list:list.sort((a,b)=>String(b.fecha).localeCompare(String(a.fecha)))};
+}
+/* Casos parecidos a una descripción nueva: comparte palabras (por raíz de 5 letras), suma si es el mismo equipo o tipo */
+function similares(desc,eqId,excluir,max){
+  const raiz=w=>w.slice(0,5);const qs=[...new Set(palabras(desc).map(raiz))];if(!qs.length)return [];
+  const e=S.eq.get(eqId);const tipo=e?eqParts(e).tipo:"";
+  return casosFalla().filter(c=>!c.abierta&&c.k!==excluir&&(c.solucion||c.causa)).map(c=>{
+    const set=new Set(palabras(c.desc+" "+c.causa+" "+c.solucion).map(raiz));const hits=qs.filter(w=>set.has(w)).length;
+    return {c,hits,score:hits*3+(c.equipoId===eqId?2:0)+(tipo&&c.tipo===tipo?1:0)}}).filter(x=>x.hits>0)
+    .sort((a,b)=>b.score-a.score||String(b.c.fecha).localeCompare(String(a.c.fecha))).slice(0,max||3).map(x=>x.c);
+}
+function hl(t,terms){
+  let h=esc(t);if(!terms||!terms.length)return h;
+  const fx=w=>w.replace(/[.*+?^${}()|[\]\\]/g,"\\$&").replace(/a/g,"[aá]").replace(/e/g,"[eé]").replace(/i/g,"[ií]").replace(/o/g,"[oó]").replace(/u/g,"[uúü]").replace(/n/g,"[nñ]");
+  try{h=h.replace(new RegExp("("+terms.map(fx).join("|")+")","gi"),"<mark>$1</mark>")}catch(_){}
+  return h;
+}
+function casoCard(c,terms){
+  const e=c.eq;const cls=c.abierta?"abierta":(c.resultado&&c.resultado!=="Resuelto"?"pend":"");
+  const row=(l,v)=>v?'<dt>'+l+'</dt><dd>'+hl(v,terms)+'</dd>':'';
+  return '<article class="caso '+cls+'"><div class="caso-top">'+(c.urg?urgChip(c.urg):'')+'<span class="code">'+esc(fmtD(c.fecha))+' · '+esc(e?e.codigo:(c.equipoCodigo||""))+'</span>'+(e?'<span>'+hl(e.nombre,terms)+'</span>':'')+
+    (c.abierta?'<span class="chip st-proxima">Abierta</span>':c.resultado?'<span class="chip '+(c.resultado==="Resuelto"?'st-ok':'st-proxima')+'">'+esc(c.resultado)+'</span>':'')+'</div>'+
+    (c.desc?'<div class="caso-p">'+hl(c.desc,terms)+'</div>':'')+
+    '<dl>'+row("Causa",c.causa)+row("Qué se hizo",c.solucion)+row("Repuestos",c.repuestos)+'</dl>'+
+    (!c.abierta&&!c.causa&&!c.solucion?'<p class="hint" style="margin:0">Sin detalle de causa ni solución.</p>':'')+
+    '<div class="meta">'+(isNum(c.duracion)?'<span>Trabajo: '+fmtN(c.duracion)+' h</span>':'')+(isNum(c.parada)?'<span>Equipo parado: '+fmtN(c.parada)+' h</span>':'')+(c.tecnico?'<span>Técnico: '+hl(c.tecnico,terms)+'</span>':'')+
+    (e?'<button class="btn link" data-act="open-eq" data-id="'+esc(e.id)+'">Ver equipo</button>':'')+'</div></article>';
+}
+function resultadosFallas(){
+  const f=S.fs||{};const {terms,list}=buscarCasos(f.q||"",f);
+  if(!list.length)return '<div class="empty"><p>'+(terms.length?'No hay fallas que contengan todas esas palabras. Probá con menos palabras o con otras (por ejemplo la pieza o el síntoma).':'Todavía no hay fallas registradas.')+'</p></div>';
+  return '<p class="hint" style="margin:0 0 8px">'+list.length+(list.length===1?' falla encontrada':' fallas encontradas')+(list.length>60?' · se muestran las 60 más recientes':'')+'</p><div class="list">'+list.slice(0,60).map(c=>casoCard(c,terms)).join("")+'</div>';
+}
+function viewFallas(){
+  const f=S.fs||{};
+  return '<div class="fs-bar"><input type="search" id="fs-q" placeholder="Palabras clave: rodamiento, pierde aceite, temperatura, correa…" value="'+esc(f.q||"")+'" aria-label="Buscar en fallas anteriores">'+
+    '<select id="fs-tipo" aria-label="Tipo de equipo"><option value="">Todos los tipos</option>'+tipos().map(([k,i])=>'<option value="'+esc(k)+'"'+(f.tipo===k?' selected':'')+'>'+esc(k+" · "+i.d)+'</option>').join("")+'</select>'+
+    '<label class="inline" style="font-size:13px"><input type="checkbox" id="fs-res" style="width:auto"'+(f.resueltas?' checked':'')+'> Solo con solución registrada</label></div>'+
+    '<p class="hint" style="margin:-6px 0 12px">Busca en la descripción, la causa, lo que se hizo, los repuestos, el técnico y los datos del equipo. Escribí varias palabras para afinar: tienen que aparecer todas.</p>'+
+    '<div id="fs-res-box">'+resultadosFallas()+'</div>';
+}
 function viewHistorial(){
+  const ht=S.histTab||"fallas";
+  const st=(k,l)=>'<button class="subtab" role="tab" data-act="histtab" data-k="'+k+'" aria-selected="'+(ht===k)+'">'+l+'</button>';
+  const nav='<nav class="subtabs" role="tablist" aria-label="Historial" style="margin-top:0">'+st("fallas","Buscar fallas anteriores")+st("regs","Todas las intervenciones")+'</nav>';
+  if(ht==="fallas")return nav+viewFallas();
+  return nav+viewHistorialRegs();
+}
+function viewHistorialRegs(){
   const regs=S.re.filter(r=>{const e=S.eq.get(r.equipoId);if(S.empresa&&(!e||e.empresa!==S.empresa))return false;
     if(!S.q)return true;const q=S.q.toLowerCase();return [e&&e.codigo,e&&e.nombre,r.tareaNombre,r.tecnico,r.obs].some(x=>x&&String(x).toLowerCase().includes(q))});
   return '<div class="sec-h"><h2>Historial de intervenciones</h2><small>'+regs.length+' registros · <button class="btn link" data-act="csv">Exportar CSV</button></small></div>'+tablaRegs(regs,true);
@@ -889,7 +987,8 @@ function viewConfig(){
   '<li>Los números no se reutilizan: un equipo dado de baja conserva el suyo y el siguiente toma el próximo libre.</li>'+
   '<li>Los equipos móviles (apiladoras, herramientas, compresores portátiles, motores, soldadoras) sin destino fijo van a <b>GR</b> (pañol del grupo) mientras no estén asignados.</li>'+
   '<li>Retirado para siempre → <b>Dar de baja</b>. Pasa a otra empresa del grupo → <b>Reubicar / transferir</b>. Cargado por error → <b>Eliminar</b>.</li></ul></section>'+
-      '<h3 class="rp-h">Tipos de equipo</h3>'+tb(tipos().map(([k,i])=>'<tr><td class="num"><b>'+esc(k)+'</b></td><td>'+esc(i.d)+'</td><td>'+(i.movil?'<span class="chip">Móvil</span>':'Fijo')+'</td><td class="num">'+(cnt[k]?'último '+esc(idAct(k,cnt[k]))+' · próximo '+esc(idAct(k,cnt[k]+1)):'próximo '+esc(idAct(k,1)))+'</td><td>'+renBtn("tipos",k)+'</td></tr>'),["Código","Tipo","Movilidad","Numeración",""]);
+      '<h3 class="rp-h">Tipos de equipo</h3>'+tb(tipos().map(([k,i])=>'<tr><td class="num"><b>'+esc(k)+'</b></td><td>'+esc(i.d)+'</td><td>'+(i.movil?'<span class="chip">Móvil</span>':'Fijo')+'</td><td class="num">'+usos("tipo",k)+'</td><td class="num">próximo '+esc(idAct(k,nextNum(k)))+'</td><td><div class="acts" style="justify-content:flex-start">'+renBtn("tipos",k)+'<button class="btn sm danger adm" data-act="tipo-del" data-id="'+esc(k)+'">Eliminar</button></div></td></tr>'),["Código","Tipo","Movilidad","Uso","Numeración",""])+
+      '<p class="hint adm" style="margin:6px 0 0">Para redefinir categorías: “Editar” cambia código, nombre o movilidad (los equipos se recodifican); “Eliminar” un tipo con equipos te deja pasarlos antes a otro tipo.</p>';
     const pub=(S.cfg&&S.cfg.publicUrl)||"";
     h+='<h3 class="rp-h">Etiquetas NFC / QR</h3><section class="code-spec">'+
       '<p style="margin:0">Las etiquetas abren el equipo en el celular a través de la versión web. Dirección actual: <b>'+esc(baseUrl()||"sin configurar")+'</b></p>'+
@@ -899,12 +998,82 @@ function viewConfig(){
   }else h+=urgenciaDoc();
   return h;
 }
-function renBtn(tab,k){return '<button class="btn sm adm" data-act="cod-ren" data-k="'+esc(tab)+'" data-id="'+esc(k)+'">'+(tab==="tipos"?"Cambiar nombre":"Editar")+'</button>'}
+function renBtn(tab,k){return '<button class="btn sm adm" data-act="cod-ren" data-k="'+esc(tab)+'" data-id="'+esc(k)+'">'+"Editar"+'</button>'}
 async function saveCfgLista(tab,list){
   const cfg=cfgCopy();
   if(tab==="emp"){cfg.empresasLista=list.map(([c,d])=>({c,d}));delete cfg.empresas;if(cfg.nombres)delete cfg.nombres.emp}
   else{cfg.areasLista=list.map(([c,d])=>({c,d}));delete cfg.areas;if(cfg.nombres)delete cfg.nombres.areas}
   await S.db.doc("config/codigos").set(cfg);
+}
+function saveTipos(list){
+  const cfg=cfgCopy();cfg.tiposLista=list.map(([c,i])=>({c,d:i.d,movil:!!i.movil}));delete cfg.tipos;if(cfg.nombres)delete cfg.nombres.tipos;
+  return S.db.doc("config/codigos").set(cfg);
+}
+/* Cambia tipo y número de un equipo guardando el código y el ID anteriores (las etiquetas viejas siguen funcionando) */
+function recodeTipo(e,tipo,num){
+  const p=eqParts(e);
+  return S.db.doc("equipos/"+e.id).update({tipo,numero:num,idActivo:idAct(tipo,num),codigo:codeOf(p.empresa,p.area,tipo,num),
+    codigosAnteriores:[...new Set([...(e.codigosAnteriores||[]),e.codigo,e.idActivo].filter(Boolean))]});
+}
+const eqDeTipo=k=>[...S.eq.values()].filter(e=>eqParts(e).tipo===k).sort((a,b)=>(eqParts(a).numero||0)-(eqParts(b).numero||0));
+function formEditTipo(k){
+  const info=tipoInfo(k)||{d:"",movil:false};const afect=eqDeTipo(k);
+  openModal(mhead("Editar tipo de equipo")+'<form id="frm" class="fg" novalidate>'+
+  '<label class="f"><span>Código (3 letras) *</span><input id="et-c" maxlength="3" value="'+esc(k)+'" style="text-transform:uppercase"></label>'+
+  '<label class="f"><span>Nombre *</span><input id="et-d" value="'+esc(info.d)+'"></label>'+
+  '<label class="f full" style="flex-direction:row;align-items:center;gap:8px;color:var(--fg)"><input type="checkbox" id="et-mv" style="width:auto"'+(info.movil?' checked':'')+'> Es un tipo de equipo móvil (puede pasar de una empresa a otra)</label>'+
+  '<div class="code-prev full" id="et-prev"></div>'+
+  '<div class="err full" id="err"></div><div class="m-acts full"><button type="button" class="btn" data-act="close">Cancelar</button><button type="submit" class="btn primary" id="et-save">Guardar</button></div></form>',
+  r=>{const g=id=>r.querySelector("#"+id);
+    const upd=()=>{const c=g("et-c").value.trim().toUpperCase();const ej=afect[0];
+      g("et-prev").innerHTML=(c===k||!c)?'<span class="hint">'+(afect.length?afect.length+(afect.length===1?' equipo usa':' equipos usan')+' este tipo.':'Ningún equipo usa este tipo todavía.')+'</span>':
+        '<b>Se van a recodificar '+afect.length+(afect.length===1?' equipo':' equipos')+'.</b>'+(ej?' <span class="hint">Ejemplo:</span> <span class="code">'+esc(ej.codigo)+'</span> → <b class="code">'+esc((()=>{const p=eqParts(ej);return codeOf(p.empresa,p.area,c,p.numero)})())+'</b>':'')+
+        '<br><span class="hint">El tipo es parte del ID permanente (ej. '+esc(k)+'-001 → '+esc(c)+'-001). Las etiquetas NFC/QR ya grabadas siguen abriendo el equipo, porque el ID anterior queda guardado; las nuevas etiquetas salen con el ID nuevo.</span>'};
+    g("et-c").addEventListener("input",upd);upd();
+    g("frm").addEventListener("submit",async ev=>{ev.preventDefault();
+      const err=g("err"),btn=g("et-save");const c=g("et-c").value.trim().toUpperCase(),d=val("et-d"),mv=g("et-mv").checked;
+      if(!/^[A-Z]{3}$/.test(c)){err.textContent="El código tiene que tener exactamente 3 letras.";return}
+      if(!d){err.textContent="Escribí el nombre.";return}
+      const lista=tipos();
+      if(c!==k&&lista.some(([x])=>x===c)){err.textContent="El tipo "+c+" ya existe. Para juntar dos tipos usá “Eliminar” en uno de ellos y pasá sus equipos al otro.";return}
+      btn.disabled=true;
+      try{
+        if(c!==k){
+          /* si el código nuevo ya se usó antes, se numera a continuación para no repetir IDs de etiquetas viejas */
+          const base=nextNum(c)-1;let i=0;
+          for(const e of afect){i++;btn.textContent="Recodificando "+i+"/"+afect.length+"…";
+            await recodeTipo(e,c,base?base+i:eqParts(e).numero)}
+        }
+        btn.textContent="Guardando…";
+        await saveTipos(lista.map(([x,y])=>x===k?[c,{d,movil:mv}]:[x,y]));
+        closeModal();toast(c!==k?"Tipo "+k+" → "+c+" · "+afect.length+(afect.length===1?" equipo recodificado":" equipos recodificados"):"Tipo actualizado");render();
+      }catch(x){btn.disabled=false;btn.textContent="Guardar";writeErr(x);err.textContent="No se completó el cambio. Volvé a intentar: los equipos que ya se recodificaron no se tocan de nuevo."}
+    });
+  });
+}
+function formDelTipo(k){
+  const info=tipoInfo(k)||{d:""};const afect=eqDeTipo(k);const otros=tipos().filter(([x])=>x!==k);
+  openModal(mhead("Eliminar tipo "+k)+'<form id="frm" class="fg" novalidate>'+
+  '<p class="full" style="margin:0">'+esc(k+" · "+info.d)+': '+(afect.length?'<b>'+afect.length+(afect.length===1?' equipo usa':' equipos usan')+' este tipo</b> (incluidos los dados de baja). Antes de eliminarlo hay que pasarlos a otro tipo:':'ningún equipo lo usa. Se puede eliminar sin afectar nada.')+'</p>'+
+  (afect.length?'<label class="f full"><span>Pasar los equipos al tipo *</span><select id="dt-dest"><option value="">Elegí…</option>'+otros.map(([x,i])=>'<option value="'+esc(x)+'">'+esc(x+" · "+i.d)+'</option>').join("")+'</select></label>'+
+    '<div class="code-prev full" id="dt-prev"><span class="hint">Cada equipo toma el próximo número libre del tipo elegido. El código y el ID anteriores quedan guardados, así que las etiquetas viejas siguen funcionando.</span></div>':'')+
+  '<div class="err full" id="err"></div><div class="m-acts full"><button type="button" class="btn" data-act="close">Cancelar</button><button type="submit" class="btn danger" id="dt-ok">'+(afect.length?'Pasar equipos y eliminar':'Eliminar tipo')+'</button></div></form>',
+  r=>{const g=id=>r.querySelector("#"+id);
+    if(afect.length)g("dt-dest").addEventListener("change",()=>{const t=g("dt-dest").value;if(!t)return;const n=nextNum(t);
+      g("dt-prev").innerHTML='<b>'+afect.length+(afect.length===1?' equipo pasa':' equipos pasan')+' a '+esc(t)+'.</b> <span class="hint">Ejemplo:</span> <span class="code">'+esc(afect[0].codigo)+'</span> → <b class="code">'+esc((()=>{const p=eqParts(afect[0]);return codeOf(p.empresa,p.area,t,n)})())+'</b> <span class="hint">· numeración desde '+esc(idAct(t,n))+'. Las etiquetas viejas siguen funcionando; conviene reimprimir las nuevas.</span>'});
+    g("frm").addEventListener("submit",async ev=>{ev.preventDefault();
+      const err=g("err"),btn=g("dt-ok");const t=afect.length?g("dt-dest").value:"";
+      if(afect.length&&!t){err.textContent="Elegí a qué tipo pasan los equipos.";return}
+      btn.disabled=true;
+      try{
+        if(afect.length){let n=nextNum(t),i=0;
+          for(const e of afect){i++;btn.textContent="Pasando "+i+"/"+afect.length+"…";await recodeTipo(e,t,n++)}}
+        btn.textContent="Eliminando…";
+        await saveTipos(tipos().filter(([x])=>x!==k));
+        closeModal();toast("Tipo "+k+" eliminado"+(afect.length?" · "+afect.length+(afect.length===1?" equipo pasado a ":" equipos pasados a ")+t:""));render();
+      }catch(x){btn.disabled=false;btn.textContent="Reintentar";writeErr(x);err.textContent="No se completó. Volvé a intentar: los equipos que ya se pasaron no se tocan de nuevo."}
+    });
+  });
 }
 function formEditCodigo(tab,k){
   const isEmp=tab==="emp",len=isEmp?2:3,f=isEmp?"empresa":"area",lbl=isEmp?"empresa":"área";
@@ -940,7 +1109,7 @@ function formEditCodigo(tab,k){
         btn.textContent="Guardando…";
         await saveCfgLista(tab,lista.map(([x,y])=>x===k?[c,d]:[x,y]));
         if(isEmp&&S.empresa===k){S.empresa=c;try{localStorage.setItem("pm-empresa",c)}catch(_){}}
-        closeModal();toast(c!==k?"Código "+k+" → "+c+" · "+afect.length+" equipos recodificados":"Nombre actualizado");render();
+        closeModal();toast(c!==k?"Código "+k+" → "+c+" · "+afect.length+(afect.length===1?" equipo recodificado":" equipos recodificados"):"Nombre actualizado");render();
       }catch(x){btn.disabled=false;btn.textContent="Guardar";writeErr(x);err.textContent="No se completó el cambio. Volvé a intentar: los equipos que ya se recodificaron no se tocan de nuevo."}
     });
   });
@@ -977,7 +1146,7 @@ function formCodigo(pre){
       const exists=(t==="empresas"?Object.keys(EMP):t==="areas"?areas().map(a=>a[0]):tipos().map(x=>x[0])).includes(c);
       if(exists){g("err").textContent="El código "+c+" ya existe en esa tabla.";return}
       try{
-        if(t==="tipos"){const cfg=cfgCopy();cfg.tipos=cfg.tipos||[];cfg.tipos.push({c,d,movil:g("cd-mv").checked});await S.db.doc("config/codigos").set(cfg)}
+        if(t==="tipos")await saveTipos([...tipos(),[c,{d,movil:g("cd-mv").checked}]]);
         else if(t==="empresas")await saveCfgLista("emp",[...Object.entries(EMP),[c,d]]);
         else await saveCfgLista("areas",[...areas(),[c,d]]);
         closeModal();toast("Código "+c+" agregado");render()}catch(x){writeErr(x)}
@@ -1362,7 +1531,7 @@ function otCard(o,showEq){
     '<div class="meta"><span>'+esc(fallaLabel(o.tipoFalla))+(o.tipoFalla==="parcial"?' ('+o.perdida+' %)':'')+'</span>'+(isNum(o.tEst)?'<span>Reparación estimada: '+fmtN(o.tEst)+' h</span>':'')+'<span>Reportada hace '+fmtH(st.el)+'</span>'+(o.asignado?'<span>A cargo: '+esc(o.asignado)+'</span>':'')+'</div>'+
     '<div class="ot-flags">'+(o.estado==="Abierta"?(st.respOk?'<span class="flag ok">Responder antes de '+fmtH(st.meta-st.el)+'</span>':'<span class="flag bad">Tiempo de respuesta vencido ('+URG[st.u].meta.toLowerCase()+')</span>'):'')+
       (st.riesgo?'<span class="flag '+(st.riesgo.startsWith("Ya")?'bad':'warn')+'">'+esc(st.riesgo)+'</span>':'')+'</div>'+
-    '<div class="acts">'+(o.estado==="Abierta"?'<button class="btn sm w" data-act="ot-start" data-id="'+esc(o.id)+'">Empezar</button>':'')+'<button class="btn sm w" data-act="ot-edit" data-id="'+esc(o.id)+'">Editar</button><button class="btn sm primary w" data-act="ot-close" data-id="'+esc(o.id)+'">Cerrar falla</button></div></article>';
+    '<div class="acts">'+(o.estado==="Abierta"?'<button class="btn sm w" data-act="ot-start" data-id="'+esc(o.id)+'">Empezar</button>':'')+'<button class="btn sm" data-act="ot-sim" data-id="'+esc(o.id)+'">Casos parecidos</button><button class="btn sm w" data-act="ot-edit" data-id="'+esc(o.id)+'">Editar</button><button class="btn sm primary w" data-act="ot-close" data-id="'+esc(o.id)+'">Cerrar falla</button></div></article>';
 }
 function openOts(filter){return [...S.ot.values()].filter(o=>o.estado!=="Cerrada"&&(!filter||filter(o))).sort((a,b)=>urgOf(a).localeCompare(urgOf(b))||String(a.reportado).localeCompare(String(b.reportado)))}
 function formFalla(o,eqId){
@@ -1372,6 +1541,7 @@ function formFalla(o,eqId){
   '<form id="frm" class="fg" novalidate>'+
   (pick?'<label class="f full"><span>Equipo *</span><select id="f-eq"><option value="">Elegí el equipo…</option>'+[...S.eq.values()].filter(isActivo).sort((a,b)=>String(a.codigo).localeCompare(String(b.codigo))).map(x=>'<option value="'+esc(x.id)+'">'+esc(x.codigo+" · "+x.nombre)+'</option>').join("")+'</select></label>':'')+
   '<label class="f full"><span>¿Qué pasa? *</span><textarea id="f-desc" placeholder="Pierde aceite la unidad hidráulica y la máquina se detuvo">'+esc(o.desc)+'</textarea></label>'+
+  '<div class="full" id="f-sim"></div>'+
   '<fieldset class="full"><legend>¿Cómo afecta?</legend><div class="radios col">'+FALLAS.map(([k,l])=>'<label><input type="radio" name="tf" value="'+k+'"'+(o.tipoFalla===k?' checked':'')+'> '+esc(l)+'</label>').join("")+'</div>'+
   '<label class="f" id="g-perd"><span>¿Cuánta capacidad se pierde? (%)</span><input id="f-perd" inputmode="numeric" value="'+esc(isNum(o.perdida)?o.perdida:50)+'"></label></fieldset>'+
   '<label class="f"><span>Tiempo estimado de reparación (h) *</span><input id="f-t" inputmode="decimal" value="'+esc(isNum(o.tEst)?o.tEst:"")+'" placeholder="ej. 3"></label>'+
@@ -1387,6 +1557,10 @@ function formFalla(o,eqId){
       const c=calcUrg(x.f,e);const man=g("f-man").value;
       g("f-prev").innerHTML='<div class="urg-row">'+urgChip(man||c.u,true)+'<div><b>'+esc(URG[man||c.u].meta)+'</b><br><span class="hint">'+esc(URG[man||c.u].accion)+'</span></div></div><p class="hint" style="margin:6px 0 0">'+(man?'Calculada: '+c.u+'. ':'')+esc(c.why)+'</p>'};
     r.querySelectorAll('input[name=tf]').forEach(x=>x.addEventListener("change",upd));
+    const sim=()=>{const box=g("f-sim");if(!box||!box.isConnected)return;const eid=pick?g("f-eq").value:o.equipoId;const d=g("f-desc").value;
+      const l=d.trim().length>=4?similares(d,eid,o.id?"ot"+o.id:null,3):[];
+      box.innerHTML=l.length?'<div class="sim-box"><h3>Fallas parecidas que ya se resolvieron</h3>'+l.map(c=>casoCard(c,palabras(d))).join("")+'</div>':''};
+    let simT;g("f-desc").addEventListener("input",()=>{clearTimeout(simT);simT=setTimeout(sim,250)});if(pick)g("f-eq").addEventListener("change",sim);sim();
     ["f-perd","f-t"].forEach(id=>g(id).addEventListener("input",upd));g("f-man").addEventListener("change",upd);if(pick)g("f-eq").addEventListener("change",upd);upd();
     g("frm").addEventListener("submit",async ev=>{ev.preventDefault();const err=g("err");
       const x=read();const e=S.eq.get(x.eid);const desc=val("f-desc");const man=g("f-man").value;
@@ -1431,7 +1605,7 @@ function formCerrarOT(o){
       const u=urgOf(o);const perdidaReal=par!==null?par*(o.perdida||0)/100:null;
       const reg={equipoId:o.equipoId,equipoCodigo:e?e.codigo:o.equipoCodigo,tareaId:null,tareaNombre:"Falla: "+o.desc.slice(0,80),tipo:"Correctivo",fecha:f,
         horometro:null,tecnico:o.asignado||(S.me&&S.me.name)||"",duracion:dur,parada:par,resultado:res,proveedor:res==="Enviado a reparación externa"?val("o-prov"):"",
-        repuestos:val("o-rep"),obs:[val("o-causa")?"Causa: "+val("o-causa"):"",val("o-obs")].filter(Boolean).join(" · "),
+        repuestos:val("o-rep"),obs:[val("o-causa")?"Causa: "+val("o-causa"):"",val("o-obs")].filter(Boolean).join(" · "),causa:val("o-causa"),solucion:val("o-obs"),
         otId:o.id,urgencia:u,respuestaH:respH,respuestaOk:respH<=URG[u].resp,afectoEntregas:isNum(o.holgura)&&perdidaReal!==null?perdidaReal>=Number(o.holgura):null,
         porId:S.me&&S.me.id||null,creado:new Date().toISOString()};
       if(res==="Resuelto")reg.fechaCierre=f;
@@ -1503,6 +1677,12 @@ document.addEventListener("click",async ev=>{
     case "dl-ins":{const t=S.ta.get(id),e=S.eq.get(t.equipoId);save("Instructivo_"+safe(e.codigo)+"_"+safe(t.nombre)+".html",printableDoc(e,[t]));break}
     case "dl-eq":{const e=S.eq.get(id);save("Ficha_"+safe(e.codigo)+".html",printableDoc(e,tasksOf(id).sort((x,y)=>String(x.nombre).localeCompare(String(y.nombre)))));break}
     case "eqtab":S.eqTab=b.dataset.k;render();break;
+    case "histtab":S.histTab=b.dataset.k;render();break;
+    case "ot-sim":{const o=S.ot.get(id);if(!o)break;const e=S.eq.get(o.equipoId);
+      S.fs={q:"",tipo:e?eqParts(e).tipo:"",resueltas:true,desdeOt:id};S.view="historial";S.histTab="fallas";render();window.scrollTo(0,0);
+      const sim=similares(o.desc,o.equipoId,"ot"+o.id,20);
+      const box=$("#fs-res-box");if(box)box.innerHTML='<p class="hint" style="margin:0 0 8px">Fallas resueltas parecidas a: <b>'+esc(o.desc)+'</b>'+(e?' · mismo tipo de equipo primero':'')+'. Escribí palabras arriba para una búsqueda propia.</p>'+(sim.length?'<div class="list">'+sim.map(c=>casoCard(c,palabras(o.desc))).join("")+'</div>':'<div class="empty"><p>No se encontraron fallas resueltas parecidas.</p></div>');
+      break}
     case "bajas":S.verBajas=!S.verBajas;render();break;
     case "falla":formFalla(null,id||null);break;
     case "ot-edit":formFalla(S.ot.get(id));break;
@@ -1512,7 +1692,8 @@ document.addEventListener("click",async ev=>{
     case "baja":formBaja(S.eq.get(id));break;
     case "reactivar":b.disabled=true;await reactivar(S.eq.get(id));break;
     case "cod-new":formCodigo(b.dataset.k);break;
-    case "cod-ren":if(b.dataset.k==="tipos")formRenombrar("tipos",id);else formEditCodigo(b.dataset.k,id);break;
+    case "cod-ren":if(b.dataset.k==="tipos")formEditTipo(id);else formEditCodigo(b.dataset.k,id);break;
+    case "tipo-del":formDelTipo(id);break;
     case "cfgtab":S.cfgTab=b.dataset.k;render();break;
     case "cfg-pub":{const v=val("cfg-pub");if(v&&!/^https:\/\//i.test(v)){toast("La dirección tiene que empezar con https://");break}
       const cfg=cfgCopy();if(v)cfg.publicUrl=v;else delete cfg.publicUrl;
@@ -1543,7 +1724,9 @@ document.addEventListener("click",async ev=>{
 });
 document.addEventListener("keydown",ev=>{if(ev.key==="Escape")closeModal()});
 $("#btn-new-eq").addEventListener("click",()=>{if(!S.db){toast("Sin conexión con la base de datos.");return}if(!S.isAdmin){toast("Solo un administrador puede crear equipos.");return}formEquipo()});
-document.addEventListener("change",ev=>{if(ev.target&&ev.target.id==="inf-mes"&&ev.target.value){S.mes=ev.target.value;render()}});
+document.addEventListener("change",ev=>{if(ev.target&&ev.target.id==="inf-mes"&&ev.target.value){S.mes=ev.target.value;render()}
+  if(ev.target&&(ev.target.id==="fs-tipo"||ev.target.id==="fs-res")){S.fs=Object.assign({},S.fs,{tipo:$("#fs-tipo").value,resueltas:$("#fs-res").checked});const b=$("#fs-res-box");if(b)b.innerHTML=resultadosFallas()}});
+document.addEventListener("input",ev=>{if(ev.target&&ev.target.id==="fs-q"){S.fs=Object.assign({},S.fs,{q:ev.target.value});clearTimeout(render.fs);render.fs=setTimeout(()=>{const b=$("#fs-res-box");if(b)b.innerHTML=resultadosFallas()},150)}});
 $("#f-empresa").addEventListener("change",ev=>{S.empresa=ev.target.value;render()});
 $("#f-q").addEventListener("keydown",ev=>{if(ev.key!=="Enter")return;const v=ev.target.value.trim();const tok=v.includes("#")?v.split("#").pop():v;const e=findByToken(tok);
   if(e){ev.preventDefault();ev.target.value="";S.q="";S.view="equipo";S.eqId=e.id;S.eqTab=((S.ck.get(e.id)||{}).items||[]).length?"check":"plan";render();toast("Equipo identificado: "+e.codigo)}});
