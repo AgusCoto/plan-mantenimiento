@@ -9,13 +9,23 @@
 
   /* ---------- configuración ---------- */
   const LS_CFG = "pm-config";
+  // Deja solo "https://xxxx.supabase.co" aunque se pegue con /rest/v1/, con espacios
+  // o la dirección del panel (supabase.com/dashboard/project/xxxx).
+  function normalizeUrl(u) {
+    u = String(u || "").trim();
+    if (!u) return "";
+    const dash = /supabase\.com\/dashboard\/project\/([a-z0-9]+)/i.exec(u);
+    if (dash) return "https://" + dash[1].toLowerCase() + ".supabase.co";
+    if (!/^[a-z]+:\/\//i.test(u)) u = "https://" + u;
+    try { return new URL(u).origin; } catch (_) { return u.replace(/\/+$/, ""); }
+  }
   function readCfg() {
     let local = {};
     try { local = JSON.parse(localStorage.getItem(LS_CFG) || "{}") || {}; } catch (_) {}
     const base = window.APP_CONFIG || {};
     const pick = (k) => (local[k] || base[k] || "").trim();
     return {
-      supabaseUrl: pick("supabaseUrl").replace(/\/+$/, ""),
+      supabaseUrl: normalizeUrl(pick("supabaseUrl")),
       supabaseAnonKey: pick("supabaseAnonKey"),
       publicUrl: pick("publicUrl"),
       anthropicKey: (local.anthropicKey || "").trim()
@@ -146,7 +156,7 @@
     el.querySelector("#pm-pub").value = CFG.publicUrl;
     el.querySelector("#pm-setup").addEventListener("submit", (ev) => {
       ev.preventDefault();
-      const url = el.querySelector("#pm-url").value.trim();
+      const url = normalizeUrl(el.querySelector("#pm-url").value);
       if (!/^https:\/\/.+/i.test(url)) { el.querySelector("#pm-err").textContent = "La dirección tiene que empezar con https://"; return; }
       writeCfg({ supabaseUrl: url, supabaseAnonKey: el.querySelector("#pm-key").value.trim(), publicUrl: el.querySelector("#pm-pub").value.trim() });
       location.reload();
@@ -201,6 +211,7 @@
   }
   function traducir(e) {
     const m = (e && e.message) || String(e);
+    if (/Invalid path specified|requested path is invalid|Invalid API key|No API key/i.test(m)) return "La dirección o la clave de la base no son correctas. Tocá “Cambiar base de datos” y pegá la Project URL (solo https://xxxx.supabase.co) y la clave anon public.";
     if (/Invalid login credentials/i.test(m)) return "Email o contraseña incorrectos.";
     if (/Email not confirmed/i.test(m)) return "Todavía no confirmaste el email: revisá tu casilla.";
     if (/already registered/i.test(m)) return "Ese email ya tiene usuario: usá Ingresar.";
