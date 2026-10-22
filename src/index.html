@@ -1,4 +1,4 @@
-<!doctype html><html lang="es"><head><meta charset=utf-8><title>Plan de Mantenimiento</title><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#0D3B85"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Mantenimiento"><meta name="apple-mobile-web-app-status-bar-style" content="default"><link rel="apple-touch-icon" href="iconos/icono-180.png"><link rel="icon" type="image/svg+xml" href="iconos/icono.svg"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style>
+<!doctype html><html lang="es"><head><meta charset=utf-8><title>W-Main</title><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#0D3B85"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="W-Main"><meta name="apple-mobile-web-app-status-bar-style" content="default"><link rel="apple-touch-icon" href="iconos/icono-180.png"><link rel="icon" type="image/svg+xml" href="iconos/icono.svg"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style>
 
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -378,7 +378,7 @@ main.wrap{padding-top:22px}
 
 </head><body>
 <aside class="side" id="side" aria-label="Menú principal">
-  <div class="side-brand"><img src="iconos/icono.svg" alt="" width="40" height="40"><div><b>Plan de Mantenimiento</b><span>Gestión y seguimiento</span></div></div>
+  <div class="side-brand"><img src="iconos/icono.svg" alt="" width="40" height="40"><div><b>W-Main</b><span>Plan de mantenimiento</span></div></div>
   <nav class="side-nav">
     <div class="nav-g">Día a día</div>
     <button class="nav-item" data-go="tablero"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v10h5v-6h4v6h5V10"/></svg><span>Inicio</span><span class="nbadge" id="nb-tablero"></span></button>
@@ -626,7 +626,7 @@ function navState(){
   let pg=PAGINAS[S.view]||["",""];
   if(S.view==="historial")pg=ht==="fallas"?["Buscar fallas anteriores","Encontrá cómo se resolvió un problema parecido y ganá tiempo"]:["Historial de intervenciones","Todo lo que se hizo en cada equipo"];
   if(S.view==="equipo"){const e=S.eq.get(S.eqId);pg=[e?e.nombre:"Equipo",e?e.codigo:""]}
-  $("#pg-t").textContent=pg[0];$("#pg-s").textContent=pg[1];document.title=pg[0]?pg[0]+" · Plan de Mantenimiento":"Plan de Mantenimiento";
+  $("#pg-t").textContent=pg[0];$("#pg-s").textContent=pg[1];document.title=pg[0]?pg[0]+" · W-Main":"W-Main";
   const nf=openOts().length;const no=[...S.ot.values()].filter(o=>o.estado!=="Cerrada").length;
   const b1=$("#nb-tablero"),b2=$("#nb-ordenes");if(b1)b1.textContent=nf?String(nf):"";if(b2){b2.textContent=no?String(no):"";b2.style.background=no?"#1452B8":""}
 }

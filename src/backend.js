@@ -1,5 +1,5 @@
 /* =====================================================================
-   Plan de Mantenimiento · conexión con Supabase
+   W-Main · conexión con Supabase
    Implementa window.claude.use(...) con la misma interfaz que usaba la
    versión en Claude (db, user, assets, downloads, sample), de modo que el
    resto de la aplicación (index.html) funciona sin cambios.
@@ -209,7 +209,7 @@
   function loginScreen(mode, msg) {
     mode = mode || "in";
     const el = overlay(`<form class="pm-box" id="pm-login">
-      <h2>Plan de Mantenimiento</h2>
+      <div style="display:flex;gap:12px;align-items:center"><img src="iconos/icono.svg" alt="" width="48" height="48" style="border-radius:11px"><div><h2>W-Main</h2><p class="hint" style="margin:0">Plan de mantenimiento</p></div></div>
       <nav class="pm-sw" role="tablist"><button type="button" role="tab" data-m="in" aria-selected="${mode === "in"}">Ingresar</button><button type="button" role="tab" data-m="up" aria-selected="${mode === "up"}">Crear usuario</button></nav>
       ${mode === "up" ? field("pm-name", "Nombre y apellido", 'required autocomplete="name"') : ""}
       ${field("pm-mail", "Email", 'type="email" required autocomplete="email"')}

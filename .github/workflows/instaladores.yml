@@ -45,7 +45,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tagName: ${{ github.ref_type == 'tag' && github.ref_name || format('v{0}', github.run_number) }}
-          releaseName: "Plan de Mantenimiento ${{ github.ref_type == 'tag' && github.ref_name || format('v{0}', github.run_number) }}"
+          releaseName: "W-Main ${{ github.ref_type == 'tag' && github.ref_name || format('v{0}', github.run_number) }}"
           releaseBody: "Descargá el instalador para tu sistema: .dmg para Mac, -setup.exe para Windows."
           releaseDraft: false
           prerelease: false

@@ -1,8 +1,8 @@
 {
   "name": "plan-mantenimiento",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "private": true,
-  "description": "Plan de Mantenimiento: aplicación de escritorio (Mac y Windows) con base de datos en Supabase",
+  "description": "W-Main: aplicación de escritorio (Mac y Windows) con base de datos en Supabase",
   "scripts": {
     "tauri": "tauri",
     "vendor": "node scripts/vendor.mjs",

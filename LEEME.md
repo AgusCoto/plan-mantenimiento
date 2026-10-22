@@ -1,6 +1,6 @@
-# Plan de Mantenimiento: aplicación de escritorio
+# W-Main: plan de mantenimiento
 
-Es la misma aplicación que armaste en Claude (tablero, equipos, fallas con códigos de urgencia, checklists, manuales, informe mensual y etiquetas NFC/QR), convertida en un programa que se instala en Mac y en Windows. Los datos se guardan en una base de datos en la nube (Supabase): tu computadora y la de la oficina técnica ven lo mismo al instante.
+**W-Main** es la misma aplicación que armaste en Claude (tablero, equipos, fallas con códigos de urgencia, checklists, manuales, informe mensual y etiquetas NFC/QR), convertida en un programa que se instala en Mac y en Windows. Los datos se guardan en una base de datos en la nube (Supabase): tu computadora y la de la oficina técnica ven lo mismo al instante.
 
 ```
  Tu computadora (Mac / Windows)      PC oficina técnica        Celular (QR / NFC)
@@ -43,8 +43,8 @@ Los instaladores se generan en los servidores de GitHub, porque el de Mac solo p
    La forma más simple es pedirle a Claude Code que lo suba por vos: conectá tu GitHub y pasale el nombre del repositorio.
 3. En el repositorio, entrá a **Actions → Instaladores → Run workflow**. Tarda unos 15 minutos.
 4. Cuando termine, entrá a **Releases** (columna derecha) y descargá:
-   - **Mac:** `Plan de Mantenimiento_1.0.0_universal.dmg`, que funciona en Mac Intel y en Apple Silicon (M1–M4).
-   - **Windows:** `Plan de Mantenimiento_1.0.0_x64-setup.exe`.
+   - **Mac:** `W-Main_<versión>_universal.dmg`, que funciona en Mac Intel y en Apple Silicon (M1–M4).
+   - **Windows:** `W-Main_<versión>_x64-setup.exe`.
 
 ### Instalar en Mac
 
@@ -52,7 +52,7 @@ Abrí el `.dmg` y arrastrá la app a **Aplicaciones**. Como la app no está firm
 
 - Hacé **clic derecho → Abrir → Abrir**.
 - Si dice que *"está dañada"*, abrí la Terminal y ejecutá:
-  `xattr -cr "/Applications/Plan de Mantenimiento.app"`
+  `xattr -cr "/Applications/W-Main.app"`
 
 ### Instalar en Windows
 

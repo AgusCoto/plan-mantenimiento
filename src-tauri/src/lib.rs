@@ -5,5 +5,5 @@ pub fn run() {
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_opener::init())
         .run(tauri::generate_context!())
-        .expect("error al iniciar Plan de Mantenimiento");
+        .expect("error al iniciar W-Main");
 }
