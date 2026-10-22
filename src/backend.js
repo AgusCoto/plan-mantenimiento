@@ -601,6 +601,17 @@
     who.addEventListener("keydown", (ev) => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); open(); } });
   }
 
+  // Accesos desde el menú del programa: Usuarios, Mi cuenta, Cerrar sesión
+  window.PM_CUENTA = (tab) => {
+    if (!me) return;
+    if (tab === "salir") {
+      overlay(`<div class="pm-box"><h2>Cerrar sesión</h2><p>Se va a cerrar la sesión de <b>${esc(me.name)}</b> en este dispositivo. Para volver a entrar hace falta el email y la contraseña.</p><div class="pm-row"><button class="btn" id="pm-no">Cancelar</button><button class="btn danger" id="pm-si">Cerrar sesión</button></div></div>`, true);
+      document.getElementById("pm-no").addEventListener("click", closeOverlay);
+      document.getElementById("pm-si").addEventListener("click", () => sb.auth.signOut());
+      return;
+    }
+    accountScreen(tab === "usuarios" && me.rol !== "admin" ? "perfil" : tab);
+  };
   async function accountScreen(tab) {
     const tabs = [["perfil", "Mi perfil"]].concat(me.rol === "admin" ? [["usuarios", "Usuarios"]] : []).concat([["config", "Configuración"]]);
     let body = "";

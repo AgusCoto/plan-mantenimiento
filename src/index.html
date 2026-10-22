@@ -393,6 +393,9 @@ main.wrap{padding-top:22px}
     <button class="nav-item" data-go="informe"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h16"/><path d="M7 16v-4M12 16V7M17 16v-6"/></svg><span>Informe mensual</span></button>
     <div class="nav-g">Ajustes</div>
     <button class="nav-item" data-go="config"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h9M17 7h3M4 12h3M11 12h9M4 17h11M19 17h1"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="17" cy="17" r="2"/></svg><span>Configuración</span></button>
+    <button class="nav-item adm" data-act="cuenta" data-k="usuarios"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8.5" r="3.2"/><path d="M3.5 19c.9-3.2 3.1-4.6 5.5-4.6s4.6 1.4 5.5 4.6"/><circle cx="17" cy="9.5" r="2.5"/><path d="M15.5 14.6c2.3.1 4 1.5 4.8 4.4"/></svg><span>Usuarios y permisos</span></button>
+    <button class="nav-item" data-act="cuenta" data-k="perfil"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c1.2-3.6 4-5 7-5s5.8 1.4 7 5"/></svg><span>Mi cuenta</span></button>
+    <button class="nav-item" data-act="cuenta" data-k="salir"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h4.5A1.5 1.5 0 0 1 20 5.5v13a1.5 1.5 0 0 1-1.5 1.5H14"/><path d="M10 8l-4 4 4 4M6 12h10"/></svg><span>Cerrar sesión</span></button>
     <button class="nav-item" data-act="ayuda"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M9.6 9.5a2.5 2.5 0 1 1 3.4 2.3c-.6.3-1 .8-1 1.5v.7"/><path d="M12 16.8v.2"/></svg><span>¿Dónde está cada cosa?</span></button>
   </nav>
   <div class="side-foot"><div class="who" id="who" aria-live="polite"><span class="hint">Identificando usuario…</span></div></div>
@@ -1046,7 +1049,7 @@ function ayuda(){
     ["Informe del mes y remitos","Menú → Informe mensual → “Descargar informe” o “Solo remitos”."],
     ["Manuales","Menú → Manuales, o en la ficha del equipo, pestaña Manuales."],
     ["Empresas, áreas y tipos de equipo","Menú → Configuración (solo el administrador modifica)."],
-    ["Usuarios y roles","Tu nombre abajo a la izquierda → Usuarios (administrador)."],
+    ["Usuarios, permisos y contraseñas","Menú → Ajustes → Usuarios y permisos (administrador). Tu nombre y cerrar sesión: Menú → Mi cuenta / Cerrar sesión."],
     ["Conectar un celular","Configuración → Celulares: se escanea un QR y queda listo."]];
   openModal(mhead("¿Dónde está cada cosa?")+'<div class="help-list">'+it.map(([a,b])=>'<div><b>'+esc(a)+'</b><span>'+esc(b)+'</span></div>').join("")+'</div><div class="m-acts"><button class="btn primary" data-act="close">Entendido</button></div>');
 }
@@ -2101,6 +2104,7 @@ document.addEventListener("click",async ev=>{
     case "baja":formBaja(S.eq.get(id));break;
     case "reactivar":b.disabled=true;await reactivar(S.eq.get(id));break;
     case "cod-new":formCodigo(b.dataset.k);break;
+    case "cuenta":document.body.classList.remove("side-open");if(window.PM_CUENTA)window.PM_CUENTA(b.dataset.k);break;
     case "side-open":document.body.classList.add("side-open");break;
     case "side-close":document.body.classList.remove("side-open");break;
     case "ayuda":document.body.classList.remove("side-open");ayuda();break;
