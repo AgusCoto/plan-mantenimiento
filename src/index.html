@@ -269,6 +269,7 @@ td a{color:var(--accent)}
       </select>
       <input type="search" id="f-q" placeholder="Buscar equipo, código o tarea" aria-label="Buscar">
       <button class="btn danger w" data-act="falla" type="button">Reportar falla</button>
+      <button class="btn adm" data-go="codigos" type="button">Empresas y áreas</button>
       <button class="btn primary adm" id="btn-new-eq" type="button">+ Equipo</button>
     </div>
   </div>
@@ -461,7 +462,7 @@ function eqWorst(id){let w="sin";const c={vencida:0,proxima:0,ok:0,sin:0};
 
 /* ---------- render ---------- */
 function render(){
-  document.querySelectorAll(".tab").forEach(b=>b.setAttribute("aria-selected",String(S.view.startsWith(b.dataset.go)||(b.dataset.go==="equipos"&&S.view==="codigos")||(b.dataset.go==="equipos"&&S.view==="equipo"))));
+  document.querySelectorAll(".tab").forEach(b=>b.setAttribute("aria-selected",String(S.view.startsWith(b.dataset.go)||(b.dataset.go==="equipos"&&S.view==="codigos"&&false)||(b.dataset.go==="equipos"&&S.view==="equipo"))));
   applyRole();
   const m=$("#main");
   const ta0=$("#inf-nota");if(ta0)S.infDraft={k:ta0.dataset.k,v:ta0.value,f:document.activeElement===ta0,s:ta0.selectionStart};
@@ -870,15 +871,18 @@ function viewCodigos(){
   const tb=(rows,cols)=>'<div class="tbl-wrap"><table><thead><tr>'+cols.map(c=>'<th>'+c+'</th>').join("")+'</tr></thead><tbody>'+rows.join("")+'</tbody></table></div>';
   const cnt={};for(const e of S.eq.values()){const p=eqParts(e);if(p.tipo)cnt[p.tipo]=Math.max(cnt[p.tipo]||0,p.numero||0)}
   return '<p><button class="btn link" data-go="equipos">← Equipos</button></p>'+
-  '<div class="sec-h"><h2>Norma de codificación y urgencias</h2><button class="btn adm" data-act="cod-new">+ Agregar empresa, área o tipo</button></div>'+
+  '<div class="sec-h"><h2>Empresas y áreas</h2><button class="btn primary adm" data-act="cod-new">+ Agregar empresa, área o tipo</button></div>'+
+  '<p class="hint" style="margin:-4px 0 10px">Con “Cambiar nombre” corregís el nombre; el código (IP, SER…) no cambia, así que los equipos y las etiquetas siguen valiendo. Solo el administrador puede modificarlos.</p>'+
+  '<h3 class="rp-h" style="margin-top:6px">Empresas</h3>'+tb(Object.entries(EMP).map(([k,v])=>'<tr><td class="num"><b>'+esc(k)+'</b></td><td>'+esc(v)+'</td><td>'+renBtn("emp",k)+'</td></tr>'),["Código","Empresa",""])+
+  '<h3 class="rp-h">Áreas</h3>'+tb(areas().map(([k,v])=>'<tr><td class="num"><b>'+esc(k)+'</b></td><td>'+esc(v)+'</td><td>'+renBtn("areas",k)+'</td></tr>'),["Código","Área",""])+
+  '<div class="sec-h" style="margin-top:32px"><h2>Norma de codificación y urgencias</h2></div>'+
   '<section class="code-spec"><div class="code-anat"><span><b>IP</b><small>Empresa</small></span><i>-</i><span><b>SER</b><small>Área</small></span><i>-</i><span class="perm"><b>COM</b><small>Tipo</small></span><i>-</i><span class="perm"><b>007</b><small>Número</small></span></div>'+
   '<ul class="rules"><li><b>Código de ubicación</b> (IP-SER-COM-007): dice dónde está el equipo hoy. Cambia si se traslada a otra empresa o área.</li>'+
   '<li><b>ID permanente</b> (COM-007): tipo + número correlativo único en todo el grupo. Es el que se graba en la etiqueta NFC/QR y no cambia nunca, aunque el equipo rote entre empresas.</li>'+
   '<li>Los números no se reutilizan: un equipo dado de baja conserva el suyo y el siguiente toma el próximo libre.</li>'+
   '<li>Los equipos móviles (apiladoras, herramientas, compresores portátiles, motores, soldadoras) sin destino fijo van a <b>GR</b> (pañol del grupo) mientras no estén asignados.</li>'+
   '<li>Retirado para siempre → <b>Dar de baja</b>. Pasa a otra empresa del grupo → <b>Reubicar / transferir</b>. Cargado por error → <b>Eliminar</b>.</li></ul></section>'+
-  urgenciaDoc()+'<h3 class="rp-h">Empresas</h3>'+tb(Object.entries(EMP).map(([k,v])=>'<tr><td class="num"><b>'+esc(k)+'</b></td><td>'+esc(v)+'</td><td>'+renBtn("emp",k)+'</td></tr>'),["Código","Empresa",""])+
-  '<h3 class="rp-h">Áreas</h3>'+tb(areas().map(([k,v])=>'<tr><td class="num"><b>'+esc(k)+'</b></td><td>'+esc(v)+'</td><td>'+renBtn("areas",k)+'</td></tr>'),["Código","Área",""])+
+  urgenciaDoc()+
   '<h3 class="rp-h">Tipos de equipo</h3>'+tb(tipos().map(([k,i])=>'<tr><td class="num"><b>'+esc(k)+'</b></td><td>'+esc(i.d)+'</td><td>'+(i.movil?'<span class="chip">Móvil</span>':'Fijo')+'</td><td class="num">'+(cnt[k]?'último '+esc(idAct(k,cnt[k]))+' · próximo '+esc(idAct(k,cnt[k]+1)):'próximo '+esc(idAct(k,1)))+'</td><td>'+renBtn("tipos",k)+'</td></tr>'),["Código","Tipo","Movilidad","Numeración",""]);
 }
 function renBtn(tab,k){return '<button class="btn sm adm" data-act="cod-ren" data-k="'+esc(tab)+'" data-id="'+esc(k)+'">Cambiar nombre</button>'}
