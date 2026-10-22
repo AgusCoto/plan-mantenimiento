@@ -37,8 +37,26 @@
     Object.assign(local, patch);
     try { localStorage.setItem(LS_CFG, JSON.stringify(local)); } catch (_) {}
   }
+  // Conexión por QR: el link trae la dirección y la clave pública de la base (#conectar=...)
+  function aplicarConexion(texto) {
+    const m = /#conectar=([A-Za-z0-9_-]+)/.exec(String(texto || ""));
+    if (!m) return false;
+    try {
+      const j = JSON.parse(decodeURIComponent(escape(atob(m[1].replace(/-/g, "+").replace(/_/g, "/")))));
+      if (j && j.u && j.k) { writeCfg({ supabaseUrl: j.u, supabaseAnonKey: j.k }); return true; }
+    } catch (_) {}
+    return false;
+  }
+  if (/^#conectar=/.test(location.hash)) {
+    aplicarConexion(location.hash);
+    history.replaceState(null, "", location.pathname + location.search);
+  }
+  window.addEventListener("hashchange", () => {
+    if (/^#conectar=/.test(location.hash) && aplicarConexion(location.hash)) { history.replaceState(null, "", location.pathname + location.search); location.reload(); }
+  });
   const CFG = readCfg();
   window.PM_PUBLIC_URL = CFG.publicUrl || "";
+  window.PM_CONN = { u: CFG.supabaseUrl, k: CFG.supabaseAnonKey };
 
   const TAURI = window.__TAURI__ || null;
   const esc = (v) => String(v == null ? "" : v).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -149,9 +167,12 @@
       ${field("pm-url", "Project URL", 'placeholder="https://xxxx.supabase.co" required inputmode="url"')}
       ${field("pm-key", "Clave anon public", 'required')}
       <div class="pm-err" id="pm-err">${esc(msg || "")}</div>
-      <div class="pm-row"><button class="btn primary" type="submit">Guardar y continuar</button></div></form>`);
+      <div class="pm-row"><button class="btn" type="button" id="pm-qr">Escanear QR de conexión</button><button class="btn primary" type="submit">Guardar y continuar</button></div>
+      <div id="pm-cam"></div>
+      <p class="hint">En el celular es más fácil: en la computadora abrí Configuración → Celulares y escaneá el QR que aparece.</p></form>`);
     el.querySelector("#pm-url").value = CFG.supabaseUrl;
     el.querySelector("#pm-key").value = CFG.supabaseAnonKey;
+    el.querySelector("#pm-qr").addEventListener("click", () => escanearConexion(el.querySelector("#pm-cam"), el.querySelector("#pm-err")));
     el.querySelector("#pm-setup").addEventListener("submit", (ev) => {
       ev.preventDefault();
       const url = normalizeUrl(el.querySelector("#pm-url").value);
@@ -159,6 +180,30 @@
       writeCfg({ supabaseUrl: url, supabaseAnonKey: el.querySelector("#pm-key").value.trim() });
       location.reload();
     });
+  }
+
+  async function escanearConexion(box, errEl) {
+    if (!navigator.mediaDevices || !window.jsQR) { errEl.textContent = "Este dispositivo no permite usar la cámara."; return; }
+    let stream;
+    try { stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" } }, audio: false }); }
+    catch (_) { errEl.textContent = "No se pudo abrir la cámara: revisá el permiso."; return; }
+    box.innerHTML = '<div style="position:relative;border-radius:10px;overflow:hidden;background:#000"><video playsinline muted style="width:100%;display:block"></video></div>';
+    const v = box.querySelector("video"); v.srcObject = stream; await v.play().catch(() => {});
+    const c = document.createElement("canvas"), ctx = c.getContext("2d", { willReadFrequently: true });
+    const tick = () => {
+      if (!box.isConnected) { stream.getTracks().forEach((t) => t.stop()); return; }
+      if (v.videoWidth) {
+        const w = Math.min(640, v.videoWidth), h = Math.round(v.videoHeight * w / v.videoWidth);
+        c.width = w; c.height = h; ctx.drawImage(v, 0, 0, w, h);
+        const r = window.jsQR(ctx.getImageData(0, 0, w, h).data, w, h, { inversionAttempts: "dontInvert" });
+        if (r && r.data) {
+          if (aplicarConexion(r.data)) { stream.getTracks().forEach((t) => t.stop()); location.reload(); return; }
+          errEl.textContent = "Ese QR no es el de conexión. Usá el de Configuración → Celulares.";
+        }
+      }
+      requestAnimationFrame(tick);
+    };
+    tick();
   }
 
   function loginScreen(mode, msg) {

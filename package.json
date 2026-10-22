@@ -1,6 +1,6 @@
 {
   "name": "plan-mantenimiento",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "private": true,
   "description": "Plan de Mantenimiento: aplicación de escritorio (Mac y Windows) con base de datos en Supabase",
   "scripts": {
@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "2.45.4",
+    "jsqr": "^1.4.0",
     "qrcode-generator": "1.4.4"
   },
   "devDependencies": {

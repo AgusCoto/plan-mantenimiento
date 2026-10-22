@@ -1,4 +1,4 @@
-<!doctype html><html lang="es"><head><meta charset=utf-8><title>Plan de Mantenimiento</title><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#1D6A73"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Mantenimiento"><meta name="apple-mobile-web-app-status-bar-style" content="default"><link rel="apple-touch-icon" href="iconos/icono-180.png"><link rel="icon" type="image/svg+xml" href="iconos/icono.svg"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style>
+<!doctype html><html lang="es"><head><meta charset=utf-8><title>Plan de Mantenimiento</title><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#0D3B85"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Mantenimiento"><meta name="apple-mobile-web-app-status-bar-style" content="default"><link rel="apple-touch-icon" href="iconos/icono-180.png"><link rel="icon" type="image/svg+xml" href="iconos/icono.svg"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style>
 
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -275,45 +275,160 @@ mark{background:var(--warn-soft);color:inherit;border-radius:2px;padding:0 1px}
   .fg{grid-template-columns:minmax(0,1fr)}
   .tab{padding:10px 10px 8px}
 }
+
+/* ===== Rediseño: azul marino / azul Francia, menú lateral ===== */
+:root{--bg:#F2F5FA;--surface:#FFFFFF;--surface-2:#E8EDF5;--fg:#0E1B2E;--muted:#56657A;--line:#D3DCE8;
+  --accent:#1452B8;--accent-fg:#FFFFFF;--accent-soft:#DCE6F7;--navy:#0B2A5B;--navy-2:#071D42;
+  --f-display:"IBM Plex Sans",-apple-system,"Segoe UI",Roboto,Arial,sans-serif;--radius:12px;
+  --shadow-sm:0 1px 2px rgba(14,27,46,.06),0 2px 8px rgba(14,27,46,.05)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0A111E;--surface:#111B2C;--surface-2:#182538;--fg:#E4EAF3;--muted:#93A1B5;--line:#24344B;
+  --accent:#5C9BF0;--accent-fg:#06142C;--accent-soft:#16294A;--navy:#0A1A36;--navy-2:#050E20;--shadow-sm:0 1px 2px rgba(0,0,0,.4)}}
+:root[data-theme="dark"]{--bg:#0A111E;--surface:#111B2C;--surface-2:#182538;--fg:#E4EAF3;--muted:#93A1B5;--line:#24344B;
+  --accent:#5C9BF0;--accent-fg:#06142C;--accent-soft:#16294A;--navy:#0A1A36;--navy-2:#050E20;--shadow-sm:0 1px 2px rgba(0,0,0,.4)}
+body{background:var(--bg)}
+.ic{width:20px;height:20px;flex:none}
+.btn .ic{width:17px;height:17px;margin-left:-2px}
+.btn{border-radius:8px;padding:8px 13px;box-shadow:var(--shadow-sm)}
+.btn.link{box-shadow:none}
+.side{position:fixed;left:0;top:0;bottom:0;width:248px;background:linear-gradient(180deg,var(--navy),var(--navy-2));color:#E8EEF8;display:flex;flex-direction:column;z-index:40;
+  padding:calc(14px + env(safe-area-inset-top,0px)) 12px calc(12px + env(safe-area-inset-bottom,0px));overflow-y:auto}
+.side-brand{display:flex;gap:10px;align-items:center;padding:4px 6px 16px}
+.side-brand img{border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+.side-brand b{display:block;font-size:15px;line-height:1.2;color:#fff}
+.side-brand span{font-size:11px;color:#9FB4D6;letter-spacing:.03em}
+.side-nav{display:flex;flex-direction:column;gap:2px;flex:1}
+.nav-g{font-size:10.5px;text-transform:uppercase;letter-spacing:.09em;color:#8EA6CC;margin:14px 10px 4px;font-weight:600}
+.nav-item{display:flex;align-items:center;gap:11px;width:100%;border:0;background:none;color:#D9E3F3;padding:9px 10px;border-radius:9px;cursor:pointer;font-size:14px;font-weight:500;text-align:left}
+.nav-item:hover{background:rgba(255,255,255,.08);color:#fff}
+.nav-item[aria-current="page"]{background:#fff;color:var(--navy);font-weight:600}
+.nav-item[aria-current="page"] .ic{color:#1452B8}
+.nav-item span{flex:1}
+.nbadge{flex:none!important;font-family:var(--f-mono);font-size:11px;font-weight:600;background:#C8102E;color:#fff;border-radius:10px;padding:1px 7px;min-width:20px;text-align:center}
+.nbadge:empty{display:none}
+.side-foot{border-top:1px solid rgba(255,255,255,.12);padding-top:10px;margin-top:10px}
+.side .who{padding:6px}
+.side .who-t b{color:#fff}
+.side .who-t span{color:#9FB4D6}
+.side #who[data-pm]:hover{background:rgba(255,255,255,.08)}
+.side-backdrop{display:none}
+.app{margin-left:248px;min-height:100vh}
+header.top{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--surface) 92%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);padding-top:env(safe-area-inset-top,0px)}
+.top-in{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding-block:12px}
+.pg{flex:1 1 260px;min-width:0}
+.pg h1{margin:0;font-size:21px;font-weight:700;letter-spacing:-.01em;line-height:1.2}
+.pg p{margin:2px 0 0;font-size:13px;color:var(--muted)}
+.pg p:empty{display:none}
+.top-in .tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:0;flex:1 1 520px;justify-content:flex-end}
+.top-in .tools input[type=search]{flex:1 1 200px;max-width:340px}
+.icon-btn{border:1px solid var(--line);background:var(--surface);border-radius:9px;width:40px;height:40px;display:grid;place-items:center;cursor:pointer;color:var(--fg)}
+.only-m{display:none!important}
+main.wrap{padding-top:22px}
+.bottom-nav{display:none}
+.quick{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:20px}
+.qk{display:flex;gap:12px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px;cursor:pointer;text-align:left;box-shadow:var(--shadow-sm);color:var(--fg)}
+.qk:hover{border-color:var(--accent)}
+.qk .ic{width:26px;height:26px;color:var(--accent)}
+.qk.red .ic{color:var(--bad)}
+.qk b{display:block;font-size:14px}
+.qk small{display:block;color:var(--muted);font-size:12px;line-height:1.3}
+.sum,.card,.row,.ot,.kcard,.detail-h,.code-spec,.rp-kpi,.caso,.tbl-wrap,.empty{border-radius:var(--radius);box-shadow:var(--shadow-sm)}
+.help-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.help-list div{background:var(--surface-2);border-radius:10px;padding:10px 12px}
+.help-list b{display:block;font-size:13.5px}
+.help-list span{font-size:12.5px;color:var(--muted)}
+.scan-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.scan-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px;display:flex;flex-direction:column;gap:10px;align-items:flex-start;box-shadow:var(--shadow-sm)}
+.scan-card .ic{width:34px;height:34px;color:var(--accent)}
+.scan-card h3{margin:0;font-size:16px}
+.scan-card p{margin:0;font-size:13px;color:var(--muted)}
+.cam{position:relative;width:100%;max-width:520px;aspect-ratio:3/4;background:#000;border-radius:12px;overflow:hidden;margin:0 auto}
+.cam video{width:100%;height:100%;object-fit:cover}
+.cam .frame{position:absolute;inset:18%;border:3px solid rgba(255,255,255,.9);border-radius:16px;box-shadow:0 0 0 999px rgba(0,0,0,.35)}
+@media (min-width:1180px){.top-in{flex-wrap:nowrap}.top-in .tools{flex-wrap:nowrap;flex:0 1 auto}.top-in .tools input[type=search]{flex:1 1 170px;min-width:150px;max-width:260px}.pg{flex:1 1 200px}}
+@media (max-width:1100px){.quick{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:900px){.quick{gap:8px;margin-bottom:14px}.qk{padding:11px 12px;gap:10px}.qk small{display:none}.qk b{font-size:13.5px;line-height:1.25}.qk .ic{width:22px;height:22px}}
+@media (max-width:900px){
+  .side{transform:translateX(-105%);transition:transform .2s;box-shadow:0 0 40px rgba(0,0,0,.4);width:280px}
+  body.side-open .side{transform:none}
+  body.side-open .side-backdrop{display:block;position:fixed;inset:0;background:rgba(5,12,25,.5);z-index:35}
+  .app{margin-left:0}
+  .only-m{display:grid!important}
+  .no-m{display:none!important}
+  header.top{position:sticky}
+  .top-in{gap:10px;padding-block:10px}
+  .pg h1{font-size:18px}
+  .pg p{display:none}
+  .top-in .tools{flex-basis:100%;justify-content:stretch}
+  .top-in .tools select{flex:1 1 40%}
+  .top-in .tools input[type=search]{max-width:none;flex:1 1 55%}
+  main.wrap{padding-bottom:calc(86px + env(safe-area-inset-bottom,0px))}
+  .bottom-nav{display:grid;grid-template-columns:repeat(5,1fr);position:fixed;left:0;right:0;bottom:0;z-index:30;background:var(--surface);border-top:1px solid var(--line);
+    padding:6px 4px calc(6px + env(safe-area-inset-bottom,0px));box-shadow:0 -4px 16px rgba(14,27,46,.08)}
+  .bottom-nav button{border:0;background:none;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;color:var(--muted);padding:4px 0;cursor:pointer}
+  .bottom-nav button[aria-current="page"]{color:var(--accent);font-weight:600}
+  .bottom-nav .ic{width:24px;height:24px}
+  .bottom-nav .bn-scan .ic{width:28px;height:28px;background:var(--accent);color:#fff;border-radius:50%;padding:9px;box-sizing:content-box;margin-top:-22px;box-shadow:0 4px 12px rgba(20,82,184,.4)}
+  .bottom-nav .bn-falla{color:var(--bad)}
+  .help-list{grid-template-columns:minmax(0,1fr)}
+  .toast{bottom:calc(84px + env(safe-area-inset-bottom,0px))}
+}
+
 @media (prefers-reduced-motion:no-preference){.btn,.card,.sum{transition:border-color .15s,box-shadow .15s}}
 </style>
 
 </head><body>
+<aside class="side" id="side" aria-label="Menú principal">
+  <div class="side-brand"><img src="iconos/icono.svg" alt="" width="40" height="40"><div><b>Plan de Mantenimiento</b><span>Gestión y seguimiento</span></div></div>
+  <nav class="side-nav">
+    <div class="nav-g">Día a día</div>
+    <button class="nav-item" data-go="tablero"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v10h5v-6h4v6h5V10"/></svg><span>Inicio</span><span class="nbadge" id="nb-tablero"></span></button>
+    <button class="nav-item" data-go="ordenes"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="5" height="16" rx="1.5"/><rect x="10" y="4" width="5" height="11" rx="1.5"/><rect x="17" y="4" width="4" height="14" rx="1.5"/></svg><span>Órdenes de trabajo</span><span class="nbadge" id="nb-ordenes"></span></button>
+    <button class="nav-item" data-go="escanear"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8V5.5A1.5 1.5 0 0 1 5.5 4H8M16 4h2.5A1.5 1.5 0 0 1 20 5.5V8M20 16v2.5a1.5 1.5 0 0 1-1.5 1.5H16M8 20H5.5A1.5 1.5 0 0 1 4 18.5V16"/><path d="M4 12h16"/></svg><span>Escanear QR / NFC</span></button>
+    <div class="nav-g">Equipos</div>
+    <button class="nav-item" data-go="equipos"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></svg><span>Equipos</span></button>
+    <button class="nav-item" data-go="manuales"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4.5A1.5 1.5 0 0 1 6.5 3H19v15H6.5A1.5 1.5 0 0 0 5 19.5z"/><path d="M5 19.5A1.5 1.5 0 0 0 6.5 21H19"/><path d="M9 7h6"/></svg><span>Manuales</span></button>
+    <div class="nav-g">Consultas e informes</div>
+    <button class="nav-item" data-go="historial" data-ht="fallas"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m20 20-4.6-4.6"/></svg><span>Buscar fallas anteriores</span></button>
+    <button class="nav-item" data-go="historial" data-ht="regs"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg><span>Historial de intervenciones</span></button>
+    <button class="nav-item" data-go="informe"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h16"/><path d="M7 16v-4M12 16V7M17 16v-6"/></svg><span>Informe mensual</span></button>
+    <div class="nav-g">Ajustes</div>
+    <button class="nav-item" data-go="config"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h9M17 7h3M4 12h3M11 12h9M4 17h11M19 17h1"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="17" cy="17" r="2"/></svg><span>Configuración</span></button>
+    <button class="nav-item" data-act="ayuda"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M9.6 9.5a2.5 2.5 0 1 1 3.4 2.3c-.6.3-1 .8-1 1.5v.7"/><path d="M12 16.8v.2"/></svg><span>¿Dónde está cada cosa?</span></button>
+  </nav>
+  <div class="side-foot"><div class="who" id="who" aria-live="polite"><span class="hint">Identificando usuario…</span></div></div>
+</aside>
+<div class="side-backdrop" data-act="side-close"></div>
+<div class="app">
 <header class="top">
-  <div class="wrap">
-    <div class="top-row">
-      <div class="brand"><h1>Plan de Mantenimiento</h1><span>Grupo · 4 plantas</span></div>
-      <nav class="tabs" role="tablist" aria-label="Secciones">
-        <button class="tab" role="tab" id="tab-tablero" data-go="tablero" aria-selected="true">Tablero</button>
-        <button class="tab" role="tab" id="tab-ordenes" data-go="ordenes" aria-selected="false">Órdenes</button>
-        <button class="tab" role="tab" id="tab-equipos" data-go="equipos" aria-selected="false">Equipos</button>
-        <button class="tab" role="tab" id="tab-historial" data-go="historial" aria-selected="false">Historial</button>
-        <button class="tab" role="tab" id="tab-informe" data-go="informe" aria-selected="false">Informe mensual</button>
-        <button class="tab" role="tab" id="tab-manuales" data-go="manuales" aria-selected="false">Manuales</button>
-        <button class="tab" role="tab" id="tab-config" data-go="config" aria-selected="false">Configuración</button>
-      </nav>
-      <div class="who" id="who" aria-live="polite"><span class="hint">Identificando usuario…</span></div>
-    </div>
+  <div class="wrap top-in">
+    <button class="icon-btn only-m" data-act="side-open" type="button" aria-label="Abrir menú"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+    <div class="pg"><h1 id="pg-t">Inicio</h1><p id="pg-s"></p></div>
     <div class="tools">
       <select id="f-empresa" aria-label="Empresa" style="width:auto">
         <option value="">Todas las empresas</option>
-        <option value="IP">IP · Inyectora</option>
-        <option value="LH">LH · Limpieza</option>
-        <option value="PH">PH · Pinturas</option>
-        <option value="AL">AL · Alimentos</option>
       </select>
       <input type="search" id="f-q" placeholder="Buscar equipo, código o tarea" aria-label="Buscar">
-      <button class="btn danger w" data-act="falla" type="button">Reportar falla</button>
-      <button class="btn primary adm" id="btn-new-eq" type="button">+ Equipo</button>
+      <button class="btn no-m" data-go="escanear" type="button"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8V5.5A1.5 1.5 0 0 1 5.5 4H8M16 4h2.5A1.5 1.5 0 0 1 20 5.5V8M20 16v2.5a1.5 1.5 0 0 1-1.5 1.5H16M8 20H5.5A1.5 1.5 0 0 1 4 18.5V16"/><path d="M4 12h16"/></svg>Escanear</button>
+      <button class="btn danger w no-m" data-act="falla" type="button"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5 21.5 20h-19z"/><path d="M12 10v4.5M12 17.2v.3"/></svg>Reportar falla</button>
+      <button class="btn primary adm" id="btn-new-eq" type="button"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Equipo</button>
     </div>
   </div>
 </header>
 <main class="wrap" id="main"></main>
+</div>
+<nav class="bottom-nav" aria-label="Accesos rápidos">
+  <button data-go="tablero"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v10h5v-6h4v6h5V10"/></svg><span>Inicio</span></button>
+  <button data-go="ordenes"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="5" height="16" rx="1.5"/><rect x="10" y="4" width="5" height="11" rx="1.5"/><rect x="17" y="4" width="4" height="14" rx="1.5"/></svg><span>Órdenes</span></button>
+  <button data-go="escanear" class="bn-scan"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8V5.5A1.5 1.5 0 0 1 5.5 4H8M16 4h2.5A1.5 1.5 0 0 1 20 5.5V8M20 16v2.5a1.5 1.5 0 0 1-1.5 1.5H16M8 20H5.5A1.5 1.5 0 0 1 4 18.5V16"/><path d="M4 12h16"/></svg><span>Escanear</span></button>
+  <button data-act="falla" class="bn-falla"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5 21.5 20h-19z"/><path d="M12 10v4.5M12 17.2v.3"/></svg><span>Falla</span></button>
+  <button data-act="side-open"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg><span>Menú</span></button>
+</nav>
 <div id="modal-root"></div>
 <div id="firma-root"></div>
 <div id="toast-root"></div>
 
 <script src="vendor/qrcode.js"></script>
+<script src="vendor/jsqr.js"></script>
 <script src="vendor/supabase.js"></script>
 <script src="config.js"></script>
 <script src="backend.js"></script>
@@ -500,15 +615,30 @@ function eqWorst(id){let w="sin";const c={vencida:0,proxima:0,ok:0,sin:0};
   return {w:tasksOf(id).length?w:"sin",c}}
 
 /* ---------- render ---------- */
+const PAGINAS={tablero:["Inicio","Fallas abiertas y tareas del plan, lo más urgente primero"],ordenes:["Órdenes de trabajo","Arrastrá cada orden a su estado; cada cambio pide la firma del técnico"],
+  escanear:["Escanear QR / NFC","Leé la etiqueta de un equipo para abrir su ficha"],equipos:["Equipos","Fichas, plan de mantenimiento, checklist, manuales e historial"],equipo:["Equipo",""],
+  manuales:["Manuales","Repositorio de manuales y documentación técnica"],historial:["Historial",""],informe:["Informe mensual","Indicadores del mes, conclusiones y remitos"],
+  config:["Configuración","Empresas, áreas, tipos de equipo, códigos y urgencias"]};
+function navState(){
+  const ht=S.histTab||"fallas";
+  const on=b=>{const g=b.dataset.go;if(!g)return false;if(g==="historial")return S.view==="historial"&&(!b.dataset.ht||b.dataset.ht===ht);return g===S.view||(g==="equipos"&&S.view==="equipo")};
+  document.querySelectorAll(".nav-item,.bottom-nav button").forEach(b=>{if(on(b))b.setAttribute("aria-current","page");else b.removeAttribute("aria-current")});
+  let pg=PAGINAS[S.view]||["",""];
+  if(S.view==="historial")pg=ht==="fallas"?["Buscar fallas anteriores","Encontrá cómo se resolvió un problema parecido y ganá tiempo"]:["Historial de intervenciones","Todo lo que se hizo en cada equipo"];
+  if(S.view==="equipo"){const e=S.eq.get(S.eqId);pg=[e?e.nombre:"Equipo",e?e.codigo:""]}
+  $("#pg-t").textContent=pg[0];$("#pg-s").textContent=pg[1];document.title=pg[0]?pg[0]+" · Plan de Mantenimiento":"Plan de Mantenimiento";
+  const nf=openOts().length;const no=[...S.ot.values()].filter(o=>o.estado!=="Cerrada").length;
+  const b1=$("#nb-tablero"),b2=$("#nb-ordenes");if(b1)b1.textContent=nf?String(nf):"";if(b2){b2.textContent=no?String(no):"";b2.style.background=no?"#1452B8":""}
+}
 function render(){
-  document.querySelectorAll(".tab").forEach(b=>b.setAttribute("aria-selected",String(S.view.startsWith(b.dataset.go)||(b.dataset.go==="equipos"&&S.view==="equipo"))));
+  navState();
   applyRole();
   const m=$("#main");
   const ta0=$("#inf-nota");if(ta0)S.infDraft={k:ta0.dataset.k,v:ta0.value,f:document.activeElement===ta0,s:ta0.selectionStart};
   if(S.dbState==="sin"){m.innerHTML='<div class="empty"><h2>No hay conexión con la base de datos</h2><p>Revisá la conexión a internet y los datos de la base en Cuenta → Configuración.</p></div>';return}
   const loading=!(S.loaded.eq&&S.loaded.ta);
   if(loading){m.innerHTML='<div class="empty"><h2>Cargando equipos…</h2><p>Acá vas a ver las tareas ordenadas por lo que vence primero.</p></div>';return}
-  if(!S.eq.size&&!["historial","informe","manuales","config","ordenes"].includes(S.view)){m.innerHTML='<div class="empty"><h2>Todavía no hay equipos cargados</h2><p>Cargá el primer equipo con su horómetro y después sus tareas de mantenimiento. El tablero te va a mostrar cuánto falta para cada una.</p><p><button class="btn primary adm" data-act="new-eq">+ Cargar primer equipo</button></p></div>';return}
+  if(!S.eq.size&&!["historial","informe","manuales","config","ordenes","escanear"].includes(S.view)){m.innerHTML='<div class="empty"><h2>Todavía no hay equipos cargados</h2><p>Cargá el primer equipo con su horómetro y después sus tareas de mantenimiento. El tablero te va a mostrar cuánto falta para cada una.</p><p><button class="btn primary adm" data-act="new-eq">+ Cargar primer equipo</button></p></div>';return}
   if(S.view==="tablero")m.innerHTML=viewTablero();
   else if(S.view==="equipos")m.innerHTML=viewEquipos();
   else if(S.view==="equipo")m.innerHTML=viewEquipo();
@@ -516,6 +646,7 @@ function render(){
   else if(S.view==="manuales")m.innerHTML=viewManuales();
   else if(S.view==="config")m.innerHTML=viewConfig();
   else if(S.view==="ordenes")m.innerHTML=viewOrdenes();
+  else if(S.view==="escanear")m.innerHTML=viewEscanear();
   else m.innerHTML=viewHistorial();
   applyRole();
   const ta1=$("#inf-nota");
@@ -537,12 +668,16 @@ function taskRow(t,showEq){
     '<div class="acts"><button class="btn sm" data-act="ins" data-id="'+esc(t.id)+'">Instructivo</button>'+
     '<button class="btn sm primary w" data-act="reg" data-id="'+esc(t.id)+'">Registrar hecho</button></div></article>';
 }
+const ICONOS={'home': '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v10h5v-6h4v6h5V10"/></svg>', 'ordenes': '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="5" height="16" rx="1.5"/><rect x="10" y="4" width="5" height="11" rx="1.5"/><rect x="17" y="4" width="4" height="14" rx="1.5"/></svg>', 'scan': '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8V5.5A1.5 1.5 0 0 1 5.5 4H8M16 4h2.5A1.5 1.5 0 0 1 20 5.5V8M20 16v2.5a1.5 1.5 0 0 1-1.5 1.5H16M8 20H5.5A1.5 1.5 0 0 1 4 18.5V16"/><path d="M4 12h16"/></svg>', 'equipos': '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></svg>', 'manuales': '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4.5A1.5 1.5 0 0 1 6.5 3H19v15H6.5A1.5 1.5 0 0 0 5 19.5z"/><path d="M5 19.5A1.5 1.5 0 0 0 6.5 21H19"/><path d="M9 7h6"/></svg>', 'buscar': '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m20 20-4.6-4.6"/></svg>', 'historial': '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>', 'informe': '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h16"/><path d="M7 16v-4M12 16V7M17 16v-6"/></svg>', 'config': '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h9M17 7h3M4 12h3M11 12h9M4 17h11M19 17h1"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="17" cy="17" r="2"/></svg>', 'cuenta': '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c1.2-3.6 4-5 7-5s5.8 1.4 7 5"/></svg>', 'ayuda': '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M9.6 9.5a2.5 2.5 0 1 1 3.4 2.3c-.6.3-1 .8-1 1.5v.7"/><path d="M12 16.8v.2"/></svg>', 'falla': '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5 21.5 20h-19z"/><path d="M12 10v4.5M12 17.2v.3"/></svg>', 'mas': '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>', 'plus': '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>', 'nfc': '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8.5a5 5 0 0 1 0 7M9.5 6a9 9 0 0 1 0 12M13 3.5a13 13 0 0 1 0 17"/></svg>'};
 function viewTablero(){
   const items=[...S.ta.values()].filter(t=>isActivo(S.eq.get(t.equipoId))&&matchQ(S.eq.get(t.equipoId),t)).map(t=>({t,st:status(t)}));
   const c={vencida:0,proxima:0,ok:0,sin:0};items.forEach(i=>c[i.st.estado]++);
   const L={vencida:"Vencidas",proxima:"Próximas",ok:"Al día",sin:"Sin datos"};
   const ots=openOts(o=>matchQ(S.eq.get(o.equipoId),null));
-  let h=ots.length?'<div class="sec-h" style="margin-top:0"><h2>Fallas abiertas</h2><small>'+ots.length+' · ordenadas por urgencia</small></div><div class="ot-grid">'+ots.map(o=>otCard(o,true)).join("")+'</div>':'';
+  const qk=(attr,k,t,d,cls)=>'<button class="qk '+(cls||"")+'" '+attr+'>'+ICONOS[k]+'<span><b>'+t+'</b><small>'+d+'</small></span></button>';
+  let h='<div class="quick">'+qk('data-act="falla"',"falla","Reportar falla","Calcula la urgencia y avisa","red w")+qk('data-go="escanear"',"scan","Escanear equipo","QR o etiqueta NFC")+
+    qk('data-go="ordenes"',"ordenes","Órdenes de trabajo","Pendientes, en curso y terminadas")+qk('data-go="historial" data-ht="fallas"',"buscar","Buscar fallas","Cómo se resolvió antes")+'</div>';
+  h+=ots.length?'<div class="sec-h" style="margin-top:0"><h2>Fallas abiertas</h2><small>'+ots.length+' · ordenadas por urgencia</small></div><div class="ot-grid">'+ots.map(o=>otCard(o,true)).join("")+'</div>':'';
   h+='<div class="summary">'+Object.keys(L).map(k=>'<button class="sum '+k+'" data-act="filtro" data-k="'+k+'" aria-pressed="'+(S.filtroEstado===k)+'"><b>'+c[k]+'</b><span>'+L[k]+'</span></button>').join("")+'</div>';
   let list=items;if(S.filtroEstado)list=list.filter(i=>i.st.estado===S.filtroEstado);
   list.sort((a,b)=>RANK[a.st.estado]-RANK[b.st.estado]||a.st.key-b.st.key);
@@ -844,7 +979,7 @@ function viewOrdenes(){
     return true});
   const ord=(a,b)=>(esPrev(a)?"U9":urgOf(a)).localeCompare(esPrev(b)?"U9":urgOf(b))||(a.numero||0)-(b.numero||0);
   const ch=(k,l)=>'<button class="btn sm'+(tipo===k?' primary':'')+'" data-act="kb-tipo" data-k="'+k+'">'+l+'</button>';
-  return '<div class="sec-h" style="margin-top:0"><h2>Órdenes de trabajo</h2><small>Arrastrá una tarjeta a otra columna para cambiar su estado. Cada cambio pide la firma (contraseña) del técnico responsable.</small></div>'+
+  return ''+
     '<div class="kb-bar">'+ch("","Todas")+ch("falla","Fallas")+ch("preventivo","Preventivas")+'<button class="btn sm danger w" data-act="falla">Reportar falla</button></div>'+
     '<div class="kb">'+OT_EST.map(([k,l])=>{const list=all.filter(o=>(o.estado||"Abierta")===k).sort(k==="Cerrada"?(a,b)=>String(b.cierre).localeCompare(String(a.cierre)):ord);
       return '<section class="kcol" data-col="'+esc(k)+'"><h3>'+esc(l)+(k==="Cerrada"?' <small class="hint" style="font-weight:400">(30 días)</small>':'')+'<span class="cnt">'+list.length+'</span></h3>'+list.map(kCard).join("")+
@@ -883,10 +1018,93 @@ document.addEventListener("dragend",ev=>{document.querySelectorAll(".kcard.dragg
 document.addEventListener("dragover",ev=>{const col=ev.target.closest&&ev.target.closest(".kcol");if(!col)return;ev.preventDefault();document.querySelectorAll(".kcol.over").forEach(x=>{if(x!==col)x.classList.remove("over")});col.classList.add("over")});
 document.addEventListener("drop",ev=>{const col=ev.target.closest&&ev.target.closest(".kcol");if(!col)return;ev.preventDefault();col.classList.remove("over");
   const id=ev.dataTransfer.getData("text/plain");if(id)moverOT(id,col.dataset.col)});
+/* ---------- conectar celulares ---------- */
+function linkConexion(){
+  const c=window.PM_CONN||{};const base=baseUrl();if(!base||!c.u||!c.k)return "";
+  const enc=btoa(unescape(encodeURIComponent(JSON.stringify({u:c.u,k:c.k})))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
+  return base+"#conectar="+enc;
+}
+function viewCelulares(){
+  const link=linkConexion();
+  const pasos='<div class="help-list" style="margin-top:12px">'+
+    '<div><b>iPhone</b><span>1. Abrí la Cámara y apuntá a este QR; tocá el aviso (se abre Safari).<br>2. Ingresá con tu usuario.<br>3. Tocá Compartir → “Agregar a inicio”.<br>4. Abrí el ícono nuevo: si pide conexión, tocá “Escanear QR de conexión” y apuntá otra vez a este QR.</span></div>'+
+    '<div><b>Android</b><span>1. Abrí la Cámara (o Google Lens) y apuntá a este QR; se abre Chrome.<br>2. Ingresá con tu usuario.<br>3. Menú ⋮ → “Instalar aplicación”.<br>Listo: desde la app se leen QR y etiquetas NFC.</span></div></div>';
+  if(!link)return '<div class="banner">Para conectar celulares primero hay que publicar la versión web de la aplicación y cargar su dirección en <b>Identificación de equipos → Etiquetas NFC / QR</b>. Los pasos están en la guía (LEEME).</div>'+pasos;
+  return '<section class="code-spec" style="flex-direction:row;flex-wrap:wrap;align-items:center"><div class="tag-card" style="width:240px"><div class="qr">'+qrSvg(link,4)+'</div><div class="tag-name">QR de conexión</div></div>'+
+    '<div style="flex:1 1 300px;min-width:0"><h3 style="margin:0 0 6px">Escaneá este QR con el celular</h3><p style="margin:0">Deja la aplicación del celular conectada a esta misma base de datos. Después cada persona entra con su usuario y contraseña.</p>'+
+    '<p class="hint">El QR contiene la dirección de la base y su clave pública, no contraseñas. Sin usuario habilitado no se ve ningún dato.</p></div></section>'+pasos;
+}
+/* ---------- ayuda: dónde está cada herramienta ---------- */
+function ayuda(){
+  const it=[["Reportar una falla","Botón rojo “Reportar falla” arriba, en Inicio o en la ficha del equipo. En el celular, “Falla” en la barra de abajo."],
+    ["Mover o terminar una orden de trabajo","Menú → Órdenes de trabajo. Arrastrá la tarjeta a la columna; pide la firma del técnico."],
+    ["Abrir un equipo con su etiqueta","Menú → Escanear QR / NFC, o el botón “Escanear” arriba."],
+    ["Dar de alta un equipo","Botón “+ Equipo” arriba (solo administrador). Ahí mismo se carga su manual."],
+    ["Registrar un mantenimiento hecho","Inicio → en la tarea, “Registrar hecho”. O desde la ficha del equipo."],
+    ["Ver cómo se resolvió una falla parecida","Menú → Buscar fallas anteriores. También aparece solo al reportar una falla."],
+    ["Imprimir etiquetas QR","Ficha del equipo → “Etiqueta NFC / QR”, o Configuración → Identificación → Descargar etiquetas."],
+    ["Informe del mes y remitos","Menú → Informe mensual → “Descargar informe” o “Solo remitos”."],
+    ["Manuales","Menú → Manuales, o en la ficha del equipo, pestaña Manuales."],
+    ["Empresas, áreas y tipos de equipo","Menú → Configuración (solo el administrador modifica)."],
+    ["Usuarios y roles","Tu nombre abajo a la izquierda → Usuarios (administrador)."],
+    ["Conectar un celular","Configuración → Celulares: se escanea un QR y queda listo."]];
+  openModal(mhead("¿Dónde está cada cosa?")+'<div class="help-list">'+it.map(([a,b])=>'<div><b>'+esc(a)+'</b><span>'+esc(b)+'</span></div>').join("")+'</div><div class="m-acts"><button class="btn primary" data-act="close">Entendido</button></div>');
+}
+/* ---------- escanear QR (cámara) y NFC ---------- */
+const hayNFC=()=>"NDEFReader" in window;
+function viewEscanear(){
+  const ios=/iPhone|iPad|iPod/i.test(navigator.userAgent);
+  return '<div id="scan-live"></div><div class="scan-grid" id="scan-opts">'+
+    '<div class="scan-card">'+ICONOS.scan+'<h3>Código QR</h3><p>Apuntá la cámara a la etiqueta del equipo.</p><button class="btn primary" data-act="scan-qr">Abrir cámara</button></div>'+
+    '<div class="scan-card">'+ICONOS.nfc+'<h3>Etiqueta NFC</h3>'+(hayNFC()?'<p>Tocá el botón y acercá el celular a la etiqueta.</p><button class="btn primary" data-act="scan-nfc">Leer etiqueta NFC</button>':
+      ios?'<p>En iPhone no hace falta abrir nada: con la pantalla desbloqueada, acercá la parte de arriba del iPhone a la etiqueta y tocá el aviso que aparece. Se abre el equipo.</p>':
+      '<p>Disponible en celulares Android con Chrome. En iPhone, acercá el celular a la etiqueta con la pantalla desbloqueada y tocá el aviso.</p>')+'</div>'+
+    '<div class="scan-card">'+ICONOS.buscar+'<h3>Escribir el código</h3><p>Código o ID del equipo (ej. IP-SER-COM-001 o COM-001).</p><div class="inline" style="width:100%"><input id="sc-code" placeholder="COM-001"><button class="btn" data-act="scan-code">Abrir</button></div></div></div>';
+}
+function abrirToken(raw){
+  if(/#conectar=/.test(String(raw)))return toast("Ese es el QR de conexión: ya estás conectado."),stopScan(),render(),true;
+  let tok=String(raw||"").trim();if(tok.includes("#"))tok=tok.split("#").pop();
+  try{tok=decodeURIComponent(tok)}catch(_){}
+  const e=findByToken(tok);
+  if(!e){toast("No encontré ningún equipo con “"+tok+"”.");return false}
+  stopScan();S.view="equipo";S.eqId=e.id;S.eqTab=((S.ck.get(e.id)||{}).items||[]).length?"check":"plan";closeModal();render();window.scrollTo(0,0);toast("Equipo identificado: "+e.codigo);
+  if(navigator.vibrate)try{navigator.vibrate(80)}catch(_){}
+  return true;
+}
+let scanStream=null,scanRaf=0;
+async function startScan(){
+  const live=$("#scan-live");if(!live)return;
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){toast("Este dispositivo no permite usar la cámara desde la aplicación.");return}
+  live.innerHTML='<div class="cam"><video id="sc-v" playsinline muted></video><div class="frame"></div></div><p class="hint" style="text-align:center">Centrá el código QR en el recuadro.</p><p style="text-align:center"><button class="btn" data-act="scan-stop">Cancelar</button></p>';
+  $("#scan-opts").hidden=true;
+  try{scanStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:"environment"}},audio:false})}
+  catch(x){live.innerHTML='<div class="banner">No se pudo abrir la cámara. Revisá que la aplicación tenga permiso para usarla.</div>';$("#scan-opts").hidden=false;return}
+  const v=$("#sc-v");v.srcObject=scanStream;await v.play().catch(()=>{});
+  const c=document.createElement("canvas");const ctx=c.getContext("2d",{willReadFrequently:true});
+  const tick=()=>{if(!scanStream)return;
+    if(v.readyState>=2&&v.videoWidth){const w=Math.min(640,v.videoWidth),h=Math.round(v.videoHeight*w/v.videoWidth);c.width=w;c.height=h;ctx.drawImage(v,0,0,w,h);
+      const img=ctx.getImageData(0,0,w,h);const r=window.jsQR&&window.jsQR(img.data,w,h,{inversionAttempts:"dontInvert"});
+      if(r&&r.data){if(abrirToken(r.data))return}}
+    scanRaf=requestAnimationFrame(tick)};
+  tick();
+}
+function stopScan(){cancelAnimationFrame(scanRaf);if(scanStream){scanStream.getTracks().forEach(t=>t.stop());scanStream=null}}
+async function leerNFC(){
+  if(!hayNFC()){toast("Este celular no permite leer NFC desde la aplicación.");return}
+  try{const r=new NDEFReader();await r.scan();toast("Acercá el celular a la etiqueta…");
+    r.onreading=ev=>{for(const rec of ev.message.records){const t=new TextDecoder().decode(rec.data);if(rec.recordType==="url"||rec.recordType==="text"||rec.recordType==="absolute-url"){if(abrirToken(t))return}}toast("La etiqueta no tiene un código de equipo.")};
+    r.onreadingerror=()=>toast("No se pudo leer la etiqueta. Probá de nuevo.");
+  }catch(x){toast(x&&x.name==="NotAllowedError"?"Hay que permitir el uso de NFC.":"No se pudo activar NFC: revisá que esté encendido.")}
+}
+async function grabarNFC(link){
+  if(!hayNFC()){toast("Grabar NFC desde la aplicación funciona en Android con Chrome.");return}
+  try{toast("Acercá la etiqueta NFC al celular…");await new NDEFReader().write({records:[{recordType:"url",data:link}]});toast("Etiqueta grabada")}
+  catch(x){toast(x&&x.name==="NotAllowedError"?"Hay que permitir el uso de NFC.":"No se pudo grabar la etiqueta.")}
+}
 function viewHistorial(){
   const ht=S.histTab||"fallas";
   const st=(k,l)=>'<button class="subtab" role="tab" data-act="histtab" data-k="'+k+'" aria-selected="'+(ht===k)+'">'+l+'</button>';
-  const nav='<nav class="subtabs" role="tablist" aria-label="Historial" style="margin-top:0">'+st("fallas","Buscar fallas anteriores")+st("regs","Todas las intervenciones")+'</nav>';
+  const nav='<nav class="subtabs" role="tablist" aria-label="Historial" style="margin-top:0">'+st("fallas","Buscar fallas anteriores")+st("regs","Historial de intervenciones")+'</nav>';
   if(ht==="fallas")return nav+viewFallas();
   return nav+viewHistorialRegs();
 }
@@ -1069,8 +1287,8 @@ function viewConfig(){
   const usos=(f,k)=>{const n=[...S.eq.values()].filter(e=>eqParts(e)[f]===k).length;return n+(n===1?" equipo":" equipos")};
   const tab=S.cfgTab||"empresas";
   const st=(k,l)=>'<button class="subtab" role="tab" data-act="cfgtab" data-k="'+k+'" aria-selected="'+(tab===k)+'">'+l+'</button>';
-  let h='<div class="sec-h" style="margin-top:0"><h2>Configuración</h2>'+(S.isAdmin?'':'<small>Solo lectura: los cambios los hace el administrador</small>')+'</div>'+
-  '<nav class="subtabs" role="tablist" aria-label="Secciones de configuración" style="margin-top:0">'+st("empresas","Empresas y áreas")+st("ident","Identificación de equipos")+st("urg","Urgencias")+'</nav>';
+  let h=(S.isAdmin?'':'<div class="banner">Solo lectura: los cambios de configuración los hace el administrador.</div>')+
+  '<nav class="subtabs" role="tablist" aria-label="Secciones de configuración" style="margin-top:0">'+st("empresas","Empresas y áreas")+st("ident","Identificación de equipos")+st("urg","Urgencias")+st("cel","Celulares")+'</nav>';
   if(tab==="empresas"){
     h+='<div class="sec-h" style="margin-top:0"><p class="hint" style="margin:0;max-width:75ch">Con “Editar” cambiás el código o el nombre. Si cambiás un código, los equipos de esa empresa o área se recodifican solos (IP-SER-COM-007 → nuevo código) y sus etiquetas NFC/QR siguen funcionando.</p><button class="btn primary adm" data-act="cod-new" data-k="empresas">+ Agregar empresa o área</button></div>'+
     '<h3 class="rp-h" style="margin-top:6px">Empresas</h3>'+tb(Object.entries(EMP).map(([k,v])=>'<tr><td class="num"><b>'+esc(k)+'</b></td><td>'+esc(v)+'</td><td class="num">'+usos("empresa",k)+'</td><td>'+renBtn("emp",k)+'</td></tr>'),["Código","Empresa","Uso",""])+
@@ -1091,7 +1309,8 @@ function viewConfig(){
       '<div class="inline adm" style="flex-wrap:wrap"><input id="cfg-pub" inputmode="url" placeholder="https://tu-usuario.github.io/plan-mantenimiento/" value="'+esc(pub)+'" style="flex:1 1 320px"><button class="btn primary" data-act="cfg-pub">Guardar dirección</button></div>'+
       '<p class="hint" style="margin:0">Se guarda para todas las computadoras. Cambiarla no invalida el ID permanente de cada equipo, pero las etiquetas ya grabadas apuntan a la dirección vieja.</p>'+
       '<div><button class="btn" data-act="tags-all">Descargar etiquetas QR de todos los equipos</button></div></section>';
-  }else h+=urgenciaDoc();
+  }else if(tab==="cel")h+=viewCelulares();
+  else h+=urgenciaDoc();
   return h;
 }
 function renBtn(tab,k){return '<button class="btn sm adm" data-act="cod-ren" data-k="'+esc(tab)+'" data-id="'+esc(k)+'">'+"Editar"+'</button>'}
@@ -1405,7 +1624,7 @@ function showTag(e){
   openModal(mhead("Etiqueta NFC / QR")+'<p class="hint" style="margin:-6px 0 0">'+esc(e.codigo+" · "+e.nombre)+'</p>'+
   '<div class="tag-wrap"><div class="tag-card">'+(svg?'<div class="qr">'+svg+'</div>':'')+'<div class="tag-code">'+esc(e.codigo)+'</div><div class="tag-name">'+esc(e.nombre)+'</div></div>'+
   '<div style="min-width:0;flex:1 1 260px;display:flex;flex-direction:column;gap:10px"><label class="f"><span>Link para grabar en el tag NFC</span><input id="tag-link" readonly value="'+esc(link)+'"></label>'+
-  '<button class="btn primary" data-act="copy-link" type="button">Copiar link</button>'+
+  '<button class="btn primary" data-act="copy-link" type="button">Copiar link</button>'+(hayNFC()?'<button class="btn" data-act="nfc-write" data-link="'+esc(link)+'" type="button">Grabar en etiqueta NFC con este celular</button>':'')+
   '<div class="ins"><h3>Cómo grabar el tag desde el iPhone</h3><ol><li>Instalá la app gratuita “NFC Tools”.</li><li>Tocá Escribir → Agregar un registro → URL / URI.</li><li>Pegá este link y confirmá.</li><li>Tocá Escribir y acercá el iPhone al tag.</li></ol></div>'+
   '<p class="hint" style="margin:0">Después, al acercar cualquier iPhone XS o más nuevo al tag (con la pantalla desbloqueada), aparece el aviso para abrir este equipo directamente en su checklist. El QR hace lo mismo con la cámara y sirve de respaldo. En el celular se abre la versión web: hay que haber ingresado una vez con el usuario.</p></div></div>'+
   '<div class="m-acts"><button class="btn" data-act="dl-tag" data-id="'+esc(e.id)+'">Descargar etiqueta para imprimir</button><button class="btn" data-act="close">Cerrar</button></div>');
@@ -1839,7 +2058,8 @@ function csv(){
 
 /* ---------- eventos ---------- */
 document.addEventListener("click",async ev=>{
-  const go=ev.target.closest("[data-go]");if(go){S.view=go.dataset.go;S.filtroEstado="";closeModal();render();return}
+  const go=ev.target.closest("[data-go]");if(go){if(S.view==="escanear"&&go.dataset.go!=="escanear")stopScan();S.view=go.dataset.go;if(go.dataset.ht)S.histTab=go.dataset.ht;S.filtroEstado="";
+    document.body.classList.remove("side-open");closeModal();render();window.scrollTo(0,0);return}
   const b=ev.target.closest("[data-act]");if(!b)return;const a=b.dataset.act,id=b.dataset.id;
   if(a==="ov"&&ev.target!==b)return;
   if(!S.db&&!["ov","close","filtro","open-eq","ins","eqtab","ck-row-add","ck-row-del","tag","copy-link"].includes(a)){toast("Sin conexión con la base de datos.");return}
@@ -1881,6 +2101,14 @@ document.addEventListener("click",async ev=>{
     case "baja":formBaja(S.eq.get(id));break;
     case "reactivar":b.disabled=true;await reactivar(S.eq.get(id));break;
     case "cod-new":formCodigo(b.dataset.k);break;
+    case "side-open":document.body.classList.add("side-open");break;
+    case "side-close":document.body.classList.remove("side-open");break;
+    case "ayuda":document.body.classList.remove("side-open");ayuda();break;
+    case "scan-qr":startScan();break;
+    case "scan-stop":stopScan();render();break;
+    case "scan-nfc":leerNFC();break;
+    case "scan-code":{const v=val("sc-code");if(v)abrirToken(v);break}
+    case "nfc-write":grabarNFC(b.dataset.link);break;
     case "cod-ren":if(b.dataset.k==="tipos")formEditTipo(id);else formEditCodigo(b.dataset.k,id);break;
     case "tipo-del":formDelTipo(id);break;
     case "cfgtab":S.cfgTab=b.dataset.k;render();break;

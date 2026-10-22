@@ -80,19 +80,24 @@ Las etiquetas QR/NFC abren el equipo en el celular, y para eso hace falta la ver
 2. En **Actions → Version web → Run workflow** se publica la web en `https://TU-USUARIO.github.io/plan-mantenimiento/`.
 3. Cargá esa dirección en `publicUrl` dentro de `src/config.js`, o en la app desde **tu nombre → Configuración**. Después generá las etiquetas.
 
-## App en el iPhone (y en Android)
+## App en el celular (iPhone y Android), con lectura de QR y NFC
 
-Con la versión web publicada (paso 5) se instala como una app más, sin App Store:
+Con la versión web publicada (paso 5), los celulares se conectan así:
 
-1. En el iPhone abrí la dirección web con **Safari** (tiene que ser Safari).
-2. Tocá el botón **Compartir** (cuadrado con flecha) → **Agregar a pantalla de inicio** → **Agregar**.
-3. Aparece el ícono **Mantenimiento**. Se abre a pantalla completa, sin barra del navegador. Ingresá una vez con tu usuario y queda guardado.
+1. En la computadora, abrí **Configuración → Celulares**. Aparece un **QR de conexión**.
+2. Apuntá la cámara del celular a ese QR y tocá el aviso. Se abre la app ya conectada a tu base.
+3. Ingresá con tu usuario.
+4. Instalala como app:
+   - **iPhone (Safari):** Compartir → **Agregar a inicio**. Si al abrir el ícono pide conexión, tocá **Escanear QR de conexión** y apuntá otra vez al mismo QR.
+   - **Android (Chrome):** menú ⋮ → **Instalar aplicación**.
 
-En Android: Chrome → menú ⋮ → **Instalar app**.
+Dentro de la app, la sección **Escanear** (botón azul abajo al centro) sirve para:
 
-Las actualizaciones llegan solas: cada vez que se publica la versión web, la app del celular la toma al abrirse.
-
-> Al leer una etiqueta **NFC**, el iPhone siempre abre el link en Safari, no en la app del ícono, y la primera vez pide ingresar también ahí. El **QR** con la cámara se comporta igual.
+- **QR:** abre la cámara y, al leer la etiqueta, va directo a la ficha del equipo. Funciona en iPhone y en Android.
+- **NFC:**
+  - **Android (Chrome):** tocá **Leer etiqueta NFC** y acercá el celular a la etiqueta. Desde la ficha del equipo también se puede **grabar** la etiqueta NFC.
+  - **iPhone:** no hace falta abrir nada. Con la pantalla desbloqueada, acercá la parte de arriba del iPhone a la etiqueta y tocá el aviso; se abre el equipo en Safari. Apple no permite que las apps web lean NFC, por eso se usa la lectura del sistema.
+- **Escribir el código:** si la etiqueta está dañada, se puede escribir el código del equipo a mano.
 
 ## Sugerencias con IA (opcional)
 
