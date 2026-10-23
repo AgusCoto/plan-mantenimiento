@@ -460,8 +460,8 @@ Object.assign(S,{ot:new Map(),ma:new Map(),user:null,me:null,canWrite:null,isAdm
 const RESULTADOS=["Resuelto","Pendiente de repuesto","Enviado a reparación externa","Equipo fuera de servicio"];
 const MAN_TIPOS=["Operación y mantenimiento","Despiece / repuestos","Eléctrico / esquemas","Manual de servicio","Ficha técnica","Otro"];
 const canW=()=>!!S.db&&S.canWrite!==false;
-const WRITE_ACTS=new Set(["ot-mover","falla","ot-edit","ot-close","ot-start","reg","reg-eq","hm","new-task","edit-task","ck-toggle","ck-plan","ck-edit","ck-ai","ck-ai-run","close-rep"]);
-const ADMIN_ACTS=new Set(["mover","baja","reactivar","cod-new","cod-ren","cfg-pub","tipo-del","new-eq","edit-eq","del-eq","del-eq-ok","del-task","man-new","man-edit","man-del","man-del-ok"]);
+const WRITE_ACTS=new Set(["ot-anular","ot-editprev","reg-edit","ot-mover","falla","ot-edit","ot-close","ot-start","reg","reg-eq","hm","new-task","edit-task","ck-toggle","ck-plan","ck-edit","ck-ai","ck-ai-run","close-rep"]);
+const ADMIN_ACTS=new Set(["mover","baja","reactivar","cod-new","cod-ren","cfg-pub","tipo-del","reg-del","new-eq","edit-eq","del-eq","del-eq-ok","del-task","man-new","man-edit","man-del","man-del-ok"]);
 function applyRole(){
   document.body.classList.toggle("ro",!canW());
   document.body.classList.toggle("noadm",!S.isAdmin);
@@ -630,7 +630,7 @@ function navState(){
   if(S.view==="historial")pg=ht==="fallas"?["Buscar fallas anteriores","Encontrá cómo se resolvió un problema parecido y ganá tiempo"]:["Historial de intervenciones","Todo lo que se hizo en cada equipo"];
   if(S.view==="equipo"){const e=S.eq.get(S.eqId);pg=[e?e.nombre:"Equipo",e?e.codigo:""]}
   $("#pg-t").textContent=pg[0];$("#pg-s").textContent=pg[1];document.title=pg[0]?pg[0]+" · W-Main":"W-Main";
-  const nf=openOts().length;const no=[...S.ot.values()].filter(o=>o.estado!=="Cerrada").length;
+  const nf=openOts().length;const no=[...S.ot.values()].filter(otAbierta).length;
   const b1=$("#nb-tablero"),b2=$("#nb-ordenes");if(b1)b1.textContent=nf?String(nf):"";if(b2){b2.textContent=no?String(no):"";b2.style.background=no?"#1452B8":""}
 }
 function render(){
@@ -668,7 +668,7 @@ function taskRow(t,showEq){
     '<div class="tname">'+esc(t.nombre)+'</div>'+
     '<div class="meta"><span>'+esc(freqLabel(t))+'</span><span>'+esc(t.tipo||"")+'</span><span>'+esc(t.responsable||"")+'</span>'+(t.ultimaFecha?'<span>Última: '+fmtD(t.ultimaFecha)+(isNum(t.ultimaHoras)?' · '+fmtN(t.ultimaHoras)+' h':'')+'</span>':'')+'</div></div>'+
     '<div class="when">'+when+'</div>'+
-    '<div class="acts"><button class="btn sm" data-act="ins" data-id="'+esc(t.id)+'">Instructivo</button>'+
+    '<div class="acts"><button class="btn sm" data-act="ins" data-id="'+esc(t.id)+'">Instructivo</button><button class="btn sm w" data-act="edit-task" data-id="'+esc(t.id)+'">Editar</button>'+
     '<button class="btn sm primary w" data-act="reg" data-id="'+esc(t.id)+'">Registrar hecho</button></div></article>';
 }
 const ICONOS={'home': '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v10h5v-6h4v6h5V10"/></svg>', 'ordenes': '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="5" height="16" rx="1.5"/><rect x="10" y="4" width="5" height="11" rx="1.5"/><rect x="17" y="4" width="4" height="14" rx="1.5"/></svg>', 'scan': '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8V5.5A1.5 1.5 0 0 1 5.5 4H8M16 4h2.5A1.5 1.5 0 0 1 20 5.5V8M20 16v2.5a1.5 1.5 0 0 1-1.5 1.5H16M8 20H5.5A1.5 1.5 0 0 1 4 18.5V16"/><path d="M4 12h16"/></svg>', 'equipos': '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></svg>', 'manuales': '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4.5A1.5 1.5 0 0 1 6.5 3H19v15H6.5A1.5 1.5 0 0 0 5 19.5z"/><path d="M5 19.5A1.5 1.5 0 0 0 6.5 21H19"/><path d="M9 7h6"/></svg>', 'buscar': '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m20 20-4.6-4.6"/></svg>', 'historial': '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>', 'informe': '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h16"/><path d="M7 16v-4M12 16V7M17 16v-6"/></svg>', 'config': '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h9M17 7h3M4 12h3M11 12h9M4 17h11M19 17h1"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="17" cy="17" r="2"/></svg>', 'cuenta': '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c1.2-3.6 4-5 7-5s5.8 1.4 7 5"/></svg>', 'ayuda': '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M9.6 9.5a2.5 2.5 0 1 1 3.4 2.3c-.6.3-1 .8-1 1.5v.7"/><path d="M12 16.8v.2"/></svg>', 'falla': '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5 21.5 20h-19z"/><path d="M12 10v4.5M12 17.2v.3"/></svg>', 'mas': '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>', 'plus': '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>', 'nfc': '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8.5a5 5 0 0 1 0 7M9.5 6a9 9 0 0 1 0 12M13 3.5a13 13 0 0 1 0 17"/></svg>'};
@@ -859,18 +859,62 @@ function printableChecklist(e,ck){
   let body='';for(const [g,its] of groups){body+='<section><h2>'+esc(g)+'</h2><table><tr><th>Ítem</th><th>Valor de referencia</th>'+[1,2,3,4,5,6].map(()=>'<th class="b">Fecha</th>').join("")+'</tr>'+its.map(it=>'<tr><td>☐ '+esc(it.texto)+'</td><td>'+esc(it.detalle)+'</td>'+[1,2,3,4,5,6].map(()=>'<td class="b"></td>').join("")+'</tr>').join("")+'</table></section>'}
   return '<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Checklist '+esc(e.codigo)+'</title><style>'+css+'</style></head><body><div class="code">'+esc(e.codigo)+'</div><h1>Checklist del fabricante · '+esc(e.nombre)+'</h1><p style="color:#555">Fuente: '+esc(ck.fuente||"—")+' · Generado el '+fmtD(todayStr())+' · Anotá la fecha y las iniciales en cada casillero.</p>'+body+'<p style="margin-top:18px">Operario: ____________________ &nbsp;&nbsp; Supervisor: ____________________</p></body></html>';
 }
-function taskRowEq(t){return taskRow(t,false).replace('<div class="acts">','<div class="acts"><button class="btn sm w" data-act="edit-task" data-id="'+esc(t.id)+'">Editar</button>')}
+function taskRowEq(t){return taskRow(t,false)}
 function tablaRegs(regs,showEq){
   if(!regs.length)return '<div class="empty"><p>Sin intervenciones registradas.</p></div>';
   resolveNames(regs.map(r=>r.porId));
-  return '<div class="tbl-wrap"><table><thead><tr><th>Fecha</th>'+(showEq?'<th>Equipo</th>':'')+'<th>Tarea / tipo</th><th>Resultado</th><th>Horómetro</th><th>Trabajo</th><th>Parada</th><th>Técnico</th><th>Observaciones</th></tr></thead><tbody>'+
+  return '<div class="tbl-wrap"><table><thead><tr><th>Fecha</th>'+(showEq?'<th>Equipo</th>':'')+'<th>Tarea / tipo</th><th>Resultado</th><th>Horómetro</th><th>Trabajo</th><th>Parada</th><th>Técnico</th><th>Observaciones</th><th></th></tr></thead><tbody>'+
     regs.map(r=>{const e=S.eq.get(r.equipoId);const abierto=r.resultado&&r.resultado!=="Resuelto"&&!r.fechaCierre;
       const rc=!r.resultado||r.resultado==="Resuelto"||r.fechaCierre?"st-ok":"st-proxima";
       return '<tr><td class="num">'+fmtD(r.fecha)+'</td>'+(showEq?'<td><span class="code">'+esc(e?e.codigo:(r.equipoCodigo||"(eliminado)"))+'</span><br>'+esc(e?e.nombre:"")+'</td>':'')+
       '<td>'+esc(r.tareaNombre||"")+'<br><span class="chip">'+esc(r.tipo||"")+'</span>'+(r.demorada?' <span class="chip st-vencida">Demorada</span>':'')+'</td>'+
       '<td><span class="chip '+rc+'">'+esc(r.fechaCierre&&r.resultado!=="Resuelto"?"Resuelto "+fmtD(r.fechaCierre):(r.resultado||"—"))+'</span>'+(r.proveedor?'<br><span class="hint">'+esc(r.proveedor)+'</span>':'')+(abierto?'<br><button class="btn sm w" data-act="close-rep" data-id="'+esc(r.id)+'" style="margin-top:4px">Marcar resuelto</button>':'')+'</td>'+
       '<td class="num">'+(isNum(r.horometro)?fmtN(r.horometro)+' h':'—')+'</td><td class="num">'+(isNum(r.duracion)?fmtN(r.duracion)+' h':'—')+'</td><td class="num">'+(isNum(r.parada)?fmtN(r.parada)+' h':'—')+'</td>'+
-      '<td>'+esc(r.tecnico||"")+(r.porId&&S.names[r.porId]?'<br><span class="hint">cargó '+esc(S.names[r.porId])+'</span>':'')+'</td><td>'+esc(r.obs||"")+(r.repuestos?'<br><span class="hint">Repuestos: '+esc(r.repuestos)+'</span>':'')+'</td></tr>'}).join("")+'</tbody></table></div>';
+      '<td>'+esc(r.tecnico||"")+(r.porId&&S.names[r.porId]?'<br><span class="hint">cargó '+esc(S.names[r.porId])+'</span>':'')+'</td><td>'+esc(r.obs||"")+(r.repuestos?'<br><span class="hint">Repuestos: '+esc(r.repuestos)+'</span>':'')+(r.editadoPorNombre?'<br><span class="hint">Corregido por '+esc(r.editadoPorNombre)+'</span>':'')+'</td>'+
+      '<td>'+(MOV.has(r.tipo)?'':'<div class="acts" style="justify-content:flex-start;flex-wrap:nowrap"><button class="btn sm w" data-act="reg-edit" data-id="'+esc(r.id)+'">Corregir</button><button class="btn sm danger adm" data-act="reg-del" data-id="'+esc(r.id)+'">Eliminar</button></div>')+'</td></tr>'}).join("")+'</tbody></table></div>';
+}
+function formEditReg(r){
+  if(!r)return;const e=S.eq.get(r.equipoId);const conCausa=!!r.otId||r.causa!=null;
+  const causa=r.causa!=null?r.causa:causaDeObs(r.obs);const hecho=r.solucion!=null?r.solucion:(r.otId?solDeObs(r.obs):r.obs);
+  openModal(mhead("Corregir registro")+'<p class="hint" style="margin:-6px 0 0">'+esc((e?e.codigo+" · ":"")+(r.tareaNombre||""))+'</p><form id="frm" class="fg" novalidate>'+
+    '<label class="f"><span>Fecha *</span><input type="date" id="er-f" value="'+esc(r.fecha)+'" max="'+todayStr()+'"></label>'+
+    '<label class="f"><span>Técnico</span><input id="er-t" value="'+esc(r.tecnico||"")+'"></label>'+
+    '<label class="f"><span>Horas de trabajo</span><input id="er-d" inputmode="decimal" value="'+esc(isNum(r.duracion)?r.duracion:"")+'"></label>'+
+    '<label class="f"><span>Horas de máquina detenida</span><input id="er-p" inputmode="decimal" value="'+esc(isNum(r.parada)?r.parada:"")+'"></label>'+
+    '<label class="f"><span>Resultado</span><select id="er-r">'+RESULTADOS.map(x=>'<option'+(x===r.resultado?' selected':'')+'>'+x+'</option>').join("")+'</select></label>'+
+    '<label class="f"><span>Repuestos</span><input id="er-rep" value="'+esc(r.repuestos||"")+'"></label>'+
+    (conCausa?'<label class="f full"><span>Causa</span><input id="er-c" value="'+esc(causa||"")+'"></label>':'')+
+    '<label class="f full"><span>'+(conCausa?'Qué se hizo':'Observaciones')+'</span><textarea id="er-o">'+esc(hecho||"")+'</textarea></label>'+
+    '<div class="err full" id="err"></div><div class="m-acts full"><button type="button" class="btn" data-act="close">Cancelar</button><button type="submit" class="btn primary">Guardar corrección</button></div></form>',
+  r2=>r2.querySelector("#frm").addEventListener("submit",async ev=>{ev.preventDefault();
+    const f=val("er-f"),d=numVal("er-d"),pa=numVal("er-p");const err=r2.querySelector("#err");
+    if(!f){err.textContent="Indicá la fecha.";return}
+    if((d!==null&&!isFinite(d))||(pa!==null&&!isFinite(pa))){err.textContent="Las horas tienen que ser números.";return}
+    const res=val("er-r");const c=conCausa?val("er-c"):null;const o=val("er-o");
+    const up={fecha:f,tecnico:val("er-t"),duracion:d,parada:pa,resultado:res,repuestos:val("er-rep"),
+      obs:conCausa?[c?"Causa: "+c:"",o].filter(Boolean).join(" · "):o,editadoPorId:S.me&&S.me.id||null,editadoPorNombre:S.me&&S.me.name||"",editadoEl:new Date().toISOString()};
+    if(conCausa){up.causa=c;up.solucion=o}
+    if(res==="Resuelto"&&!r.fechaCierre)up.fechaCierre=f;
+    try{await S.db.doc("registros/"+r.id).update(up);
+      const t=r.tareaId&&S.ta.get(r.tareaId);if(t&&t.ultimaFecha===r.fecha&&f!==r.fecha)await S.db.doc("tareas/"+t.id).update({ultimaFecha:f});
+      closeModal();toast("Registro corregido");render()}catch(x){writeErr(x)}}));
+}
+function formDelReg(r){
+  if(!r)return;const e=S.eq.get(r.equipoId);const ot=r.otId&&S.ot.get(r.otId);const reabre=ot&&ot.estado==="Cerrada"&&ot.registroId===r.id;
+  const t=r.tareaId&&S.ta.get(r.tareaId);const vuelve=t&&t.ultimaFecha===r.fecha;
+  openModal(mhead("Eliminar registro")+'<p style="margin:0"><b>'+esc(r.tareaNombre||"")+'</b><br><span class="hint">'+fmtD(r.fecha)+' · '+esc(e?e.codigo+" · "+e.nombre:r.equipoCodigo||"")+'</span></p>'+
+    '<div class="banner" style="margin:0">Se borra del historial y de los informes.'+(vuelve?' La tarea <b>'+esc(t.nombre)+'</b> vuelve a su vencimiento anterior.':'')+
+      (reabre?' La orden <b>'+esc(otNum(ot))+'</b> que cerraba vuelve a quedar abierta (pide la firma del técnico).':'')+'</div>'+
+    '<div class="m-acts"><button class="btn" data-act="close">Cancelar</button><button class="btn danger" id="dr-si">Eliminar registro</button></div>',
+  r2=>r2.querySelector("#dr-si").addEventListener("click",async()=>{
+    try{
+      if(reabre){const ok=await conFirma("reabrir "+otNum(ot),otDetalle(ot)+'<br><span class="hint">Se elimina el registro de su cierre</span>',(db,f)=>{
+          const vuelta=ot.estadoAnterior&&ot.estadoAnterior!=="Cerrada"?ot.estadoAnterior:"En curso";
+          return db.doc("ots/"+ot.id).update({estado:vuelta,registroId:null,cierre:null,historial:addHist(ot,histEntry(f,"Reabierta: se eliminó el registro del cierre"))})});
+        if(!ok)return}
+      if(vuelve)await revertirTarea(r,S.db);
+      await S.db.doc("registros/"+r.id).delete();closeModal();toast("Registro eliminado");render();
+    }catch(x){firmaErr(x)}}));
 }
 /* ---------- buscador de fallas anteriores ---------- */
 const normT=t=>String(t||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
@@ -881,7 +925,7 @@ function solDeObs(o){return String(o||"").replace(/^Causa: .*?(?: · |$)/,"")}
 /* Cada falla (cerrada o abierta) y cada intervención correctiva suelta es un "caso" */
 function casosFalla(){
   const byId=new Map(S.re.map(r=>[r.id,r]));const usados=new Set();const out=[];
-  for(const o of S.ot.values()){if(esPrev(o))continue;
+  for(const o of S.ot.values()){if(esPrev(o)||o.estado==="Anulada")continue;
     const r=(o.registroId&&byId.get(o.registroId))||S.re.find(x=>x.otId===o.id);if(r)usados.add(r.id);
     out.push({k:"ot"+o.id,fecha:(r&&r.fecha)||String(o.reportado||"").slice(0,10),equipoId:o.equipoId,equipoCodigo:o.equipoCodigo,desc:o.desc||"",
       causa:r?(r.causa!=null?r.causa:causaDeObs(r.obs)):"",solucion:r?(r.solucion!=null?r.solucion:solDeObs(r.obs)):"",repuestos:r?r.repuestos||"":"",
@@ -953,7 +997,7 @@ function syncPrev(){clearTimeout(syncPrev.t);syncPrev.t=setTimeout(async()=>{
   for(const t of S.ta.values()){
     const e=S.eq.get(t.equipoId);if(!isActivo(e))continue;
     const st=status(t);if(st.estado!=="vencida"&&st.estado!=="proxima")continue;
-    if([...S.ot.values()].some(o=>esPrev(o)&&o.tareaId===t.id&&o.estado!=="Cerrada"))continue;
+    if([...S.ot.values()].some(o=>esPrev(o)&&o.tareaId===t.id&&otAbierta(o)))continue;
     const id="prev-"+t.id+"-"+(t.ultimaFecha||"0")+"-"+(isNum(t.ultimaHoras)?t.ultimaHoras:"0");
     if(S.ot.has(id)||prevIntentos.has(id))continue;prevIntentos.add(id);
     const l=st.gov?partLabel(st.gov).big:"";
@@ -964,8 +1008,8 @@ function syncPrev(){clearTimeout(syncPrev.t);syncPrev.t=setTimeout(async()=>{
 },800)}
 function kCard(o){
   const e=S.eq.get(o.equipoId);const prev=esPrev(o);const u=prev?null:urgOf(o);const last=(o.historial||[]).slice(-1)[0];
-  const tp=prev&&o.estado!=="Cerrada"&&S.ta.get(o.tareaId);const stp=tp&&status(tp);const vence=stp&&stp.gov?partLabel(stp.gov).big:o.vence;
-  const drag=o.estado!=="Cerrada"&&canW();
+  const tp=prev&&otAbierta(o)&&S.ta.get(o.tareaId);const stp=tp&&status(tp);const vence=stp&&stp.gov?partLabel(stp.gov).big:o.vence;
+  const drag=otAbierta(o)&&canW();
   return '<article class="kcard '+(prev?'prev':u.toLowerCase())+'" data-act="ot-ver" data-id="'+esc(o.id)+'"'+(drag?' draggable="true" data-ot="'+esc(o.id)+'"':'')+'>'+
     '<div class="inline" style="justify-content:space-between"><span class="ot-n">'+esc(otNum(o))+'</span>'+(prev?'<span class="chip st-ok">Preventivo</span>':urgChip(u))+'</div>'+
     '<div class="code">'+esc(e?e.codigo:o.equipoCodigo||"")+'</div><div class="kd">'+esc(o.desc||"")+'</div>'+
@@ -995,15 +1039,59 @@ function verOT(id){
   openModal(mhead(otNum(o)+" · "+(prev?"Preventivo":"Falla"))+
     '<div class="ot-top">'+(prev?'<span class="chip st-ok">Preventivo</span>':urgChip(urgOf(o)))+'<span class="chip">'+esc(estLbl(o.estado))+'</span></div>'+
     '<dl class="kv" style="margin-top:0">'+[["Equipo",e?e.codigo+" · "+e.nombre:o.equipoCodigo],[prev?"Tarea":"Falla",o.desc],["Frecuencia",t?freqLabel(t):""],["Vencimiento",o.vence],["A cargo",o.asignado],["Creada",fmtD(String(o.reportado||"").slice(0,10))+(o.reportadoNombre?" por "+o.reportadoNombre:"")]].filter(x=>x[1]).map(([k,v])=>'<div><dt>'+esc(k)+'</dt><dd>'+esc(v)+'</dd></div>').join("")+'</dl>'+
-    (o.estado!=="Cerrada"?'<div class="inline w" style="flex-wrap:wrap"><select id="ov-dest" style="width:auto"><option value="">Mover a…</option>'+destinos.map(([k,l])=>'<option value="'+esc(k)+'">'+esc(l)+'</option>').join("")+'</select><button class="btn primary" data-act="ot-mover" data-id="'+esc(o.id)+'">Mover (con firma)</button>'+
-      (prev?'':'<button class="btn" data-act="ot-edit" data-id="'+esc(o.id)+'">Editar</button><button class="btn" data-act="ot-sim" data-id="'+esc(o.id)+'">Casos parecidos</button>')+'</div>':'')+
+    (o.estado==="Anulada"?'<div class="banner">Orden anulada el '+fmtD(String((o.anulada||{}).fecha||"").slice(0,10))+' por '+esc((o.anulada||{}).porNombre||"")+'. Motivo: '+esc((o.anulada||{}).motivo||"")+'</div>':'')+
+    (otAbierta(o)?'<div class="inline w" style="flex-wrap:wrap"><select id="ov-dest" style="width:auto"><option value="">Mover a…</option>'+destinos.map(([k,l])=>'<option value="'+esc(k)+'">'+esc(l)+'</option>').join("")+'</select><button class="btn primary" data-act="ot-mover" data-id="'+esc(o.id)+'">Mover (con firma)</button>'+
+      '<button class="btn" data-act="'+(prev?'ot-editprev':'ot-edit')+'" data-id="'+esc(o.id)+'">Editar</button>'+(prev?'':'<button class="btn" data-act="ot-sim" data-id="'+esc(o.id)+'">Casos parecidos</button>')+'</div>':'')+
+    (o.estado!=="Anulada"&&canW()?'<p style="margin:8px 0 0"><button class="btn sm danger" data-act="ot-anular" data-id="'+esc(o.id)+'">Eliminar orden (cargada por error)</button></p>':'')+
     '<h3 class="rp-h">Historial de la orden</h3>'+(h.length?'<div class="tbl-wrap"><table><thead><tr><th>Fecha y hora</th><th>Acción</th><th>Responsable</th></tr></thead><tbody>'+
       h.map(x=>'<tr><td class="num">'+esc(new Date(x.fecha).toLocaleString("es-AR",{dateStyle:"short",timeStyle:"short"}))+'</td><td>'+esc(x.accion)+(x.resultado?' · '+esc(x.resultado):'')+'</td><td>'+esc(x.porNombre||"")+'</td></tr>').join("")+'</tbody></table></div>':'<p class="hint">Sin movimientos registrados.</p>')+
     '<div class="m-acts" style="margin-top:12px"><button class="btn" data-act="close">Cerrar</button></div>');
 }
+/* Editar una orden preventiva: responsable y notas (firmado) */
+function formEditPrev(o){
+  openModal(mhead("Editar "+otNum(o))+'<p class="hint" style="margin:-6px 0 0">'+esc(o.desc||"")+'</p><form id="frm" class="fg" novalidate>'+
+    '<label class="f full"><span>A cargo</span><input id="ep-a" value="'+esc(o.asignado||"")+'"></label>'+
+    '<label class="f full"><span>Notas</span><textarea id="ep-n">'+esc(o.notas||"")+'</textarea></label>'+
+    '<div class="err full" id="err"></div><div class="m-acts full"><button type="button" class="btn" data-act="close">Cancelar</button><button type="submit" class="btn primary">Guardar</button></div></form>',
+  r=>r.querySelector("#frm").addEventListener("submit",async ev=>{ev.preventDefault();
+    try{const ok=await conFirma("editar "+otNum(o),otDetalle(o),(db,f)=>db.doc("ots/"+o.id).update({asignado:val("ep-a"),notas:val("ep-n"),historial:addHist(o,histEntry(f,"Editó la orden"))}));
+      if(ok){closeModal();toast(otNum(o)+" actualizada");render()}}catch(x){firmaErr(x)}}));
+}
+/* Deja la tarea como estaba antes de un registro que se borra */
+async function revertirTarea(r,db){
+  const t=r.tareaId&&S.ta.get(r.tareaId);if(!t||t.ultimaFecha!==r.fecha)return;
+  let up;
+  if("prevUltimaFecha" in r)up={ultimaFecha:r.prevUltimaFecha||null,ultimaHoras:isNum(r.prevUltimaHoras)?r.prevUltimaHoras:null};
+  else{const rest=S.re.filter(x=>x.tareaId===t.id&&x.id!==r.id).sort((a,b)=>String(b.fecha).localeCompare(String(a.fecha)));
+    up={ultimaFecha:rest[0]?rest[0].fecha:null,ultimaHoras:rest[0]&&isNum(rest[0].horometro)?rest[0].horometro:null}}
+  await db.doc("tareas/"+t.id).update(up);
+}
+/* Eliminar una orden cargada por error: queda anulada (con firma y motivo) y sale del tablero */
+function formAnularOT(o){
+  const cerrada=o.estado==="Cerrada";const reg=cerrada&&o.registroId&&S.re.find(x=>x.id===o.registroId);
+  openModal(mhead("Eliminar "+otNum(o))+'<form id="frm" class="fg" novalidate>'+
+    '<p class="full" style="margin:0">'+otDetalle(o)+'</p>'+
+    '<div class="banner full" style="margin:0">La orden sale del tablero y de los informes. Queda guardada como <b>anulada</b> con el motivo y quién la eliminó; su número no se vuelve a usar.'+
+      (reg?' También se borra el registro de su cierre ('+fmtD(reg.fecha)+') del historial'+(reg.tareaId?' y la tarea vuelve a su vencimiento anterior':'')+'. Esto lo puede hacer solo un administrador.':'')+'</div>'+
+    '<label class="f full"><span>Motivo *</span><input id="an-m" placeholder="Cargada dos veces, equipo equivocado, no correspondía…"></label>'+
+    '<div class="err full" id="err"></div><div class="m-acts full"><button type="button" class="btn" data-act="close">Cancelar</button><button type="submit" class="btn danger">Eliminar orden</button></div></form>',
+  r=>r.querySelector("#frm").addEventListener("submit",async ev=>{ev.preventDefault();
+    const motivo=val("an-m");const err=r.querySelector("#err");
+    if(!motivo){err.textContent="Escribí el motivo.";return}
+    if(reg&&!S.isAdmin){err.textContent="La orden ya está terminada: solo un administrador puede eliminarla.";return}
+    try{const ok=await conFirma("eliminar "+otNum(o),otDetalle(o)+'<br><span class="hint">Motivo: '+esc(motivo)+'</span>',async(db,f)=>{
+        if(reg&&f.rol!=="admin")throw {code:"firma",message:"para eliminar una orden terminada tiene que firmar un administrador."};
+        const now=new Date().toISOString();
+        await db.doc("ots/"+o.id).update({estado:"Anulada",estadoAnterior:o.estado,anulada:{fecha:now,motivo,porId:f.id,porNombre:f.name},historial:addHist(o,histEntry(f,"Eliminó la orden (anulada): "+motivo))});
+        if(reg){await revertirTarea(reg,db);await db.doc("registros/"+reg.id).delete()}
+        const e=S.eq.get(o.equipoId);
+        if(e&&!esPrev(o)&&(e.estadoOp||"Operativo")!=="Operativo"&&!openOts(x=>x.equipoId===e.id&&x.id!==o.id).length)await db.doc("equipos/"+e.id).update({estadoOp:"Operativo"});
+      });
+      if(ok){closeModal();toast(otNum(o)+" eliminada");render()}}catch(x){firmaErr(x)}}));
+}
 async function moverOT(id,dest){
   const o=S.ot.get(id);if(!o||dest===o.estado)return;
-  if(o.estado==="Cerrada"){toast("Las órdenes terminadas no se modifican.");return}
+  if(!otAbierta(o)){toast(o.estado==="Anulada"?"La orden está anulada.":"Las órdenes terminadas no se modifican.");return}
   if(!canW()){toast("Tu usuario es de solo lectura.");return}
   if(dest==="Cerrada"){closeModal();
     if(esPrev(o)){const t=S.ta.get(o.tareaId);formRegistro(t||null,o.equipoId,o)}else formCerrarOT(o);return}
@@ -1471,6 +1559,20 @@ function formCodigo(pre){
     });
   });
 }
+function formDelTask(t){
+  if(!t)return;const e=S.eq.get(t.equipoId);const ot=[...S.ot.values()].find(o=>esPrev(o)&&o.tareaId===t.id&&otAbierta(o));
+  const nReg=S.re.filter(r=>r.tareaId===t.id).length;
+  openModal(mhead("Eliminar tarea")+'<p style="margin:0"><b>'+esc(t.nombre)+'</b><br><span class="hint">'+esc(e?e.codigo+" · "+e.nombre:"")+' · '+esc(freqLabel(t))+'</span></p>'+
+    '<div class="banner" style="margin:0">La tarea sale del plan de mantenimiento y deja de generar avisos y órdenes.'+(nReg?(nReg===1?' El registro de lo que ya se hizo se conserva en el historial.':' Los '+nReg+' registros de lo que ya se hizo se conservan en el historial.'):'')+
+      (ot?' Su orden abierta <b>'+esc(otNum(ot))+'</b> se anula (pide la firma del técnico).':'')+'</div>'+
+    '<div class="m-acts"><button class="btn" data-act="close">Cancelar</button><button class="btn danger" id="dt-si">Eliminar tarea</button></div>',
+  r=>r.querySelector("#dt-si").addEventListener("click",async()=>{
+    try{
+      if(ot){const ok=await conFirma("anular "+otNum(ot),otDetalle(ot)+'<br><span class="hint">Se elimina la tarea del plan</span>',(db,f)=>db.doc("ots/"+ot.id).update({estado:"Anulada",estadoAnterior:ot.estado,anulada:{fecha:new Date().toISOString(),motivo:"Se eliminó la tarea del plan",porId:f.id,porNombre:f.name},historial:addHist(ot,histEntry(f,"Anulada: se eliminó la tarea del plan"))}));
+        if(!ok)return}
+      await S.db.doc("tareas/"+t.id).delete();closeModal();if(S.view==="equipo")S.eqTab="plan";toast("Tarea eliminada");render();
+    }catch(x){firmaErr(x)}}));
+}
 function formTarea(t,equipoId){
   t=t||{equipoId,modo:"tiempo",cadaValor:1,cadaUnidad:"meses",responsable:"Mantenimiento",tipo:"Inspección",instructivo:{}};
   const pickEq=!t.equipoId;
@@ -1528,7 +1630,7 @@ function formTarea(t,equipoId){
 }
 function formRegistro(t,equipoId,ot){
   const e=S.eq.get(t?t.equipoId:equipoId);if(!e)return;const cur=curHours(e);
-  ot=ot||(t&&[...S.ot.values()].find(x=>esPrev(x)&&x.tareaId===t.id&&x.estado!=="Cerrada"))||null;
+  ot=ot||(t&&[...S.ot.values()].find(x=>esPrev(x)&&x.tareaId===t.id&&otAbierta(x)))||null;
   const usaHoras=isNum(e.horometro);const ts=tasksOf(e.id);
   openModal(mhead(t?"Registrar: "+t.nombre:"Registrar intervención")+'<p class="hint" style="margin:-6px 0 0">'+(ot?'<span class="ot-num">'+esc(otNum(ot))+'</span> ':'')+esc(e.codigo+" · "+e.nombre)+(ot?' · se cierra la orden de trabajo (pide firma)':'')+'</p>'+
   '<form id="frm" class="fg" novalidate>'+
@@ -1562,6 +1664,7 @@ function formRegistro(t,equipoId,ot){
         proveedor:resultado==="Enviado a reparación externa"?val("r-prov"):"",repuestos:val("r-rep"),obs:val("r-obs"),
         porId:S.me&&S.me.id||null,creado:new Date().toISOString()};
       if(resultado==="Resuelto")reg.fechaCierre=fecha;
+      if(tarea){reg.prevUltimaFecha=tarea.ultimaFecha||null;reg.prevUltimaHoras=isNum(tarea.ultimaHoras)?Number(tarea.ultimaHoras):null;}
       if(tarea){const st=status(tarea);reg.atrasoDias=0;reg.atrasoHoras=0;
         for(const p of st.partes){
           if(p.k==="t"){reg.venceEl=p.next;reg.atrasoDias=Math.max(0,diffDays(p.next,fecha))}
@@ -1577,7 +1680,7 @@ function formRegistro(t,equipoId,ot){
           if(!tarea.ultimaFecha||fecha>=tarea.ultimaFecha){up.ultimaFecha=fecha;if(hm!==null)up.ultimaHoras=hm}
           if(Object.keys(up).length)await db.doc("tareas/"+tarea.id).update(up)}
         if(hm!==null)await updHorometro(e,hm,fecha,db);
-        if(f)await db.doc("ots/"+ot.id).update({estado:"Cerrada",cierre:new Date().toISOString(),registroId:ref.id,historial:addHist(ot,histEntry(f,estLbl(ot.estado)+" → Terminada",{resultado}))});
+        if(f)await db.doc("ots/"+ot.id).update({estado:"Cerrada",estadoAnterior:ot.estado,cierre:new Date().toISOString(),registroId:ref.id,historial:addHist(ot,histEntry(f,estLbl(ot.estado)+" → Terminada",{resultado}))});
       };
       try{
         if(ot){const ok=await conFirma("terminar "+otNum(ot),otDetalle(ot),guardar);if(!ok)return}
@@ -1687,7 +1790,7 @@ function reportData(m){
   const paradaCorr=sum(corr,"parada");
   return {m,a,b,parcial:b>=hoy,regs,prev,corr,medidas,dem,parada:sum(regs,"parada"),trabajo:sum(regs,"duracion"),
     mttr:corr.length?paradaCorr/corr.length:null,aTiempo:medidas.length?(medidas.length-dem.length)/medidas.length:null,
-    otsMes:[...S.ot.values()].filter(o=>{if(esPrev(o))return false;const f=String(o.reportado||"").slice(0,10);return f>=a&&f<=b&&(!S.empresa||inEmp(o.equipoId))}),
+    otsMes:[...S.ot.values()].filter(o=>{if(esPrev(o)||o.estado==="Anulada")return false;const f=String(o.reportado||"").slice(0,10);return f>=a&&f<=b&&(!S.empresa||inEmp(o.equipoId))}),
     movs,byEq:[...byEq.values()].sort((x,z)=>z.parada-x.parada||z.n-x.n),byEmp,reps,venc,ck,fueraServ,tipos};
 }
 function reportBody(d,print){
@@ -1898,6 +2001,7 @@ const OT_EST=[["Abierta","Pendiente"],["En curso","En curso"],["Esperando repues
 const estLbl=e=>(OT_EST.find(x=>x[0]===e)||[0,e])[1];
 const otNum=o=>o&&isNum(o.numero)?"OT-"+String(o.numero).padStart(6,"0"):"OT s/n";
 const esPrev=o=>o&&o.tipo==="preventivo";
+const otAbierta=o=>!!o&&o.estado!=="Cerrada"&&o.estado!=="Anulada";
 const histEntry=(f,accion,extra)=>Object.assign({fecha:new Date().toISOString(),accion,porId:f.id,porNombre:f.name},extra||{});
 const addHist=(o,h)=>[...((o&&o.historial)||[]),h];
 /* Pide usuario y contraseña del técnico que hace el cambio. Devuelve {db,id,name,cerrar} o null si se cancela */
@@ -1921,7 +2025,7 @@ function firmar(titulo,detalle){
       if(!u){g("fz-err").textContent="Elegí quién firma.";return}
       if(!pw){g("fz-err").textContent="Escribí la contraseña.";return}
       g("fz-ok").disabled=true;g("fz-ok").textContent="Verificando…";
-      try{const v=await S.user.verificar(u.email,pw);done({id:v.id,name:v.name,db:S.db.as(v.cliente),cerrar:v.cerrar})}
+      try{const v=await S.user.verificar(u.email,pw);done({id:v.id,name:v.name,rol:v.rol,db:S.db.as(v.cliente),cerrar:v.cerrar})}
       catch(x){g("fz-ok").disabled=false;g("fz-ok").textContent="Firmar y guardar";g("fz-p").value="";g("fz-p").focus();
         g("fz-err").textContent=x&&x.code==="bad_password"?"Contraseña incorrecta.":(x&&x.message)||"No se pudo verificar."}
     });
@@ -1935,7 +2039,7 @@ async function conFirma(titulo,detalle,fn){
 }
 function firmaErr(x){if(x&&x.code==="firma")toast("No se guardó: "+x.message);else writeErr(x)}
 function otDetalle(o){const e=S.eq.get(o.equipoId);return '<b>'+esc(otNum(o))+'</b> · '+esc(e?e.codigo:o.equipoCodigo||"")+' · '+esc(o.desc||"")}
-function openOts(filter){return [...S.ot.values()].filter(o=>o.estado!=="Cerrada"&&!esPrev(o)&&(!filter||filter(o))).sort((a,b)=>urgOf(a).localeCompare(urgOf(b))||String(a.reportado).localeCompare(String(b.reportado)))}
+function openOts(filter){return [...S.ot.values()].filter(o=>otAbierta(o)&&!esPrev(o)&&(!filter||filter(o))).sort((a,b)=>urgOf(a).localeCompare(urgOf(b))||String(a.reportado).localeCompare(String(b.reportado)))}
 function formFalla(o,eqId){
   const editing=!!(o&&o.id);o=o||{equipoId:eqId||null,tipoFalla:"total",perdida:100};
   const pick=!o.equipoId;
@@ -2017,7 +2121,7 @@ function formCerrarOT(o){
       try{const ok=await conFirma("terminar "+otNum(o),otDetalle(o)+'<br><span class="hint">'+esc(estLbl(o.estado))+' → Terminada · '+esc(res)+'</span>',async(db,f)=>{
           reg.porId=f.id;if(!o.asignado)reg.tecnico=f.name;reg.otNumero=o.numero||null;
           const ref=await db.collection("registros").add(reg);
-          await db.doc("ots/"+o.id).update({estado:"Cerrada",cierre:new Date().toISOString(),registroId:ref.id,inicio:o.inicio||null,historial:addHist(o,histEntry(f,estLbl(o.estado)+" → Terminada",{resultado:res}))});
+          await db.doc("ots/"+o.id).update({estado:"Cerrada",estadoAnterior:o.estado,cierre:new Date().toISOString(),registroId:ref.id,inicio:o.inicio||null,historial:addHist(o,histEntry(f,estLbl(o.estado)+" → Terminada",{resultado:res}))});
           const eo={"Enviado a reparación externa":"En reparación externa","Equipo fuera de servicio":"Fuera de servicio","Pendiente de repuesto":"Esperando repuesto","Resuelto":"Operativo"}[res];
           const otrasAbiertas=openOts(x=>x.equipoId===o.equipoId&&x.id!==o.id).length;
           if(e&&eo&&!(eo==="Operativo"&&otrasAbiertas)&&(e.estadoOp||"Operativo")!==eo)await db.doc("equipos/"+e.id).update({estadoOp:eo})});
@@ -2078,7 +2182,11 @@ document.addEventListener("click",async ev=>{
     case "del-eq-ok":{b.disabled=true;try{for(const t of tasksOf(id))await S.db.doc("tareas/"+t.id).delete();await S.db.doc("equipos/"+id).delete();closeModal();S.view="equipos";toast("Equipo eliminado");render()}catch(x){writeErr(x);b.disabled=false}break}
     case "new-task":formTarea(null,id||null);break;
     case "edit-task":formTarea(S.ta.get(id));break;
-    case "del-task":{if(b.dataset.sure){try{await S.db.doc("tareas/"+id).delete();closeModal();toast("Tarea eliminada");render()}catch(x){writeErr(x)}}else{b.dataset.sure="1";b.textContent="Confirmar: eliminar tarea"}break}
+    case "del-task":formDelTask(S.ta.get(id));break;
+    case "ot-anular":formAnularOT(S.ot.get(id));break;
+    case "ot-editprev":formEditPrev(S.ot.get(id));break;
+    case "reg-edit":formEditReg(S.re.find(x=>x.id===id));break;
+    case "reg-del":formDelReg(S.re.find(x=>x.id===id));break;
     case "ins":showIns(S.ta.get(id));break;
     case "reg":formRegistro(S.ta.get(id));break;
     case "reg-eq":formRegistro(null,id);break;
