@@ -167,11 +167,11 @@ legend{font-family:var(--f-display);font-weight:600;font-size:14px;padding:0 6px
 .ck-s{font-size:12px;font-family:var(--f-mono)}
 .ck-item.hecho .ck-s{color:var(--ok)} .ck-item.toca .ck-s{color:var(--warn)} .ck-item.vencido .ck-s{color:var(--bad)} .ck-item.nunca .ck-s{color:var(--none)}
 .ck-a{flex:none}
-.ck-er{display:grid;grid-template-columns:minmax(0,2fr) auto minmax(0,1.4fr) auto;gap:8px;align-items:center;position:relative}
+.ck-er{display:grid;grid-template-columns:minmax(0,2fr) auto auto minmax(0,1.3fr) minmax(0,1.3fr) auto;gap:8px;align-items:center;position:relative}
 .ck-er.hd{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:-6px}
 .ck-er[data-ai]{background:var(--accent-soft);border-radius:8px;padding:6px}
 .chip.ai{position:absolute;top:-7px;left:6px;background:var(--accent);color:var(--accent-fg)}
-@media (max-width:760px){.ck-er{grid-template-columns:minmax(0,1fr) auto;border-bottom:1px solid var(--line);padding-bottom:8px}.ck-er .er-t,.ck-er .er-d{grid-column:1/-1}.ck-er.hd{display:none}.ck-item{flex-wrap:wrap}}
+@media (max-width:900px){.ck-er{grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;border-bottom:1px solid var(--line);padding-bottom:8px}.ck-er .er-t,.ck-er .er-d,.ck-er .er-m{grid-column:1/-1}.ck-er.hd{display:none}.ck-item{flex-wrap:wrap}}
 .code-prev{background:var(--surface-2);border-radius:6px;padding:8px 10px;font-size:13px}
 .code-big{font-family:var(--f-mono);font-weight:600;font-size:15px;letter-spacing:.03em}
 .is-baja .w{display:none!important}
@@ -751,7 +751,7 @@ function viewEquipo(){
   const st=(k,l,c)=>'<button class="subtab" role="tab" data-act="eqtab" data-k="'+k+'" aria-selected="'+(S.eqTab===k)+'">'+l+(c!=null?' <span class="cnt">'+c+'</span>':'')+'</button>';
   const mans=[...S.ma.values()].filter(m=>(m.equipoIds||[]).includes(e.id));
   if(eots.length)h+='<div class="sec-h"><h2>Fallas abiertas</h2><small>'+eots.length+'</small></div><div class="ot-grid">'+eots.map(o=>otCard(o,false)).join("")+'</div>';
-  h+='<nav class="subtabs" role="tablist" aria-label="Secciones del equipo">'+st("plan","Plan de mantenimiento",ts.length)+st("check","Checklist del fabricante",ckItems.length?ckPend+" pend.":null)+st("hist","Historial",regs.length)+st("man","Manuales",mans.length)+'</nav>';
+  h+='<nav class="subtabs" role="tablist" aria-label="Secciones del equipo">'+st("plan","Plan de mantenimiento",ts.length)+st("check","Checklist de mantenimiento",ckItems.length?ckPend+" pend.":null)+st("hist","Historial",regs.length)+st("man","Manuales",mans.length)+'</nav>';
   if(S.eqTab==="check")h+=viewChecklist(e);
   else if(S.eqTab==="man")h+=(mans.length?manualTable(mans,false):'<div class="empty"><p>Todavía no hay manuales asociados a este equipo.</p></div>')+
     '<div class="detail-acts"><button class="btn primary adm" data-act="man-new" data-id="'+esc(e.id)+'">+ Agregar manual</button><a class="btn" href="'+esc(searchUrl(e))+'" target="_blank" rel="noopener">Buscar el manual en la web ↗</a></div>';
@@ -761,8 +761,25 @@ function viewEquipo(){
 }
 
 /* ---------- checklist del fabricante ---------- */
-function grpKey(it){return it.unidad==="horas"?100000+Number(it.cada):UNIT_DAYS[it.unidad||"dias"]*Number(it.cada)}
-function grpLabel(it){const v=Number(it.cada),u=it.unidad||"dias";
+/* Exigencia de uso del equipo: multiplica el intervalo del manual para sugerir el ajuste */
+const EXIGENCIAS=[["baja","Baja",2,"poco uso, un turno o menos"],["normal","Normal",1,"la que supone el fabricante"],["alta","Alta",0.75,"varios turnos, carga alta"],["severa","Severa",0.5,"uso continuo, ambiente agresivo (polvo, calor, humedad)"]];
+const exig=k=>EXIGENCIAS.find(x=>x[0]===k)||EXIGENCIAS[1];
+/* Frecuencia que se usa para programar: la ajustada a nuestro uso si existe; si no, la del manual */
+const ef=it=>Number(it.ajCada)>0?{cada:Number(it.ajCada),unidad:it.ajUnidad||"dias"}:{cada:Number(it.cada),unidad:it.unidad||"dias"};
+const ajustado=it=>Number(it.ajCada)>0&&(Number(it.ajCada)!==Number(it.cada)||(it.ajUnidad||"dias")!==(it.unidad||"dias"));
+function frecTxt(f){const v=Number(f.cada),u=f.unidad||"dias";if(u==="horas")return "cada "+fmtN(v)+" h de uso";
+  const one={dias:"diaria",semanas:"semanal",meses:"mensual",anios:"anual"};return v===1?one[u]:"cada "+v+" "+plural(v,u)}
+/* Sugerencia: intervalo del manual × factor de exigencia, llevado a una unidad cómoda */
+function sugerirFrec(cada,unidad,factor){
+  if(unidad==="horas"){const h=cada*factor;const paso=h>=500?100:h>=100?50:10;return {cada:Math.max(paso,Math.round(h/paso)*paso),unidad:"horas"}}
+  const d=cada*UNIT_DAYS[unidad||"dias"]*factor;
+  if(d<7)return {cada:Math.max(1,Math.round(d)),unidad:"dias"};
+  if(d<30)return {cada:Math.max(1,Math.round(d/7)),unidad:"semanas"};
+  if(d<365)return {cada:Math.max(1,Math.round(d/30.4)),unidad:"meses"};
+  return {cada:Math.max(1,Math.round(d/365)),unidad:"anios"};
+}
+function grpKey(it){const f=ef(it);return f.unidad==="horas"?100000+f.cada:UNIT_DAYS[f.unidad||"dias"]*f.cada}
+function grpLabel(it){const f=ef(it);const v=f.cada,u=f.unidad||"dias";
   if(u==="horas")return "Cada "+fmtN(v)+" h de uso";
   const one={dias:"Diario",semanas:"Semanal",meses:"Mensual",anios:"Anual"};
   if(v===1)return one[u];if(u==="dias"&&v===15)return "Quincenal";if(u==="meses"&&v===3)return "Trimestral";if(u==="meses"&&v===6)return "Semestral";
@@ -771,6 +788,7 @@ function itemSt(it,eq){
   const last=(it.hist||[])[0];
   if(!last)return {st:"nunca",txt:"Sin registrar"};
   const when="Hecho el "+fmtD(last.f)+(isNum(last.h)?" · "+fmtN(last.h)+" h":"");
+  it=Object.assign({},it,ef(it));
   if(it.unidad==="horas"){
     const cur=curHours(eq);
     if(cur.h===null||!isNum(last.h))return {st:"hecho",txt:when+" · falta horómetro para calcular"};
@@ -788,17 +806,19 @@ function viewChecklist(e){
   if(!items.length)return '<div class="empty"><h2>Sin checklist del fabricante</h2><p>Cargá los controles que indica el manual: qué revisar, cada cuánto y con qué valor de referencia. Después los vas tildando en cada ronda.</p><p style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap"><button class="btn primary w" data-act="ck-edit" data-id="'+esc(e.id)+'">Cargar checklist</button>'+aiBtn+'</p></div>';
   const groups=new Map();items.slice().sort((a,b)=>grpKey(a)-grpKey(b)).forEach(it=>{const k=grpLabel(it);if(!groups.has(k))groups.set(k,[]);groups.get(k).push(it)});
   const done=items.filter(it=>itemSt(it,e).st==="hecho").length;
-  let h='<div class="ck-head"><div style="min-width:0;flex:1 1 260px"><div class="hint">Fuente</div><div>'+esc(ck.fuente||"Sin indicar (anotá manual y página)")+'</div>'+(ck.ia?'<div class="ck-note">Incluye ítems sugeridos por IA: verificá intervalos y valores contra el manual del fabricante.</div>':'')+'</div>'+
+  const ex=exig(ck.exigencia);const nAj=items.filter(ajustado).length;
+  let h='<div class="ck-head"><div style="min-width:0;flex:1 1 260px"><div class="hint">Fuente</div><div>'+esc(ck.fuente||"Sin indicar (anotá manual y página)")+'</div>'+
+    '<div class="hint" style="margin-top:6px">Exigencia de uso</div><div><b>'+esc(ex[1])+'</b>'+(ck.exigMotivo?' · '+esc(ck.exigMotivo):'')+(nAj?' · <span class="chip sens">'+nAj+(nAj===1?' ítem ajustado':' ítems ajustados')+' a nuestro uso</span>':'')+'</div>'+(ck.ia?'<div class="ck-note">Incluye ítems sugeridos por IA: verificá intervalos y valores contra el manual del fabricante.</div>':'')+'</div>'+
     '<div class="ck-prog"><b>'+done+' / '+items.length+'</b><span>al día</span><div class="bar"><i style="width:'+(done/items.length*100).toFixed(0)+'%"></i></div></div>'+
     '<div class="detail-acts" style="margin:0"><button class="btn w" data-act="ck-edit" data-id="'+esc(e.id)+'">Editar checklist</button><button class="btn" data-act="ck-dl" data-id="'+esc(e.id)+'">Descargar para imprimir</button></div></div>';
   for(const [g,its] of groups){
     const gd=its.filter(it=>itemSt(it,e).st==="hecho").length;
     h+='<section class="ck-grp"><div class="ck-gh"><h3>'+esc(g)+'</h3><span class="hint">'+gd+' de '+its.length+' al día</span></div><ul class="ck-list">'+its.map(it=>{
       const s=itemSt(it,e);const inPlan=it.tareaId&&S.ta.has(it.tareaId);
-      return '<li class="ck-item '+s.st+'"><label class="ck-box"><input type="checkbox" id="ck-'+esc(it.id)+'" data-act="ck-toggle" data-eq="'+esc(e.id)+'" data-id="'+esc(it.id)+'"'+(s.st==="hecho"?' checked':'')+(S.ckBusy||!canW()?' disabled':'')+'><span class="ck-txt"><span class="ck-t">'+esc(it.texto)+'</span>'+(it.detalle?'<span class="ck-d">'+esc(it.detalle)+'</span>':'')+'<span class="ck-s">'+esc(s.txt)+'</span></span></label>'+
+      return '<li class="ck-item '+s.st+'"><label class="ck-box"><input type="checkbox" id="ck-'+esc(it.id)+'" data-act="ck-toggle" data-eq="'+esc(e.id)+'" data-id="'+esc(it.id)+'"'+(s.st==="hecho"?' checked':'')+(S.ckBusy||!canW()?' disabled':'')+'><span class="ck-txt"><span class="ck-t">'+esc(it.texto)+'</span>'+(it.detalle?'<span class="ck-d">'+esc(it.detalle)+'</span>':'')+(ajustado(it)?'<span class="ck-d"><span class="chip sens">Ajustado: '+esc(frecTxt(ef(it)))+'</span> manual: '+esc(frecTxt(it))+(it.ajMotivo?' · '+esc(it.ajMotivo):'')+'</span>':'')+'<span class="ck-s">'+esc(s.txt)+'</span></span></label>'+
         '<div class="ck-a">'+(inPlan?'<span class="chip st-ok">En el plan</span>':'<button class="btn sm w" data-act="ck-plan" data-eq="'+esc(e.id)+'" data-id="'+esc(it.id)+'" title="Crear una tarea con aviso en el tablero">Pasar al plan</button>')+'</div></li>'}).join("")+'</ul></section>';
   }
-  h+='<p class="hint">Tildá cada ítem al hacerlo: queda la fecha y el horómetro, y se destilda solo cuando vuelve a tocar. Para recibir avisos en el tablero, usá “Pasar al plan”.</p>';
+  h+='<p class="hint">Tildá cada ítem al hacerlo: queda la fecha y el horómetro, y se destilda solo cuando vuelve a tocar. Para recibir avisos en el tablero, usá “Pasar al plan”. Las frecuencias se programan con el ajuste a nuestro uso cuando existe.</p>';
   return h;
 }
 async function saveCk(eqId,patch){
@@ -817,43 +837,81 @@ async function toggleItem(eqId,itemId){
 }
 async function itemToPlan(eqId,itemId){
   const ck=S.ck.get(eqId);const items=JSON.parse(JSON.stringify(ck.items||[]));const it=items.find(x=>x.id===itemId);if(!it)return;
-  const last=(it.hist||[])[0];const h=it.unidad==="horas";
+  const last=(it.hist||[])[0];const fr=ef(it);const h=fr.unidad==="horas";
   const t={equipoId:eqId,nombre:it.texto,tipo:"Inspección",responsable:"Mantenimiento",modo:h?"horas":"tiempo",
-    cadaValor:h?null:Number(it.cada),cadaUnidad:h?"meses":it.unidad,cadaHoras:h?Number(it.cada):null,
+    cadaValor:h?null:fr.cada,cadaUnidad:h?"meses":fr.unidad,cadaHoras:h?fr.cada:null,
     ultimaFecha:last?last.f:null,ultimaHoras:last&&isNum(last.h)?last.h:null,avisoDias:null,avisoHoras:null,
-    instructivo:{minutos:null,detenido:"",seguridad:"",herramientas:"",repuestos:"",criterio:it.detalle||"",pasos:[]},
+    instructivo:{minutos:null,detenido:"",seguridad:"",herramientas:"",repuestos:"",criterio:[it.detalle,ajustado(it)?"Frecuencia ajustada a nuestro uso ("+frecTxt(fr)+"; manual: "+frecTxt(it)+")"+(it.ajMotivo?": "+it.ajMotivo:""):""].filter(Boolean).join(" · "),pasos:[]},
     origen:"Checklist del fabricante",creado:new Date().toISOString()};
   try{const ref=await S.db.collection("tareas").add(t);it.tareaId=ref.id;await saveCk(eqId,{items});toast("Tarea creada en el plan: completá su instructivo")}catch(x){writeErr(x)}
 }
 let ckSeq=0;
 function ckRow(it){it=it||{};const id=it.id||("n"+Date.now().toString(36)+(ckSeq++));
+  const uSel=(cls,v,vacia)=>'<select class="'+cls+'" aria-label="Unidad">'+(vacia?'<option value="">—</option>':'')+UNIT_OPTS.map(([k,l])=>'<option value="'+k+'"'+(v===k?' selected':'')+'>'+l+'</option>').join("")+'</select>';
   return '<div class="ck-er" data-rid="'+esc(id)+'"'+(it.ai?' data-ai="1"':'')+'>'+
-    '<input class="er-t" aria-label="Qué hacer" placeholder="Qué hacer (ej. Revisar nivel de aceite)" value="'+esc(it.texto)+'">'+
-    '<div class="inline"><input class="er-c" aria-label="Cada" inputmode="numeric" style="width:70px" value="'+esc(isNum(it.cada)?it.cada:"")+'"><select class="er-u" aria-label="Unidad">'+UNIT_OPTS.map(([v,l])=>'<option value="'+v+'"'+((it.unidad||"dias")===v?' selected':'')+'>'+l+'</option>').join("")+'</select></div>'+
+    '<input class="er-t" aria-label="Qué hacer" placeholder="Qué hacer (ej. Purgar el tanque)" value="'+esc(it.texto)+'">'+
+    '<div class="inline" title="Lo que pide el manual"><input class="er-c" aria-label="Según manual: cada" inputmode="numeric" style="width:78px" value="'+esc(isNum(it.cada)?it.cada:"")+'">'+uSel("er-u",it.unidad||"dias")+'</div>'+
+    '<div class="inline" title="Ajustado a nuestro uso (vacío = igual al manual)"><input class="er-ac" aria-label="Ajustado: cada" inputmode="numeric" style="width:78px" placeholder="=" value="'+esc(Number(it.ajCada)>0?it.ajCada:"")+'">'+uSel("er-au",Number(it.ajCada)>0?(it.ajUnidad||"dias"):"",true)+'</div>'+
+    '<input class="er-m" aria-label="Motivo del ajuste" placeholder="Motivo del ajuste" value="'+esc(it.ajMotivo)+'">'+
     '<input class="er-d" aria-label="Valor de referencia" placeholder="Valor de referencia / detalle" value="'+esc(it.detalle)+'">'+
     '<button type="button" class="btn sm" data-act="ck-row-del" aria-label="Quitar ítem">✕</button>'+(it.ai?'<span class="chip ai">IA</span>':'')+'</div>';
 }
 function formChecklist(eqId,autoAI){
   const e=S.eq.get(eqId);const ck=S.ck.get(eqId)||{items:[]};const byId=new Map((ck.items||[]).map(i=>[i.id,i]));
-  openModal(mhead("Checklist del fabricante")+'<p class="hint" style="margin:-6px 0 0">'+esc(e.codigo+" · "+e.nombre)+'</p>'+
+  openModal(mhead("Checklist de mantenimiento")+'<p class="hint" style="margin:-6px 0 0">'+esc(e.codigo+" · "+e.nombre)+'</p>'+
   '<form id="frm" novalidate style="display:flex;flex-direction:column;gap:12px">'+
   '<label class="f"><span>Fuente (manual, edición, página)</span><input id="ck-fuente" value="'+esc(ck.fuente)+'" placeholder="Manual de operación y mantenimiento, cap. 7, pág. 42"></label>'+
-  '<div class="ck-er hd" aria-hidden="true"><span>Qué hacer</span><span>Cada</span><span>Valor de referencia</span><span></span></div>'+
+  '<fieldset><legend>Exigencia de uso de este equipo</legend><div class="fg">'+
+    '<label class="f"><span>Exigencia</span><select id="ck-ex">'+EXIGENCIAS.map(([k,l,f,d])=>'<option value="'+k+'"'+((ck.exigencia||"normal")===k?' selected':'')+'>'+l+' — '+d+'</option>').join("")+'</select></label>'+
+    '<label class="f"><span>Por qué (producción, turnos, ambiente)</span><input id="ck-exm" value="'+esc(ck.exigMotivo)+'" placeholder="Hoy trabaja un solo turno, 5 días"></label>'+
+    '<div class="full" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button type="button" class="btn" id="ck-sug">Sugerir frecuencias según la exigencia</button><span class="hint" id="ck-sug-msg">Completa el ajuste de los ítems que no lo tienen. Revisalo antes de guardar.</span></div></div></fieldset>'+
+  '<div class="ck-er hd" aria-hidden="true"><span>Qué hacer</span><span>Según manual</span><span>Ajustado a nuestro uso</span><span>Motivo del ajuste</span><span>Valor de referencia</span><span></span></div>'+
   '<div id="ck-rows" style="display:flex;flex-direction:column;gap:8px">'+((ck.items||[]).length?(ck.items||[]).map(ckRow).join(""):ckRow())+'</div>'+
   '<div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn" data-act="ck-row-add">+ Agregar ítem</button>'+(S.smp?'<button type="button" class="btn" id="ck-ai-btn" data-act="ck-ai-run" data-id="'+esc(eqId)+'">Sugerir ítems con IA</button>':'')+'</div>'+
   '<p class="hint" id="ck-ai-msg" style="margin:0"></p>'+
   '<div class="err" id="err"></div>'+
   '<div class="m-acts"><button type="button" class="btn" data-act="close">Cancelar</button><button type="submit" class="btn primary">Guardar checklist</button></div></form>',
   r=>{
+    r.querySelector(".modal").style.maxWidth="1120px";
+    r.querySelector("#ck-sug").addEventListener("click",()=>{
+      const ex=exig(r.querySelector("#ck-ex").value);const mot=r.querySelector("#ck-exm").value.trim();let n=0;
+      r.querySelectorAll("#ck-rows .ck-er").forEach(row=>{
+        const c=Number(row.querySelector(".er-c").value.replace(",","."));if(!(c>0)||row.querySelector(".er-ac").value)return;
+        const sg=sugerirFrec(c,row.querySelector(".er-u").value,ex[2]);
+        if(sg.cada===c&&sg.unidad===row.querySelector(".er-u").value)return;
+        row.querySelector(".er-ac").value=sg.cada;row.querySelector(".er-au").value=sg.unidad;
+        if(!row.querySelector(".er-m").value)row.querySelector(".er-m").value="Exigencia "+ex[1].toLowerCase()+(mot?": "+mot:"");n++});
+      r.querySelector("#ck-sug-msg").textContent=n?"Se sugirieron "+n+" ajustes (exigencia "+ex[1].toLowerCase()+"). Revisalos antes de guardar.":ex[2]===1?"Con exigencia normal se usa lo que indica el manual.":"No hay ítems sin ajuste para sugerir.";
+    });
     r.querySelector("#frm").addEventListener("submit",async ev=>{ev.preventDefault();
       const rows=[...r.querySelectorAll("#ck-rows .ck-er")];const items=[];let bad=false;let ai=false;
       for(const row of rows){const texto=row.querySelector(".er-t").value.trim();const cada=Number(row.querySelector(".er-c").value.replace(",","."));
         if(!texto&&!row.querySelector(".er-c").value)continue;
         if(!texto||!(cada>0)){bad=true;continue}
         const old=byId.get(row.dataset.rid)||{};if(row.dataset.ai)ai=true;
-        items.push({id:row.dataset.rid,texto,cada,unidad:row.querySelector(".er-u").value,detalle:row.querySelector(".er-d").value.trim(),hist:old.hist||[],tareaId:old.tareaId||null,ai:!!(old.ai||row.dataset.ai)})}
+        const ajc=Number(row.querySelector(".er-ac").value.replace(",","."));const aju=row.querySelector(".er-au").value||row.querySelector(".er-u").value;
+        const it={id:row.dataset.rid,texto,cada,unidad:row.querySelector(".er-u").value,detalle:row.querySelector(".er-d").value.trim(),hist:old.hist||[],tareaId:old.tareaId||null,ai:!!(old.ai||row.dataset.ai),
+          ajCada:ajc>0?ajc:null,ajUnidad:ajc>0?aju:null,ajMotivo:ajc>0?row.querySelector(".er-m").value.trim():""};
+        if(ajc>0&&ajustado(it)&&!it.ajMotivo){$("#err").textContent="Anotá el motivo del ajuste de “"+texto+"”.";row.querySelector(".er-m").focus();return}
+        items.push(it)}
       if(bad){$("#err").textContent="Cada ítem necesita una descripción y un intervalo mayor a cero.";return}
-      try{await saveCk(eqId,{fuente:val("ck-fuente"),items,ia:items.some(i=>i.ai)});closeModal();toast("Checklist guardado");render()}catch(x){writeErr(x)}
+      /* constancia de los cambios de frecuencia y de exigencia */
+      const oldById=new Map((ck.items||[]).map(i=>[i.id,i]));const cambios=[];
+      const ft=it=>frecTxt(ef(it))+(ajustado(it)?" (ajustada)":" (manual)");
+      for(const it of items){const o=oldById.get(it.id);if(!o){cambios.push({campo:"Nuevo ítem · "+it.texto,antes:"",despues:ft(it)});continue}
+        if(ft(o)!==ft(it))cambios.push({campo:"Frecuencia · "+it.texto,antes:ft(o),despues:ft(it)+(it.ajMotivo?" — "+it.ajMotivo:"")})}
+      for(const o of (ck.items||[]))if(!items.some(i=>i.id===o.id))cambios.push({campo:"Ítem quitado · "+o.texto,antes:ft(o),despues:""});
+      const exN=r.querySelector("#ck-ex").value,exM=r.querySelector("#ck-exm").value.trim();
+      if((ck.exigencia||"normal")!==exN)cambios.push({campo:"Exigencia de uso",antes:exig(ck.exigencia)[1],despues:exig(exN)[1]+(exM?" — "+exM:"")});
+      const patch={fuente:val("ck-fuente"),items,ia:items.some(i=>i.ai),exigencia:exN,exigMotivo:exM};
+      if(cambios.length)patch.cambios=[...(ck.cambios||[]),{fecha:new Date().toISOString(),porId:S.me&&S.me.id||null,porNombre:S.me&&S.me.name||"",cambios}];
+      try{await saveCk(eqId,patch);
+        /* las tareas del plan que salieron de estos ítems toman la frecuencia nueva */
+        let nT=0;
+        for(const it of items){const o=oldById.get(it.id);const t=it.tareaId&&S.ta.get(it.tareaId);if(!t||!o)continue;
+          const a=ef(o),b=ef(it);if(a.cada===b.cada&&a.unidad===b.unidad)continue;const h=b.unidad==="horas";
+          await S.db.doc("tareas/"+t.id).update({modo:h?"horas":"tiempo",cadaValor:h?null:b.cada,cadaUnidad:h?"meses":b.unidad,cadaHoras:h?b.cada:null});nT++}
+        closeModal();toast("Checklist guardado"+(nT?" · "+nT+(nT===1?" tarea del plan actualizada":" tareas del plan actualizadas"):""));render()}catch(x){writeErr(x)}
     });
     if(autoAI)suggestAI(eqId);
   });
@@ -882,7 +940,7 @@ async function suggestAI(eqId){
 function printableChecklist(e,ck){
   const items=(ck.items||[]).slice().sort((a,b)=>grpKey(a)-grpKey(b));const groups=new Map();items.forEach(it=>{const k=grpLabel(it);if(!groups.has(k))groups.set(k,[]);groups.get(k).push(it)});
   const css='body{font-family:Arial,sans-serif;color:#111;margin:24px;font-size:12px}h1{font-size:20px;margin:0}h2{font-size:14px;margin:18px 0 6px;border-bottom:2px solid #1D6A73;padding-bottom:3px}table{border-collapse:collapse;width:100%}td,th{border:1px solid #bbb;padding:5px 6px;text-align:left;vertical-align:top}th{background:#eef2f3}td.b{width:34px}.code{font-family:monospace;color:#555}section{page-break-inside:avoid}@media print{body{margin:10mm}}';
-  let body='';for(const [g,its] of groups){body+='<section><h2>'+esc(g)+'</h2><table><tr><th>Ítem</th><th>Valor de referencia</th>'+[1,2,3,4,5,6].map(()=>'<th class="b">Fecha</th>').join("")+'</tr>'+its.map(it=>'<tr><td>☐ '+esc(it.texto)+'</td><td>'+esc(it.detalle)+'</td>'+[1,2,3,4,5,6].map(()=>'<td class="b"></td>').join("")+'</tr>').join("")+'</table></section>'}
+  let body='';for(const [g,its] of groups){body+='<section><h2>'+esc(g)+'</h2><table><tr><th>Ítem</th><th>Valor de referencia</th>'+[1,2,3,4,5,6].map(()=>'<th class="b">Fecha</th>').join("")+'</tr>'+its.map(it=>'<tr><td>☐ '+esc(it.texto)+(ajustado(it)?'<br><small style="color:#555">Ajustado a nuestro uso (manual: '+esc(frecTxt(it))+')'+(it.ajMotivo?' · '+esc(it.ajMotivo):'')+'</small>':'')+'</td><td>'+esc(it.detalle)+'</td>'+[1,2,3,4,5,6].map(()=>'<td class="b"></td>').join("")+'</tr>').join("")+'</table></section>'}
   return '<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Checklist '+esc(e.codigo)+'</title><style>'+css+'</style></head><body><div class="code">'+esc(e.codigo)+'</div><h1>Checklist del fabricante · '+esc(e.nombre)+'</h1><p style="color:#555">Fuente: '+esc(ck.fuente||"—")+' · Generado el '+fmtD(todayStr())+' · Anotá la fecha y las iniciales en cada casillero.</p>'+body+'<p style="margin-top:18px">Operario: ____________________ &nbsp;&nbsp; Supervisor: ____________________</p></body></html>';
 }
 function taskRowEq(t){return taskRow(t,false)}
@@ -1216,13 +1274,15 @@ function movimientosAuditoria(){
       out.push({fecha:h.fecha,porId:h.porId,quien:h.porNombre,que:otNum(o)+" · "+(o.desc||""),accion:h.accion,cambios:h.cambios||[],equipoId:o.equipoId});
   for(const r of S.re)for(const c of (r.cambios||[]))
     out.push({fecha:c.fecha,porId:c.porId,quien:c.porNombre,que:"Registro del "+fmtD(r.fecha)+" · "+(r.tareaNombre||"")+(r.otNumero?" ("+otNum({numero:r.otNumero})+")":""),accion:"Corrigió el registro",cambios:c.cambios||[],equipoId:r.equipoId});
+  for(const ck of S.ck.values())for(const c of (ck.cambios||[]))
+    out.push({fecha:c.fecha,porId:c.porId,quien:c.porNombre,que:"Checklist del equipo",accion:"Modificó el checklist",cambios:c.cambios||[],equipoId:ck.equipoId||ck.id});
   return out.sort((a,b)=>String(b.fecha).localeCompare(String(a.fecha)));
 }
 function viewCambios(){
   const f=S.audF||{};let l=movimientosAuditoria();
   const personas=[...new Map(l.map(x=>[x.porId,x.quien])).entries()];
   if(f.quien)l=l.filter(x=>x.porId===f.quien);
-  if(f.sens)l=l.filter(x=>x.cambios.some(c=>SENSIBLES.has(c.campo)));
+  if(f.sens)l=l.filter(x=>x.cambios.some(c=>SENSIBLES.has(c.campo)||/^Frecuencia · /.test(c.campo)));
   if(S.empresa)l=l.filter(x=>{const e=S.eq.get(x.equipoId);return e&&e.empresa===S.empresa});
   return '<div class="fs-bar"><select id="aud-q"><option value="">Todas las personas</option>'+personas.map(([id,n])=>'<option value="'+esc(id)+'"'+(f.quien===id?' selected':'')+'>'+esc(n||"")+'</option>').join("")+'</select>'+
     '<label class="inline" style="font-size:13px"><input type="checkbox" id="aud-s" style="width:auto"'+(f.sens?' checked':'')+'> Solo cambios sensibles (fechas, horas, resultado)</label></div>'+
@@ -2136,13 +2196,13 @@ const esPrev=o=>o&&o.tipo==="preventivo";
 const otAbierta=o=>!!o&&o.estado!=="Cerrada"&&o.estado!=="Anulada";
 const tecnicoDe=o=>o&&(o.tecnicoNombre||o.asignado)||"";
 /* Lista de cambios campo por campo: [{campo, antes, despues}] */
-const SENSIBLES=new Set(["Fecha","Horas de trabajo","Equipo detenido (h)","Tiempo estimado (h)","Resultado"]);
+const SENSIBLES=new Set(["Fecha","Horas de trabajo","Equipo detenido (h)","Tiempo estimado (h)","Resultado","Exigencia de uso"]);
 function difCampos(antes,despues,campos){
   const v=x=>x===null||x===undefined?"":String(x);const out=[];
   for(const [k,l,fmt] of campos){if(!(k in despues))continue;const a=v(antes[k]),d=v(despues[k]);if(a!==d)out.push({campo:l,antes:fmt?fmt(antes[k]):a,despues:fmt?fmt(despues[k]):d})}
   return out;
 }
-function cambiosHTML(l){return (l||[]).map(c=>'<div class="cmb"><b>'+esc(c.campo)+':</b> <span class="antes">'+esc(c.antes||"(vacío)")+'</span> → '+esc(c.despues||"(vacío)")+(SENSIBLES.has(c.campo)?' <span class="chip sens">sensible</span>':'')+'</div>').join("")}
+function cambiosHTML(l){return (l||[]).map(c=>'<div class="cmb"><b>'+esc(c.campo)+':</b> <span class="antes">'+esc(c.antes||"(vacío)")+'</span> → '+esc(c.despues||"(vacío)")+(SENSIBLES.has(c.campo)||/^Frecuencia · /.test(c.campo)?' <span class="chip sens">sensible</span>':'')+'</div>').join("")}
 /* Firma digital vigente de un usuario (la última que cargó) */
 function firmaDe(uid){let f=null;for(const x of (S.firmas||new Map()).values())if(x.userId===uid&&(!f||String(x.creado)>String(f.creado)))f=x;return f}
 /* Asigna el técnico a la orden la primera vez que alguien la firma; después queda fijo */
