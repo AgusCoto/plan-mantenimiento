@@ -143,6 +143,9 @@
   .pm-sw button{border:0;background:none;padding:8px 10px;font-family:var(--f-display);font-weight:600;font-size:15px;color:var(--muted);border-bottom:3px solid transparent;margin-bottom:-1px;cursor:pointer}
   .pm-sw button[aria-selected="true"]{color:var(--fg);border-bottom-color:var(--accent)}
   .pm-users td select{width:auto}
+  .pm-paso{background:var(--surface-2);border-radius:10px;padding:10px 12px;font-size:14px}
+  .pm-big{width:100%;justify-content:center;padding:14px;font-size:16px;font-weight:600}
+  #pm-man summary{cursor:pointer;color:var(--accent);font-size:13px}
   #who[data-pm]{cursor:pointer;border-radius:8px;padding:2px 6px}
   #who[data-pm]:hover{background:var(--surface-2)}
   `;
@@ -161,33 +164,47 @@
   const field = (id, label, attrs) => `<label class="f"><span>${label}</span><input id="${id}" ${attrs || ""}></label>`;
 
   function setupScreen(msg) {
+    // En el celular lo principal es escanear el QR de la computadora; los datos a mano quedan como respaldo.
+    const movil = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || (window.matchMedia && matchMedia("(pointer:coarse)").matches && !TAURI);
+    const manual = !movil || !!msg;
     const el = overlay(`<form class="pm-box" id="pm-setup">
-      <h2>Conectar con la base de datos</h2>
-      <p class="hint">Copiá estos datos de Supabase → <b>Project Settings → API</b>. Se piden una sola vez en esta computadora.</p>
-      ${field("pm-url", "Project URL", 'placeholder="https://xxxx.supabase.co" required inputmode="url"')}
-      ${field("pm-key", "Clave anon public", 'required')}
+      <div style="display:flex;gap:12px;align-items:center"><img src="iconos/icono.svg" alt="" width="48" height="48" style="border-radius:11px"><div><h2>Conectar W-Main</h2><p class="hint" style="margin:0">Se hace una sola vez en este dispositivo</p></div></div>
+      ${movil ? `<div class="pm-paso"><b>1.</b> En la computadora, abrí W-Main y entrá a <b>Configuración → Celulares</b>.</div>
+      <div class="pm-paso"><b>2.</b> Tocá el botón de abajo y apuntá la cámara al QR que aparece en la pantalla.</div>
+      <button class="btn primary pm-big" type="button" id="pm-qr">Escanear QR de la computadora</button>
+      <div id="pm-cam"></div>` : ""}
       <div class="pm-err" id="pm-err">${esc(msg || "")}</div>
-      <div class="pm-row"><button class="btn" type="button" id="pm-qr">Escanear QR de conexión</button><button class="btn primary" type="submit">Guardar y continuar</button></div>
-      <div id="pm-cam"></div>
-      <p class="hint">En el celular es más fácil: en la computadora abrí Configuración → Celulares y escaneá el QR que aparece.</p></form>`);
+      <details id="pm-man"${manual ? " open" : ""}><summary>${movil ? "No tengo la computadora: ingresar los datos a mano" : "Datos de la base (Supabase → Project Settings → API)"}</summary>
+        <div style="display:flex;flex-direction:column;gap:12px;margin-top:12px">
+        ${field("pm-url", "Project URL", 'placeholder="https://xxxx.supabase.co" inputmode="url" autocapitalize="off" autocorrect="off"')}
+        ${field("pm-key", "Clave anon public", 'autocapitalize="off" autocorrect="off"')}
+        <div class="pm-row">${movil ? "" : '<button class="btn" type="button" id="pm-qr">Escanear QR de conexión</button>'}<button class="btn primary" type="submit">Guardar y continuar</button></div>
+        ${movil ? "" : '<div id="pm-cam"></div>'}
+        </div></details></form>`);
     el.querySelector("#pm-url").value = CFG.supabaseUrl;
     el.querySelector("#pm-key").value = CFG.supabaseAnonKey;
-    el.querySelector("#pm-qr").addEventListener("click", () => escanearConexion(el.querySelector("#pm-cam"), el.querySelector("#pm-err")));
+    const qr = el.querySelector("#pm-qr");
+    qr.addEventListener("click", () => { qr.hidden = movil; escanearConexion(el.querySelector("#pm-cam"), el.querySelector("#pm-err"), () => { qr.hidden = false; }); });
     el.querySelector("#pm-setup").addEventListener("submit", (ev) => {
       ev.preventDefault();
       const url = normalizeUrl(el.querySelector("#pm-url").value);
+      const key = el.querySelector("#pm-key").value.trim();
       if (!/^https:\/\/.+/i.test(url)) { el.querySelector("#pm-err").textContent = "La dirección tiene que empezar con https://"; return; }
-      writeCfg({ supabaseUrl: url, supabaseAnonKey: el.querySelector("#pm-key").value.trim() });
+      if (!key) { el.querySelector("#pm-err").textContent = "Pegá la clave anon public."; return; }
+      writeCfg({ supabaseUrl: url, supabaseAnonKey: key });
       location.reload();
     });
   }
 
-  async function escanearConexion(box, errEl) {
-    if (!navigator.mediaDevices || !window.jsQR) { errEl.textContent = "Este dispositivo no permite usar la cámara."; return; }
+  async function escanearConexion(box, errEl, alTerminar) {
+    const fin = () => { if (alTerminar) alTerminar(); };
+    errEl.textContent = "";
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.jsQR) { errEl.textContent = "Este dispositivo no permite usar la cámara. Ingresá los datos a mano."; fin(); return; }
     let stream;
     try { stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" } }, audio: false }); }
-    catch (_) { errEl.textContent = "No se pudo abrir la cámara: revisá el permiso."; return; }
-    box.innerHTML = '<div style="position:relative;border-radius:10px;overflow:hidden;background:#000"><video playsinline muted style="width:100%;display:block"></video></div>';
+    catch (_) { errEl.textContent = "No se pudo abrir la cámara. Permití el acceso a la cámara (en iPhone: Ajustes → Safari → Cámara) y probá de nuevo."; fin(); return; }
+    box.innerHTML = '<div style="position:relative;border-radius:12px;overflow:hidden;background:#000;aspect-ratio:1"><video playsinline muted style="width:100%;height:100%;object-fit:cover;display:block"></video><div style="position:absolute;inset:16%;border:3px solid rgba(255,255,255,.9);border-radius:14px;box-shadow:0 0 0 999px rgba(0,0,0,.35)"></div></div><p class="hint" style="text-align:center;margin:8px 0">Apuntá al QR de Configuración → Celulares</p><div class="pm-row" style="justify-content:center"><button class="btn" type="button" id="pm-cam-x">Cancelar</button></div>';
+    box.querySelector("#pm-cam-x").addEventListener("click", () => { stream.getTracks().forEach((t) => t.stop()); box.innerHTML = ""; fin(); });
     const v = box.querySelector("video"); v.srcObject = stream; await v.play().catch(() => {});
     const c = document.createElement("canvas"), ctx = c.getContext("2d", { willReadFrequently: true });
     const tick = () => {
@@ -198,7 +215,7 @@
         const r = window.jsQR(ctx.getImageData(0, 0, w, h).data, w, h, { inversionAttempts: "dontInvert" });
         if (r && r.data) {
           if (aplicarConexion(r.data)) { stream.getTracks().forEach((t) => t.stop()); location.reload(); return; }
-          errEl.textContent = "Ese QR no es el de conexión. Usá el de Configuración → Celulares.";
+          errEl.textContent = /#[A-Z]{3}-\d/.test(r.data) ? "Ese es el QR de un equipo. Primero escaneá el QR de conexión: W-Main en la computadora → Configuración → Celulares." : "Ese QR no es el de conexión. Usá el de Configuración → Celulares.";
         }
       }
       requestAnimationFrame(tick);

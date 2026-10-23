@@ -39,6 +39,12 @@ jobs:
 
       - run: npm ci
       - run: npm run vendor
+      - name: Conectar la app con la base
+        shell: bash
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: node scripts/config-ci.mjs
 
       - uses: tauri-apps/tauri-action@v0
         env:
