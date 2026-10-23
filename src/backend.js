@@ -307,6 +307,10 @@
 
   async function start(session) {
     closeOverlay();
+    try {
+      const { data: aal } = await sb.auth.mfa.getAuthenticatorAssuranceLevel();
+      if (aal && aal.nextLevel === "aal2" && aal.currentLevel !== "aal2") await pedirCodigo2FA();
+    } catch (_) {}
     const uid = session.user.id;
     let prof = null;
     for (let i = 0; i < 3 && !prof; i++) {
@@ -340,9 +344,7 @@
       },
       // Verifica email y contraseña con una sesión aparte (no cambia el usuario conectado en esta computadora)
       verificar: async (email, password) => {
-        const c = window.supabase.createClient(CFG.supabaseUrl, CFG.supabaseAnonKey, { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false, storageKey: "pm-firma" } });
-        const { data, error } = await c.auth.signInWithPassword({ email, password });
-        if (error) throw { code: /Invalid login/i.test(error.message) ? "bad_password" : "error", message: traducir(error) };
+        const { c, data } = await verificarCred(email, password);
         const { data: prof } = await c.from("perfiles").select("nombre,rol").eq("id", data.user.id).maybeSingle();
         const cerrar = () => c.auth.signOut({ scope: "local" }).catch(() => {});
         if (!prof || !["admin", "tecnico"].includes(prof.rol)) { cerrar(); throw { code: "not_granted", message: "Ese usuario no tiene rol Técnico ni Administrador." }; }
@@ -366,6 +368,114 @@
       }).subscribe();
 
     addAccountButton();
+    iniciarBloqueo();
+  }
+
+  // Valida email y contraseña con una sesión aparte (no cambia la sesión de este dispositivo)
+  async function verificarCred(email, password) {
+    const c = window.supabase.createClient(CFG.supabaseUrl, CFG.supabaseAnonKey, { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false, storageKey: "pm-firma" } });
+    const { data, error } = await c.auth.signInWithPassword({ email, password });
+    if (error) throw { code: /Invalid login/i.test(error.message) ? "bad_password" : "error", message: traducir(error) };
+    return { c, data };
+  }
+
+  /* ---------- seguridad: identificarse otra vez antes de cambios delicados ---------- */
+  let reauthHasta = 0;
+  function overlay2(html) {
+    let el = document.getElementById("pm-ov2");
+    if (!el) { el = document.createElement("div"); el.id = "pm-ov2"; document.body.appendChild(el); }
+    el.className = "pm-ov dim"; el.style.zIndex = "120"; el.innerHTML = html; return el;
+  }
+  // Pide la contraseña del usuario conectado. siempre=true: aunque se haya identificado hace poco.
+  window.PM_REAUTH = (titulo, opciones) => new Promise((resolve) => {
+    const o = opciones || {};
+    if (!me) return resolve(false);
+    if (!o.siempre && Date.now() < reauthHasta) return resolve(true);
+    const el = overlay2(`<form class="pm-box" id="pm-ra"><h2>Identificate para continuar</h2>
+      <p>${esc(titulo || "Cambio protegido")}</p>
+      <p class="hint">Por seguridad, los cambios y eliminaciones del administrador piden la contraseña de <b>${esc(me.name)}</b>.</p>
+      ${field("pm-ra-p", "Contraseña", 'type="password" autocomplete="current-password"')}
+      <div class="pm-err" id="pm-ra-e"></div>
+      <div class="pm-row"><button class="btn" type="button" id="pm-ra-x">Cancelar</button><button class="btn primary" type="submit" id="pm-ra-ok">Confirmar</button></div></form>`);
+    const fin = (v) => { el.remove(); resolve(v); };
+    el.querySelector("#pm-ra-p").focus();
+    el.querySelector("#pm-ra-x").addEventListener("click", () => fin(false));
+    el.addEventListener("keydown", (ev) => { if (ev.key === "Escape") { ev.stopPropagation(); fin(false); } });
+    el.querySelector("#pm-ra").addEventListener("submit", async (ev) => {
+      ev.preventDefault(); ev.stopPropagation();
+      const b = el.querySelector("#pm-ra-ok"), e = el.querySelector("#pm-ra-e");
+      b.disabled = true; b.textContent = "Verificando…";
+      try {
+        const { c } = await verificarCred(me.email, el.querySelector("#pm-ra-p").value);
+        c.auth.signOut({ scope: "local" }).catch(() => {});
+        reauthHasta = Date.now() + 5 * 60 * 1000;
+        fin(true);
+      } catch (x) {
+        b.disabled = false; b.textContent = "Confirmar";
+        e.textContent = x && x.code === "bad_password" ? "Contraseña incorrecta." : (x && x.message) || "No se pudo verificar.";
+        registrarIntento();
+      }
+    });
+  });
+  // Demasiados intentos fallidos: se cierra la sesión
+  let fallidos = 0;
+  function registrarIntento() { if (++fallidos >= 5) { alert("Demasiados intentos fallidos. Por seguridad se cierra la sesión."); sb.auth.signOut(); } }
+
+  /* ---------- bloqueo por inactividad ---------- */
+  const BLOQUEO_MIN = 30;
+  let ultimaActividad = Date.now();
+  function iniciarBloqueo() {
+    ["pointerdown", "keydown", "wheel", "touchstart"].forEach((t) => document.addEventListener(t, () => { ultimaActividad = Date.now(); }, { passive: true, capture: true }));
+    try { if (localStorage.getItem("pm-bloqueo") === me.id) bloquear(); } catch (_) {}
+    setInterval(() => { if (Date.now() - ultimaActividad > BLOQUEO_MIN * 60 * 1000 && !document.getElementById("pm-lock")) bloquear(); }, 30 * 1000);
+  }
+  function bloquear() {
+    try { localStorage.setItem("pm-bloqueo", me.id); } catch (_) {}
+    let el = document.getElementById("pm-lock");
+    if (!el) { el = document.createElement("div"); el.id = "pm-lock"; document.body.appendChild(el); }
+    el.className = "pm-ov"; el.style.zIndex = "130";
+    el.innerHTML = `<form class="pm-box" id="pm-lk"><div style="display:flex;gap:12px;align-items:center"><img src="iconos/icono.svg" alt="" width="44" height="44" style="border-radius:10px"><div><h2>W-Main bloqueado</h2><p class="hint" style="margin:0">Pasaron ${BLOQUEO_MIN} minutos sin uso</p></div></div>
+      <p>Ingresá la contraseña de <b>${esc(me.name)}</b> para seguir, o cerrá la sesión si no sos vos.</p>
+      ${field("pm-lk-p", "Contraseña", 'type="password" autocomplete="current-password"')}
+      <div class="pm-err" id="pm-lk-e"></div>
+      <div class="pm-row"><button class="btn" type="button" id="pm-lk-out">Cerrar sesión</button><button class="btn primary" type="submit" id="pm-lk-ok">Desbloquear</button></div></form>`;
+    el.querySelector("#pm-lk-out").addEventListener("click", () => { try { localStorage.removeItem("pm-bloqueo"); } catch (_) {} sb.auth.signOut(); });
+    el.querySelector("#pm-lk").addEventListener("submit", async (ev) => {
+      ev.preventDefault();
+      const b = el.querySelector("#pm-lk-ok"); b.disabled = true;
+      try {
+        const { c } = await verificarCred(me.email, el.querySelector("#pm-lk-p").value);
+        c.auth.signOut({ scope: "local" }).catch(() => {});
+        try { localStorage.removeItem("pm-bloqueo"); } catch (_) {}
+        ultimaActividad = Date.now(); el.remove();
+      } catch (x) {
+        b.disabled = false; el.querySelector("#pm-lk-e").textContent = x && x.code === "bad_password" ? "Contraseña incorrecta." : "No se pudo verificar.";
+        registrarIntento();
+      }
+    });
+  }
+
+  /* ---------- verificación en dos pasos (código de una app como Google Authenticator) ---------- */
+  async function pedirCodigo2FA() {
+    return new Promise((resolve) => {
+      const el = overlay(`<form class="pm-box" id="pm-2f"><h2>Verificación en dos pasos</h2>
+        <p>Abrí la app de autenticación del celular (Google Authenticator, Microsoft Authenticator…) y escribí el código de 6 números de <b>W-Main</b>.</p>
+        ${field("pm-2f-c", "Código", 'inputmode="numeric" autocomplete="one-time-code" maxlength="6"')}
+        <div class="pm-err" id="pm-2f-e"></div>
+        <div class="pm-row"><button class="btn" type="button" id="pm-2f-out">Cerrar sesión</button><button class="btn primary" type="submit">Verificar</button></div></form>`);
+      el.querySelector("#pm-2f-c").focus();
+      el.querySelector("#pm-2f-out").addEventListener("click", () => sb.auth.signOut());
+      el.querySelector("#pm-2f").addEventListener("submit", async (ev) => {
+        ev.preventDefault();
+        const code = el.querySelector("#pm-2f-c").value.replace(/\D/g, "");
+        const { data: f } = await sb.auth.mfa.listFactors();
+        const factor = f && f.totp && f.totp[0];
+        if (!factor) { closeOverlay(); return resolve(true); }
+        const { error } = await sb.auth.mfa.challengeAndVerify({ factorId: factor.id, code });
+        if (error) { el.querySelector("#pm-2f-e").textContent = "Código incorrecto o vencido. Probá con el código nuevo."; registrarIntento(); return; }
+        closeOverlay(); resolve(true);
+      });
+    });
   }
 
   function colorFor(id) {
@@ -630,16 +740,42 @@
     accountScreen(tab === "usuarios" && me.rol !== "admin" ? "perfil" : tab);
   };
   async function accountScreen(tab) {
-    const tabs = [["perfil", "Mi perfil"]].concat(me.rol === "admin" ? [["usuarios", "Usuarios"]] : []).concat([["config", "Configuración"]]);
+    const tabs = [["perfil", "Mi perfil"]].concat(me.rol === "admin" ? [["usuarios", "Usuarios"]] : []).concat([["seguridad", "Seguridad"], ["config", "Configuración"]]);
+    const db = services.db;
     let body = "";
     if (tab === "perfil") {
+      let actual = null;
+      try { const snap = await db.collection("firmas").get(); snap.docs.map((d) => d.data()).filter((x) => x.userId === me.id).forEach((x) => { if (!actual || String(x.creado) > String(actual.creado)) actual = x; }); } catch (_) {}
+      const firma = ["admin", "tecnico"].includes(me.rol) ? `<h3 style="margin:8px 0 0;font-size:16px">Firma digital</h3>
+        <p class="hint" style="margin:0">Se estampa en el remito de cada orden que finalizás (después de poner tu contraseña). Dibujala con el mouse o con el dedo.</p>
+        ${actual ? `<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span class="hint">Firma actual:</span><img src="${esc(actual.img)}" alt="Firma actual" style="max-height:60px;background:#fff;border:1px solid var(--line);border-radius:6px;padding:4px"></div>` : `<p class="pm-err" style="margin:0">Todavía no cargaste tu firma: sin ella no podés finalizar órdenes.</p>`}
+        <canvas id="pm-pad" width="560" height="180" style="width:100%;max-width:560px;height:auto;aspect-ratio:560/180;background:#fff;border:2px dashed var(--line);border-radius:10px;touch-action:none;cursor:crosshair"></canvas>
+        <div class="pm-row" style="justify-content:flex-start"><button class="btn" type="button" id="pm-pad-x">Borrar</button><button class="btn primary" type="button" id="pm-pad-ok">Guardar firma</button></div>
+        <p class="hint" style="margin:0">Si la cambiás, los remitos ya firmados conservan la firma anterior.</p>` : "";
       body = `${field("pm-n", "Nombre", "")}<p class="hint">Email: ${esc(me.email)} · Rol: <b>${esc(rolLabel(me.rol))}</b></p>
+        <div class="pm-row" style="justify-content:flex-start"><button class="btn primary" type="button" id="pm-save">Guardar nombre</button></div>
+        ${firma}
         <div class="pm-err" id="pm-err"></div>
-        <div class="pm-row"><button class="btn danger" type="button" id="pm-out">Cerrar sesión</button><button class="btn primary" type="button" id="pm-save">Guardar nombre</button></div>`;
+        <div class="pm-row"><button class="btn danger" type="button" id="pm-out">Cerrar sesión</button></div>`;
+    } else if (tab === "seguridad") {
+      let factores = [];
+      try { const { data } = await sb.auth.mfa.listFactors(); factores = (data && data.totp) || []; } catch (_) {}
+      body = `<h3 style="margin:4px 0 0;font-size:16px">Verificación en dos pasos</h3>
+        <p class="hint" style="margin:0">Además de la contraseña, al ingresar se pide un código del celular (app Google Authenticator o Microsoft Authenticator). Así, aunque alguien consiga tu contraseña, no puede entrar. <b>Muy recomendado para administradores.</b></p>
+        ${factores.length ? `<p class="pm-ok" style="margin:0">Activada.</p><div class="pm-row" style="justify-content:flex-start"><button class="btn danger" type="button" id="pm-mfa-off">Desactivar</button></div>`
+          : `<div class="pm-row" style="justify-content:flex-start"><button class="btn primary" type="button" id="pm-mfa-on">Activar verificación en dos pasos</button></div><div id="pm-mfa"></div>`}
+        <h3 style="margin:10px 0 0;font-size:16px">Otras protecciones activas</h3>
+        <ul class="hint" style="margin:0;padding-left:18px">
+          <li>La aplicación se bloquea después de ${BLOQUEO_MIN} minutos sin uso y pide la contraseña.</li>
+          <li>Los cambios y eliminaciones del administrador piden identificarse otra vez.</li>
+          <li>Cada orden se firma con usuario y contraseña del técnico.</li>
+          <li>Después de 5 intentos de contraseña fallidos se cierra la sesión.</li></ul>
+        <div class="pm-err" id="pm-err"></div>`;
     } else if (tab === "usuarios") {
       const { data, error } = await sb.from("perfiles").select("*").order("creado");
       body = error ? `<p class="pm-err">${esc(error.message)}</p>` :
-        `<p class="hint">Los usuarios se crean desde la pantalla de ingreso (“Crear usuario”). Los nuevos aparecen como <b>Sin acceso</b> hasta que les asignes un rol: <b>Solo lectura</b> ve todo, <b>Técnico</b> carga fallas, intervenciones y tareas; <b>Administrador</b> además da de alta equipos, manuales y usuarios.</p>
+        `<p class="hint">Los usuarios se crean desde la pantalla de ingreso (“Crear usuario”) y quedan <b>Sin acceso</b> hasta que les asignes un rol:</p>
+        <ul class="hint" style="margin:0;padding-left:18px"><li><b>Gerente de mantenimiento:</b> acceso total; los cambios y eliminaciones piden su contraseña.</li><li><b>Técnico:</b> reporta fallas, genera y finaliza órdenes con su firma, y corrige datos básicos de sus propias órdenes y registros (cada cambio queda registrado).</li><li><b>Directivo:</b> solo consulta — fallas a reparar, trabajos en curso, informes.</li></ul>
         <div class="tbl-wrap"><table class="pm-users"><thead><tr><th>Nombre</th><th>Email</th><th>Rol</th></tr></thead><tbody>${(data || []).map((p) => `<tr><td>${esc(p.nombre)}</td><td>${esc(p.email || "")}</td><td><select data-uid="${esc(p.id)}" ${p.id === me.id ? "disabled title=\"No podés cambiar tu propio rol\"" : ""}>${["admin", "tecnico", "lectura", "pendiente"].map((r) => `<option value="${r}" ${r === p.rol ? "selected" : ""}>${rolLabel(r)}</option>`).join("")}</select></td></tr>`).join("")}</tbody></table></div>
         <div class="pm-err" id="pm-err"></div>`;
     } else {
@@ -657,6 +793,25 @@
     const errEl = el.querySelector("#pm-err");
     if (tab === "perfil") {
       el.querySelector("#pm-n").value = me.name;
+      const pad = el.querySelector("#pm-pad");
+      if (pad) {
+        const ctx = pad.getContext("2d"); let dib = false, hay = false, ult = null;
+        ctx.lineWidth = 2.6; ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.strokeStyle = "#0B2A5B";
+        const pos = (ev) => { const r = pad.getBoundingClientRect(); return [(ev.clientX - r.left) * pad.width / r.width, (ev.clientY - r.top) * pad.height / r.height]; };
+        pad.addEventListener("pointerdown", (ev) => { dib = true; ult = pos(ev); pad.setPointerCapture(ev.pointerId); });
+        pad.addEventListener("pointermove", (ev) => { if (!dib) return; const p = pos(ev); ctx.beginPath(); ctx.moveTo(ult[0], ult[1]); ctx.lineTo(p[0], p[1]); ctx.stroke(); ult = p; hay = true; });
+        ["pointerup", "pointercancel", "pointerleave"].forEach((t) => pad.addEventListener(t, () => { dib = false; }));
+        el.querySelector("#pm-pad-x").addEventListener("click", () => { ctx.clearRect(0, 0, pad.width, pad.height); hay = false; });
+        el.querySelector("#pm-pad-ok").addEventListener("click", async () => {
+          if (!hay) { errEl.textContent = "Dibujá tu firma en el recuadro."; return; }
+          const ahora = new Date().toISOString();
+          try {
+            await db.doc("firmas/" + me.id + "-" + Date.now().toString(36)).create({ userId: me.id, nombre: me.name, img: pad.toDataURL("image/png"), creado: ahora });
+            errEl.className = "pm-ok"; errEl.textContent = "Firma guardada.";
+            setTimeout(() => accountScreen("perfil"), 600);
+          } catch (x) { errEl.className = "pm-err"; errEl.textContent = "No se pudo guardar la firma: " + ((x && x.message) || ""); }
+        });
+      }
       el.querySelector("#pm-out").addEventListener("click", () => sb.auth.signOut());
       el.querySelector("#pm-save").addEventListener("click", async () => {
         const n = el.querySelector("#pm-n").value.trim(); if (!n) return;
@@ -664,8 +819,35 @@
         if (error) { errEl.textContent = error.message; return; }
         me.name = n; location.reload();
       });
+    } else if (tab === "seguridad") {
+      const on = el.querySelector("#pm-mfa-on"), off = el.querySelector("#pm-mfa-off");
+      if (on) on.addEventListener("click", async () => {
+        if (!(await window.PM_REAUTH("Activar la verificación en dos pasos", { siempre: true }))) return;
+        const { data, error } = await sb.auth.mfa.enroll({ factorType: "totp", friendlyName: "W-Main " + Date.now() });
+        if (error) { errEl.textContent = "No se pudo activar: " + error.message; return; }
+        const box = el.querySelector("#pm-mfa");
+        box.innerHTML = `<ol class="hint" style="padding-left:18px"><li>Instalá en el celular <b>Google Authenticator</b> o <b>Microsoft Authenticator</b>.</li><li>En la app tocá “+” y escaneá este QR (o cargá la clave a mano).</li><li>Escribí el código de 6 números que aparece.</li></ol>
+          <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:center"><img src="${esc(data.totp.qr_code)}" alt="QR" style="width:170px;height:170px;background:#fff;border-radius:8px;padding:6px"><div style="min-width:0"><span class="hint">Clave:</span><br><code style="word-break:break-all">${esc(data.totp.secret)}</code></div></div>
+          ${field("pm-mfa-c", "Código de 6 números", 'inputmode="numeric" maxlength="6" autocomplete="one-time-code"')}
+          <div class="pm-row" style="justify-content:flex-start"><button class="btn primary" type="button" id="pm-mfa-ok">Confirmar y activar</button></div>`;
+        box.querySelector("#pm-mfa-ok").addEventListener("click", async () => {
+          const { error: e2 } = await sb.auth.mfa.challengeAndVerify({ factorId: data.id, code: box.querySelector("#pm-mfa-c").value.replace(/\D/g, "") });
+          if (e2) { errEl.textContent = "Código incorrecto. Probá con el código nuevo que muestra la app."; return; }
+          errEl.className = "pm-ok"; errEl.textContent = "Verificación en dos pasos activada.";
+          setTimeout(() => accountScreen("seguridad"), 800);
+        });
+      });
+      if (off) off.addEventListener("click", async () => {
+        if (!(await window.PM_REAUTH("Desactivar la verificación en dos pasos", { siempre: true }))) return;
+        const { data } = await sb.auth.mfa.listFactors();
+        for (const f of (data && data.totp) || []) { const { error } = await sb.auth.mfa.unenroll({ factorId: f.id }); if (error) { errEl.textContent = "No se pudo desactivar: " + error.message; return; } }
+        accountScreen("seguridad");
+      });
     } else if (tab === "usuarios") {
+      el.querySelectorAll("select[data-uid]").forEach((s) => s.addEventListener("focus", () => { s.dataset.antes = s.value; }));
       el.querySelectorAll("select[data-uid]").forEach((s) => s.addEventListener("change", async () => {
+        const nombre = s.closest("tr").querySelector("td").textContent;
+        if (!(await window.PM_REAUTH("Cambiar el rol de " + nombre + " a “" + rolLabel(s.value) + "”", { siempre: true }))) { s.value = s.dataset.antes || s.value; return; }
         const { error } = await sb.from("perfiles").update({ rol: s.value }).eq("id", s.dataset.uid);
         errEl.className = error ? "pm-err" : "pm-ok";
         errEl.textContent = error ? error.message : "Rol actualizado.";
@@ -679,5 +861,5 @@
       });
     }
   }
-  const rolLabel = (r) => ({ admin: "Administrador", tecnico: "Técnico", lectura: "Solo lectura", pendiente: "Sin acceso (pendiente)" }[r] || r);
+  const rolLabel = (r) => ({ admin: "Gerente de mantenimiento (administrador)", tecnico: "Técnico", lectura: "Directivo (solo consulta)", pendiente: "Sin acceso (pendiente)" }[r] || r);
 })();

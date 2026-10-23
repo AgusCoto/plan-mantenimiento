@@ -206,6 +206,15 @@ details summary{cursor:pointer;color:var(--accent);font-weight:500}
 .who-t b{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px}
 .who-t span{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
 body.ro .w,body.noadm .adm{display:none!important}
+body.noadm [data-act=edit-task],body.noadm [data-act=new-task],body.noadm [data-act=del-task],body.noadm [data-act=ot-anular],body.noadm [data-act=ck-edit],body.noadm [data-act=ck-plan],body.noadm [data-act=ck-ai],body.noadm [data-act=inf-save],body.noadm [data-act=ot-reasignar]{display:none!important}
+body.noadm #inf-nota{pointer-events:none;opacity:.75}
+body.tec .solo-control{display:none!important}
+body.ro .bottom-nav .bn-falla{display:none}
+.cmb{font-size:12.5px;line-height:1.5}
+.cmb b{font-weight:600}
+.cmb .antes{text-decoration:line-through;color:var(--muted)}
+.chip.sens{background:var(--warn-soft);color:var(--warn)}
+.rm-firma-img{max-height:70px;max-width:100%;display:block;margin:0 auto 2px}
 body.ro .w-in{pointer-events:none;opacity:.7}
 .rp-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
 .rp-kpi{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px 14px;display:flex;flex-direction:column;gap:2px;min-width:0}
@@ -384,6 +393,7 @@ main.wrap{padding-top:22px}
     <button class="nav-item" data-go="tablero"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v10h5v-6h4v6h5V10"/></svg><span>Inicio</span><span class="nbadge" id="nb-tablero"></span></button>
     <button class="nav-item" data-go="ordenes"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="5" height="16" rx="1.5"/><rect x="10" y="4" width="5" height="11" rx="1.5"/><rect x="17" y="4" width="4" height="14" rx="1.5"/></svg><span>Órdenes de trabajo</span><span class="nbadge" id="nb-ordenes"></span></button>
     <button class="nav-item" data-go="escanear"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8V5.5A1.5 1.5 0 0 1 5.5 4H8M16 4h2.5A1.5 1.5 0 0 1 20 5.5V8M20 16v2.5a1.5 1.5 0 0 1-1.5 1.5H16M8 20H5.5A1.5 1.5 0 0 1 4 18.5V16"/><path d="M4 12h16"/></svg><span>Escanear QR / NFC</span></button>
+    <button class="nav-item solo-control" data-go="direccion"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M7 14l3-3 3 2 4-5"/><path d="M8 21h8"/></svg><span>Resumen para Dirección</span></button>
     <div class="nav-g">Equipos</div>
     <button class="nav-item" data-go="equipos"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></svg><span>Equipos</span></button>
     <button class="nav-item" data-go="manuales"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4.5A1.5 1.5 0 0 1 6.5 3H19v15H6.5A1.5 1.5 0 0 0 5 19.5z"/><path d="M5 19.5A1.5 1.5 0 0 0 6.5 21H19"/><path d="M9 7h6"/></svg><span>Manuales</span></button>
@@ -391,6 +401,7 @@ main.wrap{padding-top:22px}
     <button class="nav-item" data-go="historial" data-ht="fallas"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m20 20-4.6-4.6"/></svg><span>Buscar fallas anteriores</span></button>
     <button class="nav-item" data-go="historial" data-ht="regs"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg><span>Historial de intervenciones</span></button>
     <button class="nav-item" data-go="informe"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h16"/><path d="M7 16v-4M12 16V7M17 16v-6"/></svg><span>Informe mensual</span></button>
+    <button class="nav-item solo-control" data-go="cambios"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4l10-10-4-4L4 16z"/><path d="M13.5 6.5l4 4"/><path d="M15 20h5"/></svg><span>Historial de modificaciones</span></button>
     <div class="nav-g">Ajustes</div>
     <button class="nav-item" data-go="config"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h9M17 7h3M4 12h3M11 12h9M4 17h11M19 17h1"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="17" cy="17" r="2"/></svg><span>Configuración</span></button>
     <button class="nav-item adm" data-act="cuenta" data-k="usuarios"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8.5" r="3.2"/><path d="M3.5 19c.9-3.2 3.1-4.6 5.5-4.6s4.6 1.4 5.5 4.6"/><circle cx="17" cy="9.5" r="2.5"/><path d="M15.5 14.6c2.3.1 4 1.5 4.8 4.4"/></svg><span>Usuarios y permisos</span></button>
@@ -460,14 +471,23 @@ Object.assign(S,{ot:new Map(),ma:new Map(),user:null,me:null,canWrite:null,isAdm
 const RESULTADOS=["Resuelto","Pendiente de repuesto","Enviado a reparación externa","Equipo fuera de servicio"];
 const MAN_TIPOS=["Operación y mantenimiento","Despiece / repuestos","Eléctrico / esquemas","Manual de servicio","Ficha técnica","Otro"];
 const canW=()=>!!S.db&&S.canWrite!==false;
+/* Acciones del administrador que piden identificarse: [texto, siempre] (siempre = también si se identificó hace menos de 5 minutos) */
+const REAUTH={"del-eq":["Eliminar un equipo",true],"del-task":["Eliminar una tarea del plan",true],"reg-del":["Eliminar un registro del historial",true],
+  "ot-anular":["Eliminar una orden de trabajo",true],"tipo-del":["Eliminar un tipo de equipo",true],"man-del":["Borrar un manual",true],"baja":["Dar de baja un equipo",true],
+  "edit-eq":["Modificar un equipo",false],"new-task":["Agregar una tarea al plan",false],"edit-task":["Modificar una tarea del plan",false],"reg-edit":["Corregir un registro",false],
+  "ot-edit":["Modificar una orden de trabajo",false],"ot-editprev":["Modificar una orden de trabajo",false],"ot-reasignar":["Reasignar una orden de trabajo",false],
+  "cod-new":["Agregar empresa, área o tipo",false],"cod-ren":["Modificar empresa, área o tipo",false],"cfg-pub":["Cambiar la dirección de las etiquetas",false],
+  "mover":["Reubicar o transferir un equipo",false],"reactivar":["Reactivar un equipo",false],"man-new":["Agregar un manual",false],"man-edit":["Modificar un manual",false],
+  "ck-edit":["Modificar el checklist del fabricante",false],"ck-plan":["Pasar un ítem al plan",false],"inf-save":["Guardar las conclusiones del informe",false]};
 const WRITE_ACTS=new Set(["ot-anular","ot-editprev","reg-edit","ot-mover","falla","ot-edit","ot-close","ot-start","reg","reg-eq","hm","new-task","edit-task","ck-toggle","ck-plan","ck-edit","ck-ai","ck-ai-run","close-rep"]);
-const ADMIN_ACTS=new Set(["mover","baja","reactivar","cod-new","cod-ren","cfg-pub","tipo-del","reg-del","new-eq","edit-eq","del-eq","del-eq-ok","del-task","man-new","man-edit","man-del","man-del-ok"]);
+const ADMIN_ACTS=new Set(["mover","baja","reactivar","cod-new","cod-ren","cfg-pub","tipo-del","reg-del","new-task","edit-task","ot-anular","ck-edit","ck-plan","ck-ai","ck-ai-run","inf-save","ot-reasignar","new-eq","edit-eq","del-eq","del-eq-ok","del-task","man-new","man-edit","man-del","man-del-ok"]);
 function applyRole(){
   document.body.classList.toggle("ro",!canW());
   document.body.classList.toggle("noadm",!S.isAdmin);
+  document.body.classList.toggle("tec",canW()&&!S.isAdmin);
   const w=$("#who");if(!w)return;
   if(!S.me){w.innerHTML='<span class="hint">Sin identificar</span>';return}
-  const rol=S.isAdmin?"Administrador":canW()?"Técnico":"Solo lectura";
+  const rol=S.isAdmin?"Gerente de mantenimiento":canW()?"Técnico":"Directivo";
   w.innerHTML='<span class="av" style="background:'+esc(S.me.color||"var(--accent)")+'">'+esc((S.me.name||"?").trim().charAt(0).toUpperCase())+'</span><span class="who-t"><b>'+esc(S.me.name||"Usuario")+'</b><span>'+rol+'</span></span>';
 }
 async function resolveNames(ids){
@@ -621,7 +641,8 @@ function eqWorst(id){let w="sin";const c={vencida:0,proxima:0,ok:0,sin:0};
 const PAGINAS={tablero:["Inicio","Fallas abiertas y tareas del plan, lo más urgente primero"],ordenes:["Órdenes de trabajo","Arrastrá cada orden a su estado; cada cambio pide la firma del técnico"],
   escanear:["Escanear QR / NFC","Leé la etiqueta de un equipo para abrir su ficha"],equipos:["Equipos","Fichas, plan de mantenimiento, checklist, manuales e historial"],equipo:["Equipo",""],
   manuales:["Manuales","Repositorio de manuales y documentación técnica"],historial:["Historial",""],informe:["Informe mensual","Indicadores del mes, conclusiones y remitos"],
-  config:["Configuración","Empresas, áreas, tipos de equipo, códigos y urgencias"]};
+  config:["Configuración","Empresas, áreas, tipos de equipo, códigos y urgencias"],
+  direccion:["Resumen para Dirección","En qué se está trabajando y qué equipos tienen fallas"],cambios:["Historial de modificaciones","Quién cambió qué, cuándo, y el valor anterior"]};
 function navState(){
   const ht=S.histTab||"fallas";
   const on=b=>{const g=b.dataset.go;if(!g)return false;if(g==="historial")return S.view==="historial"&&(!b.dataset.ht||b.dataset.ht===ht);return g===S.view||(g==="equipos"&&S.view==="equipo")};
@@ -629,6 +650,7 @@ function navState(){
   let pg=PAGINAS[S.view]||["",""];
   if(S.view==="historial")pg=ht==="fallas"?["Buscar fallas anteriores","Encontrá cómo se resolvió un problema parecido y ganá tiempo"]:["Historial de intervenciones","Todo lo que se hizo en cada equipo"];
   if(S.view==="equipo"){const e=S.eq.get(S.eqId);pg=[e?e.nombre:"Equipo",e?e.codigo:""]}
+  if(S.view==="tablero"&&S.me&&!canW())pg=PAGINAS.direccion;
   $("#pg-t").textContent=pg[0];$("#pg-s").textContent=pg[1];document.title=pg[0]?pg[0]+" · W-Main":"W-Main";
   const nf=openOts().length;const no=[...S.ot.values()].filter(otAbierta).length;
   const b1=$("#nb-tablero"),b2=$("#nb-ordenes");if(b1)b1.textContent=nf?String(nf):"";if(b2){b2.textContent=no?String(no):"";b2.style.background=no?"#1452B8":""}
@@ -641,8 +663,10 @@ function render(){
   if(S.dbState==="sin"){m.innerHTML='<div class="empty"><h2>No hay conexión con la base de datos</h2><p>Revisá la conexión a internet y los datos de la base en Cuenta → Configuración.</p></div>';return}
   const loading=!(S.loaded.eq&&S.loaded.ta);
   if(loading){m.innerHTML='<div class="empty"><h2>Cargando equipos…</h2><p>Acá vas a ver las tareas ordenadas por lo que vence primero.</p></div>';return}
-  if(!S.eq.size&&!["historial","informe","manuales","config","ordenes","escanear"].includes(S.view)){m.innerHTML='<div class="empty"><h2>Todavía no hay equipos cargados</h2><p>Cargá el primer equipo con su horómetro y después sus tareas de mantenimiento. El tablero te va a mostrar cuánto falta para cada una.</p><p><button class="btn primary adm" data-act="new-eq">+ Cargar primer equipo</button></p></div>';return}
-  if(S.view==="tablero")m.innerHTML=viewTablero();
+  if(!S.eq.size&&!["historial","informe","manuales","config","ordenes","escanear","direccion","cambios"].includes(S.view)){m.innerHTML='<div class="empty"><h2>Todavía no hay equipos cargados</h2><p>Cargá el primer equipo con su horómetro y después sus tareas de mantenimiento. El tablero te va a mostrar cuánto falta para cada una.</p><p><button class="btn primary adm" data-act="new-eq">+ Cargar primer equipo</button></p></div>';return}
+  if(S.view==="tablero")m.innerHTML=S.me&&!canW()?viewDireccion():viewTablero();
+  else if(S.view==="direccion")m.innerHTML=viewDireccion();
+  else if(S.view==="cambios")m.innerHTML=viewCambios();
   else if(S.view==="equipos")m.innerHTML=viewEquipos();
   else if(S.view==="equipo")m.innerHTML=viewEquipo();
   else if(S.view==="informe")m.innerHTML=viewInforme();
@@ -668,7 +692,8 @@ function taskRow(t,showEq){
     '<div class="tname">'+esc(t.nombre)+'</div>'+
     '<div class="meta"><span>'+esc(freqLabel(t))+'</span><span>'+esc(t.tipo||"")+'</span><span>'+esc(t.responsable||"")+'</span>'+(t.ultimaFecha?'<span>Última: '+fmtD(t.ultimaFecha)+(isNum(t.ultimaHoras)?' · '+fmtN(t.ultimaHoras)+' h':'')+'</span>':'')+'</div></div>'+
     '<div class="when">'+when+'</div>'+
-    '<div class="acts"><button class="btn sm" data-act="ins" data-id="'+esc(t.id)+'">Instructivo</button><button class="btn sm w" data-act="edit-task" data-id="'+esc(t.id)+'">Editar</button>'+
+    '<div class="acts">'+(()=>{const o=[...S.ot.values()].find(x=>esPrev(x)&&x.tareaId===t.id&&otAbierta(x));return o?'<button class="btn sm linkchip ot-num" data-act="ot-ver" data-id="'+esc(o.id)+'" title="Ver la orden">'+esc(otNum(o))+'</button>':'<button class="btn sm w" data-act="ot-gen" data-id="'+esc(t.id)+'">Generar OT</button>'})()+
+    '<button class="btn sm" data-act="ins" data-id="'+esc(t.id)+'">Instructivo</button><button class="btn sm" data-act="edit-task" data-id="'+esc(t.id)+'">Editar</button>'+
     '<button class="btn sm primary w" data-act="reg" data-id="'+esc(t.id)+'">Registrar hecho</button></div></article>';
 }
 const ICONOS={'home': '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v10h5v-6h4v6h5V10"/></svg>', 'ordenes': '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="5" height="16" rx="1.5"/><rect x="10" y="4" width="5" height="11" rx="1.5"/><rect x="17" y="4" width="4" height="14" rx="1.5"/></svg>', 'scan': '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8V5.5A1.5 1.5 0 0 1 5.5 4H8M16 4h2.5A1.5 1.5 0 0 1 20 5.5V8M20 16v2.5a1.5 1.5 0 0 1-1.5 1.5H16M8 20H5.5A1.5 1.5 0 0 1 4 18.5V16"/><path d="M4 12h16"/></svg>', 'equipos': '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></svg>', 'manuales': '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4.5A1.5 1.5 0 0 1 6.5 3H19v15H6.5A1.5 1.5 0 0 0 5 19.5z"/><path d="M5 19.5A1.5 1.5 0 0 0 6.5 21H19"/><path d="M9 7h6"/></svg>', 'buscar': '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m20 20-4.6-4.6"/></svg>', 'historial': '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>', 'informe': '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h16"/><path d="M7 16v-4M12 16V7M17 16v-6"/></svg>', 'config': '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h9M17 7h3M4 12h3M11 12h9M4 17h11M19 17h1"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="17" cy="17" r="2"/></svg>', 'cuenta': '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c1.2-3.6 4-5 7-5s5.8 1.4 7 5"/></svg>', 'ayuda': '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M9.6 9.5a2.5 2.5 0 1 1 3.4 2.3c-.6.3-1 .8-1 1.5v.7"/><path d="M12 16.8v.2"/></svg>', 'falla': '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5 21.5 20h-19z"/><path d="M12 10v4.5M12 17.2v.3"/></svg>', 'mas': '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>', 'plus': '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>', 'nfc': '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8.5a5 5 0 0 1 0 7M9.5 6a9 9 0 0 1 0 12M13 3.5a13 13 0 0 1 0 17"/></svg>'};
@@ -680,6 +705,7 @@ function viewTablero(){
   const qk=(attr,k,t,d,cls)=>'<button class="qk '+(cls||"")+'" '+attr+'>'+ICONOS[k]+'<span><b>'+t+'</b><small>'+d+'</small></span></button>';
   let h='<div class="quick">'+qk('data-act="falla"',"falla","Reportar falla","Calcula la urgencia y avisa","red w")+qk('data-go="escanear"',"scan","Escanear equipo","QR o etiqueta NFC")+
     qk('data-go="ordenes"',"ordenes","Órdenes de trabajo","Pendientes, en curso y terminadas")+qk('data-go="historial" data-ht="fallas"',"buscar","Buscar fallas","Cómo se resolvió antes")+'</div>';
+  if(S.loaded.firmas&&S.me&&canW()&&!firmaDe(S.me.id))h='<div class="banner" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">Todavía no cargaste tu <b>firma digital</b>. Se necesita para finalizar órdenes de trabajo y emitir los remitos.<button class="btn sm primary" data-act="firma-cargar">Cargar mi firma</button></div>'+h;
   h+=ots.length?'<div class="sec-h" style="margin-top:0"><h2>Fallas abiertas</h2><small>'+ots.length+' · ordenadas por urgencia</small></div><div class="ot-grid">'+ots.map(o=>otCard(o,true)).join("")+'</div>':'';
   h+='<div class="summary">'+Object.keys(L).map(k=>'<button class="sum '+k+'" data-act="filtro" data-k="'+k+'" aria-pressed="'+(S.filtroEstado===k)+'"><b>'+c[k]+'</b><span>'+L[k]+'</span></button>').join("")+'</div>';
   let list=items;if(S.filtroEstado)list=list.filter(i=>i.st.estado===S.filtroEstado);
@@ -870,15 +896,16 @@ function tablaRegs(regs,showEq){
       '<td>'+esc(r.tareaNombre||"")+'<br><span class="chip">'+esc(r.tipo||"")+'</span>'+(r.demorada?' <span class="chip st-vencida">Demorada</span>':'')+'</td>'+
       '<td><span class="chip '+rc+'">'+esc(r.fechaCierre&&r.resultado!=="Resuelto"?"Resuelto "+fmtD(r.fechaCierre):(r.resultado||"—"))+'</span>'+(r.proveedor?'<br><span class="hint">'+esc(r.proveedor)+'</span>':'')+(abierto?'<br><button class="btn sm w" data-act="close-rep" data-id="'+esc(r.id)+'" style="margin-top:4px">Marcar resuelto</button>':'')+'</td>'+
       '<td class="num">'+(isNum(r.horometro)?fmtN(r.horometro)+' h':'—')+'</td><td class="num">'+(isNum(r.duracion)?fmtN(r.duracion)+' h':'—')+'</td><td class="num">'+(isNum(r.parada)?fmtN(r.parada)+' h':'—')+'</td>'+
-      '<td>'+esc(r.tecnico||"")+(r.porId&&S.names[r.porId]?'<br><span class="hint">cargó '+esc(S.names[r.porId])+'</span>':'')+'</td><td>'+esc(r.obs||"")+(r.repuestos?'<br><span class="hint">Repuestos: '+esc(r.repuestos)+'</span>':'')+(r.editadoPorNombre?'<br><span class="hint">Corregido por '+esc(r.editadoPorNombre)+'</span>':'')+'</td>'+
-      '<td>'+(MOV.has(r.tipo)?'':'<div class="acts" style="justify-content:flex-start;flex-wrap:nowrap"><button class="btn sm w" data-act="reg-edit" data-id="'+esc(r.id)+'">Corregir</button><button class="btn sm danger adm" data-act="reg-del" data-id="'+esc(r.id)+'">Eliminar</button></div>')+'</td></tr>'}).join("")+'</tbody></table></div>';
+      '<td>'+esc(r.tecnico||"")+(r.porId&&S.names[r.porId]?'<br><span class="hint">cargó '+esc(S.names[r.porId])+'</span>':'')+'</td><td>'+esc(r.obs||"")+(r.repuestos?'<br><span class="hint">Repuestos: '+esc(r.repuestos)+'</span>':'')+(r.editadoPorNombre?'<br><span class="chip sens">Modificado por '+esc(r.editadoPorNombre)+'</span>':'')+'</td>'+
+      '<td>'+(MOV.has(r.tipo)?'':'<div class="acts" style="justify-content:flex-start;flex-wrap:nowrap"><button class="btn sm" data-act="reg-remito" data-id="'+esc(r.id)+'">Remito'+(r.firmaId?' ✓':'')+'</button><button class="btn sm w" data-act="reg-edit" data-id="'+esc(r.id)+'"'+(S.isAdmin||(S.me&&r.porId===S.me.id)?'':' hidden')+'>Corregir'+((r.cambios||[]).length?' ('+(r.cambios||[]).length+')':'')+'</button><button class="btn sm danger adm" data-act="reg-del" data-id="'+esc(r.id)+'">Eliminar</button></div>')+'</td></tr>'}).join("")+'</tbody></table></div>';
 }
 function formEditReg(r){
   if(!r)return;const e=S.eq.get(r.equipoId);const conCausa=!!r.otId||r.causa!=null;
   const causa=r.causa!=null?r.causa:causaDeObs(r.obs);const hecho=r.solucion!=null?r.solucion:(r.otId?solDeObs(r.obs):r.obs);
   openModal(mhead("Corregir registro")+'<p class="hint" style="margin:-6px 0 0">'+esc((e?e.codigo+" · ":"")+(r.tareaNombre||""))+'</p><form id="frm" class="fg" novalidate>'+
     '<label class="f"><span>Fecha *</span><input type="date" id="er-f" value="'+esc(r.fecha)+'" max="'+todayStr()+'"></label>'+
-    '<label class="f"><span>Técnico</span><input id="er-t" value="'+esc(r.tecnico||"")+'"></label>'+
+    '<label class="f"><span>Técnico</span><input id="er-t" value="'+esc(r.tecnico||"")+'" disabled></label>'+
+    '<p class="hint full" style="margin:0">Al guardar se pide la firma de quien firmó el registro (o de un administrador). Cada cambio queda en el historial de modificaciones, con el valor anterior.</p>'+
     '<label class="f"><span>Horas de trabajo</span><input id="er-d" inputmode="decimal" value="'+esc(isNum(r.duracion)?r.duracion:"")+'"></label>'+
     '<label class="f"><span>Horas de máquina detenida</span><input id="er-p" inputmode="decimal" value="'+esc(isNum(r.parada)?r.parada:"")+'"></label>'+
     '<label class="f"><span>Resultado</span><select id="er-r">'+RESULTADOS.map(x=>'<option'+(x===r.resultado?' selected':'')+'>'+x+'</option>').join("")+'</select></label>'+
@@ -895,9 +922,15 @@ function formEditReg(r){
       obs:conCausa?[c?"Causa: "+c:"",o].filter(Boolean).join(" · "):o,editadoPorId:S.me&&S.me.id||null,editadoPorNombre:S.me&&S.me.name||"",editadoEl:new Date().toISOString()};
     if(conCausa){up.causa=c;up.solucion=o}
     if(res==="Resuelto"&&!r.fechaCierre)up.fechaCierre=f;
-    try{await S.db.doc("registros/"+r.id).update(up);
-      const t=r.tareaId&&S.ta.get(r.tareaId);if(t&&t.ultimaFecha===r.fecha&&f!==r.fecha)await S.db.doc("tareas/"+t.id).update({ultimaFecha:f});
-      closeModal();toast("Registro corregido");render()}catch(x){writeErr(x)}}));
+    const cambios=difCampos(r,Object.assign({},up,conCausa?{}:{obs:o}),[["fecha","Fecha",fmtD],["duracion","Horas de trabajo"],["parada","Equipo detenido (h)"],["resultado","Resultado"],["repuestos","Repuestos"],["causa","Causa"],[conCausa?"solucion":"obs",conCausa?"Qué se hizo":"Observaciones"]]);
+    if(!cambios.length){closeModal();toast("No hubo cambios");return}
+    delete up.tecnico;
+    try{const ok=await conFirma("corregir registro",esc(r.tareaNombre||"")+' · '+fmtD(r.fecha)+'<div style="margin-top:6px">'+cambiosHTML(cambios)+'</div>',async(db,fz)=>{
+        Object.assign(up,{editadoPorId:fz.id,editadoPorNombre:fz.name,cambios:[...(r.cambios||[]),{fecha:new Date().toISOString(),porId:fz.id,porNombre:fz.name,cambios}]});
+        await db.doc("registros/"+r.id).update(up);
+        const t=r.tareaId&&S.ta.get(r.tareaId);if(t&&t.ultimaFecha===r.fecha&&f!==r.fecha)await db.doc("tareas/"+t.id).update({ultimaFecha:f});
+      },{ot:{tecnicoId:r.porId,tecnicoNombre:r.firmaNombre||r.tecnico}});
+      if(ok){closeModal();toast("Registro corregido · queda en el historial de modificaciones");render()}}catch(x){firmaErr(x)}}));
 }
 function formDelReg(r){
   if(!r)return;const e=S.eq.get(r.equipoId);const ot=r.otId&&S.ot.get(r.otId);const reabre=ot&&ot.estado==="Cerrada"&&ot.registroId===r.id;
@@ -1006,6 +1039,16 @@ function syncPrev(){clearTimeout(syncPrev.t);syncPrev.t=setTimeout(async()=>{
     catch(x){/* ya la creó otra computadora, o sin permiso */}
   }
 },800)}
+async function genOT(t){
+  if(!t)return;const e=S.eq.get(t.equipoId);if(!e)return;
+  const id="prev-"+t.id+"-"+(t.ultimaFecha||"0")+"-"+(isNum(t.ultimaHoras)?t.ultimaHoras:"0");
+  if(S.ot.has(id)&&otAbierta(S.ot.get(id))){verOT(id);return}
+  const yo=S.me&&!S.isAdmin?{tecnicoId:S.me.id,tecnicoNombre:S.me.name,asignado:S.me.name}:{};
+  try{await S.db.doc("ots/"+(S.ot.has(id)?id+"-"+Date.now().toString(36):id)).create(Object.assign({tipo:"preventivo",tareaId:t.id,equipoId:e.id,equipoCodigo:e.codigo,desc:t.nombre,estado:"Abierta",
+      reportado:new Date().toISOString(),reportadoPor:S.me&&S.me.id||null,reportadoNombre:S.me&&S.me.name||"",
+      historial:[{fecha:new Date().toISOString(),accion:"Generó la orden",porId:S.me&&S.me.id||null,porNombre:S.me&&S.me.name||""}]},yo));
+    toast("Orden generada");render()}catch(x){if(x&&x.code==="already_exists")toast("Esa orden ya existe.");else writeErr(x)}
+}
 function kCard(o){
   const e=S.eq.get(o.equipoId);const prev=esPrev(o);const u=prev?null:urgOf(o);const last=(o.historial||[]).slice(-1)[0];
   const tp=prev&&otAbierta(o)&&S.ta.get(o.tareaId);const stp=tp&&status(tp);const vence=stp&&stp.gov?partLabel(stp.gov).big:o.vence;
@@ -1013,7 +1056,7 @@ function kCard(o){
   return '<article class="kcard '+(prev?'prev':u.toLowerCase())+'" data-act="ot-ver" data-id="'+esc(o.id)+'"'+(drag?' draggable="true" data-ot="'+esc(o.id)+'"':'')+'>'+
     '<div class="inline" style="justify-content:space-between"><span class="ot-n">'+esc(otNum(o))+'</span>'+(prev?'<span class="chip st-ok">Preventivo</span>':urgChip(u))+'</div>'+
     '<div class="code">'+esc(e?e.codigo:o.equipoCodigo||"")+'</div><div class="kd">'+esc(o.desc||"")+'</div>'+
-    '<div class="meta">'+(prev&&vence?'<span>'+esc(vence)+'</span>':'')+(o.asignado?'<span>A cargo: '+esc(o.asignado)+'</span>':'')+'<span>'+(o.estado==="Cerrada"&&o.cierre?'Terminada '+fmtD(String(o.cierre).slice(0,10)):'Creada hace '+fmtH(hoursSince(o.reportado)))+'</span></div>'+
+    '<div class="meta">'+(prev&&vence?'<span>'+esc(vence)+'</span>':'')+(tecnicoDe(o)?'<span>Técnico: '+esc(tecnicoDe(o))+'</span>':'')+'<span>'+(o.estado==="Cerrada"&&o.cierre?'Terminada '+fmtD(String(o.cierre).slice(0,10)):'Creada hace '+fmtH(hoursSince(o.reportado)))+'</span></div>'+
     (last?'<div class="kh">'+esc(last.accion)+' · '+esc(last.porNombre||"")+'</div>':'')+'</article>';
 }
 function viewOrdenes(){
@@ -1038,23 +1081,40 @@ function verOT(id){
   const destinos=OT_EST.filter(([k])=>k!==o.estado);
   openModal(mhead(otNum(o)+" · "+(prev?"Preventivo":"Falla"))+
     '<div class="ot-top">'+(prev?'<span class="chip st-ok">Preventivo</span>':urgChip(urgOf(o)))+'<span class="chip">'+esc(estLbl(o.estado))+'</span></div>'+
-    '<dl class="kv" style="margin-top:0">'+[["Equipo",e?e.codigo+" · "+e.nombre:o.equipoCodigo],[prev?"Tarea":"Falla",o.desc],["Frecuencia",t?freqLabel(t):""],["Vencimiento",o.vence],["A cargo",o.asignado],["Creada",fmtD(String(o.reportado||"").slice(0,10))+(o.reportadoNombre?" por "+o.reportadoNombre:"")]].filter(x=>x[1]).map(([k,v])=>'<div><dt>'+esc(k)+'</dt><dd>'+esc(v)+'</dd></div>').join("")+'</dl>'+
+    '<dl class="kv" style="margin-top:0">'+[["Técnico asignado",o.tecnicoId?o.tecnicoNombre+" (fijo)":(o.asignado||"Lo toma el primer técnico que firme")],["Equipo",e?e.codigo+" · "+e.nombre:o.equipoCodigo],[prev?"Tarea":"Falla",o.desc],["Frecuencia",t?freqLabel(t):""],["Vencimiento",o.vence],["Creada",fmtD(String(o.reportado||"").slice(0,10))+(o.reportadoNombre?" por "+o.reportadoNombre:"")]].filter(x=>x[1]).map(([k,v])=>'<div><dt>'+esc(k)+'</dt><dd>'+esc(v)+'</dd></div>').join("")+'</dl>'+
     (o.estado==="Anulada"?'<div class="banner">Orden anulada el '+fmtD(String((o.anulada||{}).fecha||"").slice(0,10))+' por '+esc((o.anulada||{}).porNombre||"")+'. Motivo: '+esc((o.anulada||{}).motivo||"")+'</div>':'')+
     (otAbierta(o)?'<div class="inline w" style="flex-wrap:wrap"><select id="ov-dest" style="width:auto"><option value="">Mover a…</option>'+destinos.map(([k,l])=>'<option value="'+esc(k)+'">'+esc(l)+'</option>').join("")+'</select><button class="btn primary" data-act="ot-mover" data-id="'+esc(o.id)+'">Mover (con firma)</button>'+
-      '<button class="btn" data-act="'+(prev?'ot-editprev':'ot-edit')+'" data-id="'+esc(o.id)+'">Editar</button>'+(prev?'':'<button class="btn" data-act="ot-sim" data-id="'+esc(o.id)+'">Casos parecidos</button>')+'</div>':'')+
-    (o.estado!=="Anulada"&&canW()?'<p style="margin:8px 0 0"><button class="btn sm danger" data-act="ot-anular" data-id="'+esc(o.id)+'">Eliminar orden (cargada por error)</button></p>':'')+
+      (S.isAdmin||!o.tecnicoId||(S.me&&o.tecnicoId===S.me.id)?'<button class="btn" data-act="'+(prev?'ot-editprev':'ot-edit')+'" data-id="'+esc(o.id)+'">Editar</button>':'')+(prev?'':'<button class="btn" data-act="ot-sim" data-id="'+esc(o.id)+'">Casos parecidos</button>')+'</div>':'')+
+    (o.estado!=="Anulada"?'<p class="adm" style="margin:8px 0 0;display:flex;gap:8px;flex-wrap:wrap">'+(otAbierta(o)?'<button class="btn sm" data-act="ot-reasignar" data-id="'+esc(o.id)+'">Reasignar técnico</button>':'')+'<button class="btn sm danger" data-act="ot-anular" data-id="'+esc(o.id)+'">Eliminar orden (cargada por error)</button></p>':'')+
+    (o.estado==="Cerrada"&&o.registroId?'<p style="margin:8px 0 0"><button class="btn sm primary" data-act="reg-remito" data-id="'+esc(o.registroId)+'">Ver / imprimir remito</button></p>':'')+
     '<h3 class="rp-h">Historial de la orden</h3>'+(h.length?'<div class="tbl-wrap"><table><thead><tr><th>Fecha y hora</th><th>Acción</th><th>Responsable</th></tr></thead><tbody>'+
-      h.map(x=>'<tr><td class="num">'+esc(new Date(x.fecha).toLocaleString("es-AR",{dateStyle:"short",timeStyle:"short"}))+'</td><td>'+esc(x.accion)+(x.resultado?' · '+esc(x.resultado):'')+'</td><td>'+esc(x.porNombre||"")+'</td></tr>').join("")+'</tbody></table></div>':'<p class="hint">Sin movimientos registrados.</p>')+
+      h.map(x=>'<tr><td class="num">'+esc(new Date(x.fecha).toLocaleString("es-AR",{dateStyle:"short",timeStyle:"short"}))+'</td><td>'+esc(x.accion)+(x.resultado?' · '+esc(x.resultado):'')+cambiosHTML(x.cambios)+'</td><td>'+esc(x.porNombre||"")+'</td></tr>').join("")+'</tbody></table></div>':'<p class="hint">Sin movimientos registrados.</p>')+
     '<div class="m-acts" style="margin-top:12px"><button class="btn" data-act="close">Cerrar</button></div>');
 }
 /* Editar una orden preventiva: responsable y notas (firmado) */
+function formReasignar(o){
+  openModal(mhead("Reasignar "+otNum(o))+'<p class="hint" style="margin:-6px 0 0">'+esc(o.desc||"")+' · hoy: '+esc(tecnicoDe(o)||"sin asignar")+'</p><form id="frm" class="fg" novalidate>'+
+    '<label class="f full"><span>Nuevo técnico *</span><select id="rs-t"><option value="">Elegí…</option></select></label>'+
+    '<label class="f full"><span>Motivo *</span><input id="rs-m" placeholder="Licencia, cambio de turno…"></label>'+
+    '<div class="err full" id="err"></div><div class="m-acts full"><button type="button" class="btn" data-act="close">Cancelar</button><button type="submit" class="btn primary">Reasignar</button></div></form>',
+  r=>{const sel=r.querySelector("#rs-t");let lista=[];
+    S.user.firmantes().then(l=>{lista=l;sel.insertAdjacentHTML("beforeend",l.filter(x=>x.id!==o.tecnicoId).map(x=>'<option value="'+esc(x.id)+'">'+esc(x.nombre||x.email)+'</option>').join(""))});
+    r.querySelector("#frm").addEventListener("submit",async ev=>{ev.preventDefault();
+      const t=lista.find(x=>x.id===sel.value),m=val("rs-m");if(!t||!m){r.querySelector("#err").textContent="Elegí el técnico y escribí el motivo.";return}
+      try{const ok=await conFirma("reasignar "+otNum(o),otDetalle(o)+'<br><span class="hint">'+esc(tecnicoDe(o)||"sin asignar")+' → <b>'+esc(t.nombre||t.email)+'</b></span>',(db,f)=>{
+          if(f.rol!=="admin")throw {code:"firma",message:"para reasignar tiene que firmar un administrador."};
+          return db.doc("ots/"+o.id).update({tecnicoId:t.id,tecnicoNombre:t.nombre||t.email,asignado:t.nombre||t.email,historial:addHist(o,histEntry(f,"Reasignó de "+(tecnicoDe(o)||"sin asignar")+" a "+(t.nombre||t.email)+": "+m))})});
+        if(ok){closeModal();toast(otNum(o)+" reasignada");render()}}catch(x){firmaErr(x)}})});
+}
 function formEditPrev(o){
   openModal(mhead("Editar "+otNum(o))+'<p class="hint" style="margin:-6px 0 0">'+esc(o.desc||"")+'</p><form id="frm" class="fg" novalidate>'+
-    '<label class="f full"><span>A cargo</span><input id="ep-a" value="'+esc(o.asignado||"")+'"></label>'+
+    '<label class="f full"><span>A cargo</span><input id="ep-a" value="'+esc(o.asignado||"")+'"'+(o.asignado&&!S.isAdmin?' disabled':'')+'></label>'+
     '<label class="f full"><span>Notas</span><textarea id="ep-n">'+esc(o.notas||"")+'</textarea></label>'+
     '<div class="err full" id="err"></div><div class="m-acts full"><button type="button" class="btn" data-act="close">Cancelar</button><button type="submit" class="btn primary">Guardar</button></div></form>',
   r=>r.querySelector("#frm").addEventListener("submit",async ev=>{ev.preventDefault();
-    try{const ok=await conFirma("editar "+otNum(o),otDetalle(o),(db,f)=>db.doc("ots/"+o.id).update({asignado:val("ep-a"),notas:val("ep-n"),historial:addHist(o,histEntry(f,"Editó la orden"))}));
+    const d={asignado:val("ep-a")||o.asignado||"",notas:val("ep-n")};const cambios=difCampos(o,d,[["asignado","A cargo"],["notas","Notas"]]);
+    if(!cambios.length){closeModal();return}
+    try{const ok=await conFirma("editar "+otNum(o),otDetalle(o)+'<div style="margin-top:6px">'+cambiosHTML(cambios)+'</div>',(db,f)=>db.doc("ots/"+o.id).update(Object.assign(d,{historial:addHist(o,histEntry(f,"Editó la orden",{cambios}))})),{ot:o});
       if(ok){closeModal();toast(otNum(o)+" actualizada");render()}}catch(x){firmaErr(x)}}));
 }
 /* Deja la tarea como estaba antes de un registro que se borra */
@@ -1083,7 +1143,7 @@ function formAnularOT(o){
         if(reg&&f.rol!=="admin")throw {code:"firma",message:"para eliminar una orden terminada tiene que firmar un administrador."};
         const now=new Date().toISOString();
         await db.doc("ots/"+o.id).update({estado:"Anulada",estadoAnterior:o.estado,anulada:{fecha:now,motivo,porId:f.id,porNombre:f.name},historial:addHist(o,histEntry(f,"Eliminó la orden (anulada): "+motivo))});
-        if(reg){await revertirTarea(reg,db);await db.doc("registros/"+reg.id).delete()}
+        if(reg){await revertirTarea(reg,S.db);await S.db.doc("registros/"+reg.id).delete()}
         const e=S.eq.get(o.equipoId);
         if(e&&!esPrev(o)&&(e.estadoOp||"Operativo")!=="Operativo"&&!openOts(x=>x.equipoId===e.id&&x.id!==o.id).length)await db.doc("equipos/"+e.id).update({estadoOp:"Operativo"});
       });
@@ -1097,9 +1157,9 @@ async function moverOT(id,dest){
     if(esPrev(o)){const t=S.ta.get(o.tareaId);formRegistro(t||null,o.equipoId,o)}else formCerrarOT(o);return}
   try{
     const ok=await conFirma("mover "+otNum(o),otDetalle(o)+'<br><span class="hint">'+esc(estLbl(o.estado))+' → <b>'+esc(estLbl(dest))+'</b></span>',(db,f)=>{
-      const up={estado:dest,historial:addHist(o,histEntry(f,estLbl(o.estado)+" → "+estLbl(dest)))};
-      if(dest==="En curso"&&!o.inicio){up.inicio=new Date().toISOString();if(!o.asignado)up.asignado=f.name}
-      return db.doc("ots/"+id).update(up)});
+      const up=asignar(o,f,{estado:dest,historial:addHist(o,histEntry(f,estLbl(o.estado)+" → "+estLbl(dest)))});
+      if(dest==="En curso"&&!o.inicio)up.inicio=new Date().toISOString();
+      return db.doc("ots/"+id).update(up)},{ot:o});
     if(ok){closeModal();toast(otNum(o)+": "+estLbl(dest));render()}
   }catch(x){firmaErr(x)}
 }
@@ -1125,6 +1185,52 @@ function viewCelulares(){
     '<div style="flex:1 1 300px;min-width:0"><h3 style="margin:0 0 6px">Escaneá este QR con el celular</h3><p style="margin:0">Deja la aplicación del celular conectada a esta misma base de datos. Después cada persona entra con su usuario y contraseña.</p>'+
     '<p class="hint">El QR contiene la dirección de la base y su clave pública, no contraseñas. Sin usuario habilitado no se ve ningún dato.</p></div></section>'+pasos;
 }
+/* ---------- resumen para Dirección (solo consulta) ---------- */
+function viewDireccion(){
+  const enEmp=id=>{const e=S.eq.get(id);return !S.empresa||(e&&e.empresa===S.empresa)};
+  const abiertas=[...S.ot.values()].filter(o=>otAbierta(o)&&enEmp(o.equipoId));
+  const fallas=abiertas.filter(o=>!esPrev(o)&&o.tipo!=="intervencion").sort((a,b)=>urgOf(a).localeCompare(urgOf(b)));
+  const trabajando=abiertas.filter(o=>o.estado==="En curso"||o.estado==="Esperando repuesto");
+  const fuera=[...S.eq.values()].filter(e=>isActivo(e)&&(e.estadoOp||"Operativo")!=="Operativo"&&(!S.empresa||e.empresa===S.empresa));
+  const venc=[...S.ta.values()].filter(t=>isActivo(S.eq.get(t.equipoId))&&enEmp(t.equipoId)&&status(t).estado==="vencida");
+  const mes=todayStr().slice(0,7);const term=[...S.ot.values()].filter(o=>o.estado==="Cerrada"&&String(o.cierre||"").slice(0,7)===mes&&enEmp(o.equipoId));
+  const k=(v,l,s,c)=>'<div class="rp-kpi"'+(c?' style="border-left:5px solid '+c+'"':'')+'><b>'+v+'</b><span>'+l+'</span>'+(s?'<small>'+s+'</small>':'')+'</div>';
+  const eqTxt=id=>{const e=S.eq.get(id);return e?'<span class="code">'+esc(e.codigo)+'</span><br>'+esc(e.nombre):''};
+  const tb=(cols,rows,vacio)=>rows.length?'<div class="tbl-wrap"><table><thead><tr>'+cols.map(c=>'<th>'+c+'</th>').join("")+'</tr></thead><tbody>'+rows.join("")+'</tbody></table></div>':'<div class="empty"><p>'+vacio+'</p></div>';
+  const u12=fallas.filter(o=>["U1","U2"].includes(urgOf(o))).length;
+  return '<div class="rp-kpis" style="margin-bottom:18px">'+k(fallas.length,"Fallas a reparar",u12?u12+" urgentes (U1/U2)":"ninguna urgente",fallas.length?"var(--bad)":"var(--ok)")+
+    k(fuera.length,"Equipos fuera de servicio","o en reparación",fuera.length?"var(--warn-bar)":"var(--ok)")+k(trabajando.length,"Trabajos en curso","con técnico asignado","var(--accent)")+
+    k(term.length,"Órdenes terminadas","en "+mesLabel(mes).toLowerCase(),"var(--ok)")+'</div>'+
+    '<h3 class="rp-h">Equipos con falla a reparar</h3>'+tb(["Equipo","Falla","Urgencia","Estado","Técnico","Reportada"],
+      fallas.map(o=>'<tr><td>'+eqTxt(o.equipoId)+'</td><td>'+esc(o.desc||"")+'</td><td>'+urgChip(urgOf(o))+'</td><td>'+esc(estLbl(o.estado))+'</td><td>'+esc(tecnicoDe(o)||"Sin asignar")+'</td><td class="num">hace '+fmtH(hoursSince(o.reportado))+'</td></tr>'),"No hay fallas abiertas.")+
+    '<h3 class="rp-h">En qué se está trabajando</h3>'+tb(["Orden","Equipo","Trabajo","Estado","Técnico"],
+      trabajando.map(o=>'<tr><td class="num">'+esc(otNum(o))+'</td><td>'+eqTxt(o.equipoId)+'</td><td>'+esc(o.desc||"")+(esPrev(o)?' <span class="chip st-ok">Preventivo</span>':'')+'</td><td>'+esc(estLbl(o.estado))+'</td><td>'+esc(tecnicoDe(o))+'</td></tr>'),"No hay trabajos en curso en este momento.")+
+    '<h3 class="rp-h">Equipos fuera de servicio o en reparación</h3>'+tb(["Equipo","Estado","Ubicación"],fuera.map(e=>'<tr><td>'+eqTxt(e.id)+'</td><td><span class="chip st-vencida">'+esc(e.estadoOp)+'</span></td><td>'+esc(e.ubicacion||"")+'</td></tr>'),"Todos los equipos están operativos.")+
+    '<h3 class="rp-h">Mantenimiento preventivo vencido</h3>'+tb(["Equipo","Tarea","Situación"],venc.map(t=>{const st=status(t);return '<tr><td>'+eqTxt(t.equipoId)+'</td><td>'+esc(t.nombre)+'</td><td>'+esc(st.gov?partLabel(st.gov).big:"")+'</td></tr>'}),"No hay tareas vencidas.");
+}
+/* ---------- historial de modificaciones (auditoría) ---------- */
+function movimientosAuditoria(){
+  const out=[];
+  for(const o of S.ot.values())for(const h of (o.historial||[]))
+    if((h.cambios&&h.cambios.length)||/^(Editó|Reasignó|Eliminó|Reabierta|Anulada)/.test(h.accion||""))
+      out.push({fecha:h.fecha,porId:h.porId,quien:h.porNombre,que:otNum(o)+" · "+(o.desc||""),accion:h.accion,cambios:h.cambios||[],equipoId:o.equipoId});
+  for(const r of S.re)for(const c of (r.cambios||[]))
+    out.push({fecha:c.fecha,porId:c.porId,quien:c.porNombre,que:"Registro del "+fmtD(r.fecha)+" · "+(r.tareaNombre||"")+(r.otNumero?" ("+otNum({numero:r.otNumero})+")":""),accion:"Corrigió el registro",cambios:c.cambios||[],equipoId:r.equipoId});
+  return out.sort((a,b)=>String(b.fecha).localeCompare(String(a.fecha)));
+}
+function viewCambios(){
+  const f=S.audF||{};let l=movimientosAuditoria();
+  const personas=[...new Map(l.map(x=>[x.porId,x.quien])).entries()];
+  if(f.quien)l=l.filter(x=>x.porId===f.quien);
+  if(f.sens)l=l.filter(x=>x.cambios.some(c=>SENSIBLES.has(c.campo)));
+  if(S.empresa)l=l.filter(x=>{const e=S.eq.get(x.equipoId);return e&&e.empresa===S.empresa});
+  return '<div class="fs-bar"><select id="aud-q"><option value="">Todas las personas</option>'+personas.map(([id,n])=>'<option value="'+esc(id)+'"'+(f.quien===id?' selected':'')+'>'+esc(n||"")+'</option>').join("")+'</select>'+
+    '<label class="inline" style="font-size:13px"><input type="checkbox" id="aud-s" style="width:auto"'+(f.sens?' checked':'')+'> Solo cambios sensibles (fechas, horas, resultado)</label></div>'+
+    '<p class="hint" style="margin:-6px 0 12px">Cada modificación de órdenes y registros queda acá con el valor anterior, quién la firmó y cuándo. Las altas y cierres normales se ven en el historial de cada orden.</p>'+
+    (l.length?'<div class="tbl-wrap"><table><thead><tr><th>Fecha y hora</th><th>Quién</th><th>Sobre qué</th><th>Qué cambió</th></tr></thead><tbody>'+
+      l.slice(0,300).map(x=>{const e=S.eq.get(x.equipoId);return '<tr><td class="num">'+esc(new Date(x.fecha).toLocaleString("es-AR",{dateStyle:"short",timeStyle:"short"}))+'</td><td><b>'+esc(x.quien||"")+'</b></td><td>'+(e?'<span class="code">'+esc(e.codigo)+'</span><br>':'')+esc(x.que)+'</td><td>'+esc(x.accion)+cambiosHTML(x.cambios)+'</td></tr>'}).join("")+'</tbody></table></div>'
+      :'<div class="empty"><p>No hay modificaciones registradas'+(f.quien||f.sens?' con este filtro':'')+'.</p></div>');
+}
 /* ---------- ayuda: dónde está cada herramienta ---------- */
 function ayuda(){
   const it=[["Reportar una falla","Botón rojo “Reportar falla” arriba, en Inicio o en la ficha del equipo. En el celular, “Falla” en la barra de abajo."],
@@ -1137,6 +1243,10 @@ function ayuda(){
     ["Informe del mes y remitos","Menú → Informe mensual → “Descargar informe” o “Solo remitos”."],
     ["Manuales","Menú → Manuales, o en la ficha del equipo, pestaña Manuales."],
     ["Empresas, áreas y tipos de equipo","Menú → Configuración (solo el administrador modifica)."],
+    ["Firma digital","Menú → Mi cuenta: dibujá tu firma una vez. Se estampa en el remito de cada orden que finalizás."],
+    ["Seguridad","Menú → Mi cuenta → Seguridad: verificación en dos pasos. La app se bloquea tras 30 minutos sin uso."],
+    ["Qué se modificó y quién","Menú → Historial de modificaciones (gerente y directivos)."],
+    ["Resumen para Dirección","Menú → Resumen para Dirección: fallas a reparar y trabajos en curso. Es el inicio de los directivos."],
     ["Usuarios, permisos y contraseñas","Menú → Ajustes → Usuarios y permisos (administrador). Tu nombre y cerrar sesión: Menú → Mi cuenta / Cerrar sesión."],
     ["Conectar un celular","Configuración → Celulares: se escanea un QR y queda listo."]];
   openModal(mhead("¿Dónde está cada cosa?")+'<div class="help-list">'+it.map(([a,b])=>'<div><b>'+esc(a)+'</b><span>'+esc(b)+'</span></div>').join("")+'</div><div class="m-acts"><button class="btn primary" data-act="close">Entendido</button></div>');
@@ -1639,7 +1749,7 @@ function formRegistro(t,equipoId,ot){
   '<label class="f"><span>Fecha *</span><input type="date" id="r-fecha" value="'+todayStr()+'" max="'+todayStr()+'"></label>'+
   '<label class="f"><span>Horómetro'+(usaHoras?'':' (opcional)')+'</span><input id="r-hm" inputmode="decimal" value="'+(cur.h!==null?Math.round(cur.h):"")+'"></label>'+
   (cur.est?'<p class="hint full" style="margin:-6px 0 0">El valor propuesto es una estimación: anotá la lectura real del equipo.</p>':'')+
-  '<label class="f"><span>Técnico / operario</span><input id="r-tec" value="'+esc(S.me&&S.me.name||"")+'"></label>'+
+  '<p class="hint full" style="margin:0">Al guardar firma el técnico que hizo el trabajo (contraseña y firma digital). Queda el remito de la orden de trabajo.</p>'+
   '<label class="f"><span>Duración del trabajo (h)</span><input id="r-dur" inputmode="decimal" placeholder="ej. 1,5"></label>'+
   '<label class="f"><span>Horas de máquina detenida</span><input id="r-par" inputmode="decimal" placeholder="0 si no se detuvo"></label>'+
   '<label class="f"><span>Resultado</span><select id="r-res">'+RESULTADOS.map(x=>'<option>'+x+'</option>').join("")+'</select></label>'+
@@ -1660,7 +1770,7 @@ function formRegistro(t,equipoId,ot){
       const dur=numVal("r-dur");if(dur!==null&&!isFinite(dur)){err.textContent="La duración tiene que ser un número.";return}
       const resultado=val("r-res");
       const reg={equipoId:e.id,equipoCodigo:e.codigo,tareaId:tarea?tarea.id:null,tareaNombre:tarea?tarea.nombre:"Intervención no programada",
-        tipo:tarea?"Preventivo":val("r-tipo"),fecha,horometro:hm,tecnico:val("r-tec"),duracion:dur,parada:par,resultado,
+        tipo:tarea?"Preventivo":val("r-tipo"),fecha,horometro:hm,tecnico:"",duracion:dur,parada:par,resultado,
         proveedor:resultado==="Enviado a reparación externa"?val("r-prov"):"",repuestos:val("r-rep"),obs:val("r-obs"),
         porId:S.me&&S.me.id||null,creado:new Date().toISOString()};
       if(resultado==="Resuelto")reg.fechaCierre=fecha;
@@ -1672,7 +1782,16 @@ function formRegistro(t,equipoId,ot){
         }
         reg.demorada=reg.atrasoDias>0||reg.atrasoHoras>0}
       const guardar=async(db,f)=>{
-        if(f){reg.porId=f.id;reg.otId=ot.id;reg.otNumero=ot.numero||null}
+        const ahora=new Date().toISOString();
+        reg.porId=f.id;reg.firmaId=f.firma.id;reg.firmaNombre=f.name;reg.firmadoEl=ahora;
+        let o=ot;
+        if(!o){/* sin orden abierta: se genera la orden y se finaliza en el mismo paso */
+          const oid="ot-"+Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+          await db.doc("ots/"+oid).create({tipo:tarea?"preventivo":"intervencion",tareaId:tarea?tarea.id:null,equipoId:e.id,equipoCodigo:e.codigo,
+            desc:tarea?tarea.nombre:(val("r-tipo")+(val("r-obs")?": "+val("r-obs").slice(0,80):"")),estado:"En curso",reportado:ahora,reportadoPor:f.id,reportadoNombre:f.name,
+            tecnicoId:f.id,tecnicoNombre:f.name,asignado:f.name,historial:[histEntry(f,"Generó la orden")]});
+          o=Object.assign({id:oid},(await db.doc("ots/"+oid).get()).data())}
+        reg.otId=o.id;reg.otNumero=o.numero||null;reg.tecnico=o.tecnicoNombre||o.asignado||f.name;
         const ref=await db.collection("registros").add(reg);
         const eo={"Enviado a reparación externa":"En reparación externa","Equipo fuera de servicio":"Fuera de servicio","Pendiente de repuesto":"Esperando repuesto","Resuelto":"Operativo"}[resultado];
         if(eo&&!(tarea&&resultado==="Resuelto")&&(eo!==(e.estadoOp||"Operativo")))await db.doc("equipos/"+e.id).update({estadoOp:eo});
@@ -1680,12 +1799,13 @@ function formRegistro(t,equipoId,ot){
           if(!tarea.ultimaFecha||fecha>=tarea.ultimaFecha){up.ultimaFecha=fecha;if(hm!==null)up.ultimaHoras=hm}
           if(Object.keys(up).length)await db.doc("tareas/"+tarea.id).update(up)}
         if(hm!==null)await updHorometro(e,hm,fecha,db);
-        if(f)await db.doc("ots/"+ot.id).update({estado:"Cerrada",estadoAnterior:ot.estado,cierre:new Date().toISOString(),registroId:ref.id,historial:addHist(ot,histEntry(f,estLbl(ot.estado)+" → Terminada",{resultado}))});
+        await db.doc("ots/"+o.id).update(asignar(o,f,{estado:"Cerrada",estadoAnterior:o.estado,cierre:ahora,registroId:ref.id,firmaId:f.firma.id,historial:addHist(o,histEntry(f,estLbl(o.estado)+" → Terminada (firmada)",{resultado}))}));
+        return o;
       };
-      try{
-        if(ot){const ok=await conFirma("terminar "+otNum(ot),otDetalle(ot),guardar);if(!ok)return}
-        else await guardar(S.db,null);
-        closeModal();toast(ot?otNum(ot)+" terminada y registrada":"Registro guardado");render();
+      try{let fin=null;
+        const ok=await conFirma(ot?"finalizar "+otNum(ot):"finalizar trabajo",ot?otDetalle(ot):esc(e.codigo+" · "+(tarea?tarea.nombre:"Intervención no programada"))+'<br><span class="hint">Se genera la orden de trabajo y su remito</span>',async(db,f)=>{fin=await guardar(db,f)},{ot,digital:true});
+        if(!ok)return;
+        closeModal();toast((fin?otNum(S.ot.get(fin.id)||fin):"Orden")+" finalizada · remito firmado");render();
       }catch(x){firmaErr(x)}
     });
   });
@@ -1845,13 +1965,14 @@ const REMITO_CSS='.remito{page-break-before:always;break-before:page;border:1.5p
   '.rm-h{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;border-bottom:2px solid #1D6A73;padding-bottom:8px;margin-bottom:10px}.rm-h h2{margin:0;font-size:20px;letter-spacing:.04em}.rm-h .sub{color:#555;font-size:11px}'+
   '.rm-n{text-align:right}.rm-n b{display:block;font-family:monospace;font-size:16px}.rm-sec{margin:10px 0 4px;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#1D6A73;font-weight:bold}'+
   '.rm-t{border-collapse:collapse;width:100%}.rm-t th,.rm-t td{border:1px solid #bbb;padding:5px 7px;text-align:left;vertical-align:top}.rm-t th{background:#eef2f3;width:24%;font-weight:600}'+
-  '.rm-box{border:1px solid #bbb;padding:7px 9px;min-height:44px;white-space:pre-wrap}.rm-firmas{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:34px}.rm-firmas div{border-top:1px solid #333;padding-top:4px;text-align:center;font-size:11px;color:#333}'+
+  '.rm-box{border:1px solid #bbb;padding:7px 9px;min-height:44px;white-space:pre-wrap}.rm-firmas{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:34px}.rm-firmas>div{display:flex;flex-direction:column;justify-content:flex-end}.rm-firmas div{border-top:1px solid #333;padding-top:4px;text-align:center;font-size:11px;color:#333}'+
   '.rm-pie{margin-top:12px;font-size:10px;color:#777}@media print{.remito{border:none;padding:0}}';
 function remitosHTML(d,despuesDeInforme){
   const ots=new Map([...S.ot.values()].map(o=>[o.id,o]));
   return d.regs.map((r,i)=>{
     const e=S.eq.get(r.equipoId)||{};const p=eqParts(e);const t=r.tareaId?S.ta.get(r.tareaId):null;const o=r.otId?ots.get(r.otId):null;
-    const nro=S.mes.replace("-","")+"-"+String(i+1).padStart(3,"0");
+    const nro=r.otNumero?otNum({numero:r.otNumero}):S.mes.replace("-","")+"-"+String(i+1).padStart(3,"0");
+    const fz=r.firmaId&&S.firmas&&S.firmas.get(r.firmaId);
     const causa=r.causa!=null?r.causa:causaDeObs(r.obs);const hecho=r.solucion!=null?r.solucion:(r.otId?solDeObs(r.obs):r.obs);
     const fila=(l,v)=>v!==undefined&&v!==null&&v!==""?'<tr><th>'+l+'</th><td>'+esc(v)+'</td></tr>':'';
     const h=v=>isNum(v)?fmtN(v)+" h":"";
@@ -1871,14 +1992,25 @@ function remitosHTML(d,despuesDeInforme){
       (causa?'<div class="rm-sec">Causa</div><div class="rm-box">'+esc(causa)+'</div>':'')+
       '<div class="rm-sec">Trabajo realizado</div><div class="rm-box">'+esc(hecho||"")+'</div>'+
       '<div class="rm-sec">Repuestos y materiales</div><div class="rm-box" style="min-height:30px">'+esc(r.repuestos||"")+'</div>'+
-      '<div class="rm-firmas"><div>Realizó<br>'+esc(r.tecnico||"")+'</div><div>Conformidad del sector</div><div>Jefe de mantenimiento</div></div>'+
-      '<div class="rm-pie">Remito '+esc(nro)+' · Informe de '+esc(mesLabel(S.mes))+' · '+(i+1)+' de '+d.regs.length+'</div></section>'}).join("");
+      '<div class="rm-firmas"><div>'+(fz?'<img class="rm-firma-img" src="'+esc(fz.img)+'" alt="Firma">':'')+'Realizó<br>'+esc(r.tecnico||"")+(fz?'<br><span style="font-size:9.5px;color:#555">Firmado digitalmente por '+esc(r.firmaNombre||fz.nombre||"")+' el '+esc(new Date(r.firmadoEl||fz.creado).toLocaleString("es-AR",{dateStyle:"short",timeStyle:"short"}))+' · validado con contraseña</span>':'')+'</div><div>Conformidad del sector</div><div>Jefe de mantenimiento</div></div>'+
+      '<div class="rm-pie">Remito '+esc(nro)+(d.suelto?'':' · Informe de '+esc(mesLabel(S.mes))+' · '+(i+1)+' de '+d.regs.length)+'</div></section>'}).join("");
+}
+function remitoSuelto(r){
+  return '<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Remito '+esc(r.otNumero?otNum({numero:r.otNumero}):"")+'</title><style>'+REMITO_CSS+'body{font-family:Arial,sans-serif;color:#111;margin:22px;font-size:12px}</style></head><body>'+remitosHTML({regs:[r],suelto:true},false)+'</body></html>';
+}
+function porTecnico(regs){
+  const m=new Map();regs.forEach(r=>{const k=r.tecnico||"(sin técnico)";const o=m.get(k)||{n:0,prev:0,corr:0,horas:0,firm:0};o.n++;if(r.tipo==="Preventivo")o.prev++;else o.corr++;o.horas+=Number(r.duracion)||0;if(r.firmaId)o.firm++;m.set(k,o)});
+  return [...m].sort((a,b)=>b[1].n-a[1].n);
 }
 function printableInforme(conRemitos){
   const d=reportData(S.mes);const nota=(S.inf&&S.inf.get(informeKey()))||{};
   const css='body{font-family:Arial,sans-serif;color:#111;margin:22px;font-size:12px}h1{font-size:20px;margin:0 0 4px}.sub{color:#555;margin-bottom:14px}.rp-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.rp-kpi{border:1px solid #ccc;border-radius:6px;padding:8px}.rp-kpi b{display:block;font-size:20px}.rp-kpi span{font-size:10px;text-transform:uppercase;color:#555}.rp-kpi small{display:block;color:#666;font-size:10px}.rp-h{font-size:14px;margin:18px 0 6px;border-bottom:2px solid #1D6A73;padding-bottom:3px;page-break-after:avoid}table{border-collapse:collapse;width:100%}td,th{border:1px solid #bbb;padding:4px 6px;text-align:left;vertical-align:top}th{background:#eef2f3}.num{text-align:right;white-space:nowrap}.code{font-family:monospace}.rp-br{display:grid;grid-template-columns:45% 1fr 110px;gap:8px;align-items:center;margin:3px 0}.rp-bt{background:#e3e9eb;height:10px;border-radius:2px;display:block}.rp-bt i{display:block;height:100%;background:#B8322A}.hint{color:#666}.tbl-wrap{page-break-inside:auto}tr{page-break-inside:avoid}';
-  return '<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Informe '+esc(mesLabel(S.mes))+'</title><style>'+css+'</style></head><body><h1>Informe de mantenimiento · '+esc(mesLabel(S.mes))+'</h1><div class="sub">'+(S.empresa?esc(S.empresa+" · "+EMP[S.empresa]):"Todas las empresas del grupo")+' · Período '+fmtD(d.a)+' al '+fmtD(d.b)+(d.parcial?' (parcial)':'')+' · Generado el '+fmtD(todayStr())+(S.me?' por '+esc(S.me.name):'')+'</div>'+
-    reportBody(d,true)+(nota.texto?'<h3 class="rp-h">Conclusiones y acciones</h3><p style="white-space:pre-wrap">'+esc(nota.texto)+'</p>':'')+'<p style="margin-top:28px">Firma responsable de mantenimiento: ______________________________</p>'+
+  return '<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Informe '+esc(mesLabel(S.mes))+'</title><style>'+css+'</style></head><body><h1>Informe mensual de mantenimiento · '+esc(mesLabel(S.mes))+'</h1><div class="sub" style="margin-bottom:4px"><b>Para: Dirección</b></div><div class="sub">'+(S.empresa?esc(S.empresa+" · "+EMP[S.empresa]):"Todas las empresas del grupo")+' · Período '+fmtD(d.a)+' al '+fmtD(d.b)+(d.parcial?' (parcial)':'')+' · Generado el '+fmtD(todayStr())+(S.me?' por '+esc(S.me.name):'')+'</div>'+
+    reportBody(d,true)+
+    '<h3 class="rp-h">Tareas realizadas por técnico</h3><table><tr><th>Técnico</th><th class="num">Total</th><th class="num">Preventivas</th><th class="num">Correctivas / otras</th><th class="num">Horas de trabajo</th><th class="num">Con remito firmado</th></tr>'+
+      (porTecnico(d.regs).map(([k,o])=>'<tr><td>'+esc(k)+'</td><td class="num">'+o.n+'</td><td class="num">'+o.prev+'</td><td class="num">'+o.corr+'</td><td class="num">'+fmtN(o.horas)+'</td><td class="num">'+o.firm+'</td></tr>').join("")||'<tr><td colspan="6">Sin tareas registradas en el mes.</td></tr>')+
+      '<tr><th>Total</th><th class="num">'+d.regs.length+'</th><th class="num">'+d.regs.filter(r=>r.tipo==="Preventivo").length+'</th><th class="num">'+d.regs.filter(r=>r.tipo!=="Preventivo").length+'</th><th class="num">'+fmtN(d.regs.reduce((a,r)=>a+(Number(r.duracion)||0),0))+'</th><th class="num">'+d.regs.filter(r=>r.firmaId).length+'</th></tr></table>'+
+    (nota.texto?'<h3 class="rp-h">Conclusiones y acciones</h3><p style="white-space:pre-wrap">'+esc(nota.texto)+'</p>':'')+'<p style="margin-top:28px">Firma responsable de mantenimiento: ______________________________</p>'+
     (conRemitos&&d.regs.length?'<style>'+REMITO_CSS+'</style>'+remitosHTML(d,true):'')+'</body></html>';
 }
 
@@ -2002,19 +2134,35 @@ const estLbl=e=>(OT_EST.find(x=>x[0]===e)||[0,e])[1];
 const otNum=o=>o&&isNum(o.numero)?"OT-"+String(o.numero).padStart(6,"0"):"OT s/n";
 const esPrev=o=>o&&o.tipo==="preventivo";
 const otAbierta=o=>!!o&&o.estado!=="Cerrada"&&o.estado!=="Anulada";
+const tecnicoDe=o=>o&&(o.tecnicoNombre||o.asignado)||"";
+/* Lista de cambios campo por campo: [{campo, antes, despues}] */
+const SENSIBLES=new Set(["Fecha","Horas de trabajo","Equipo detenido (h)","Tiempo estimado (h)","Resultado"]);
+function difCampos(antes,despues,campos){
+  const v=x=>x===null||x===undefined?"":String(x);const out=[];
+  for(const [k,l,fmt] of campos){if(!(k in despues))continue;const a=v(antes[k]),d=v(despues[k]);if(a!==d)out.push({campo:l,antes:fmt?fmt(antes[k]):a,despues:fmt?fmt(despues[k]):d})}
+  return out;
+}
+function cambiosHTML(l){return (l||[]).map(c=>'<div class="cmb"><b>'+esc(c.campo)+':</b> <span class="antes">'+esc(c.antes||"(vacío)")+'</span> → '+esc(c.despues||"(vacío)")+(SENSIBLES.has(c.campo)?' <span class="chip sens">sensible</span>':'')+'</div>').join("")}
+/* Firma digital vigente de un usuario (la última que cargó) */
+function firmaDe(uid){let f=null;for(const x of (S.firmas||new Map()).values())if(x.userId===uid&&(!f||String(x.creado)>String(f.creado)))f=x;return f}
+/* Asigna el técnico a la orden la primera vez que alguien la firma; después queda fijo */
+function asignar(o,f,up){if(o&&!o.tecnicoId){up.tecnicoId=f.id;up.tecnicoNombre=f.name;if(!o.asignado)up.asignado=f.name}return up}
 const histEntry=(f,accion,extra)=>Object.assign({fecha:new Date().toISOString(),accion,porId:f.id,porNombre:f.name},extra||{});
 const addHist=(o,h)=>[...((o&&o.historial)||[]),h];
 /* Pide usuario y contraseña del técnico que hace el cambio. Devuelve {db,id,name,cerrar} o null si se cancela */
-function firmar(titulo,detalle){
+function firmar(titulo,detalle,opts){
+  opts=opts||{};const ot=opts.ot||null;
   return new Promise(async resolve=>{
     const root=$("#firma-root");let lista=[];
     try{lista=S.user?await S.user.firmantes():[]}catch(_){}
     const done=v=>{root.innerHTML="";resolve(v)};
-    const def=lista.find(x=>S.me&&x.id===S.me.id)?S.me.id:"";
+    const def=ot&&ot.tecnicoId&&lista.find(x=>x.id===ot.tecnicoId)?ot.tecnicoId:(lista.find(x=>S.me&&x.id===S.me.id)?S.me.id:"");
+    const aviso=(ot&&ot.tecnicoId?'<p class="hint full" style="margin:0">Orden asignada a <b>'+esc(ot.tecnicoNombre||"")+'</b>: solo esa persona o un administrador pueden firmarla.</p>':'')+
+      (opts.digital?'<p class="hint full" style="margin:0">Al finalizar se estampa la <b>firma digital</b> de quien firma en el remito.</p>':'');
     root.innerHTML='<div class="overlay"><div class="modal" role="dialog" aria-modal="true" style="max-width:460px">'+mhead("Firmar: "+titulo).replace('data-act="close"','data-act="firma-cancel"')+
       '<form id="fz" class="fg" novalidate>'+(detalle?'<div class="code-prev full">'+detalle+'</div>':'')+
       '<label class="f full"><span>Técnico responsable *</span><select id="fz-u"><option value="">Elegí…</option>'+lista.map(x=>'<option value="'+esc(x.id)+'"'+(x.id===def?' selected':'')+'>'+esc(x.nombre||x.email)+(x.rol==="admin"?" (administrador)":"")+'</option>').join("")+'</select></label>'+
-      '<label class="f full"><span>Contraseña *</span><input type="password" id="fz-p" autocomplete="off"></label>'+
+      '<label class="f full"><span>Contraseña *</span><input type="password" id="fz-p" autocomplete="off"></label>'+aviso+
       '<p class="hint full" style="margin:0">El cambio queda registrado a nombre de quien firma, con fecha y hora. Es la misma contraseña con la que entra al programa.</p>'+
       '<div class="err full" id="fz-err"></div><div class="m-acts full"><button type="button" class="btn" data-act="firma-cancel">Cancelar</button><button type="submit" class="btn primary" id="fz-ok">Firmar y guardar</button></div></form></div></div>';
     const g=id=>root.querySelector("#"+id);
@@ -2025,15 +2173,20 @@ function firmar(titulo,detalle){
       if(!u){g("fz-err").textContent="Elegí quién firma.";return}
       if(!pw){g("fz-err").textContent="Escribí la contraseña.";return}
       g("fz-ok").disabled=true;g("fz-ok").textContent="Verificando…";
-      try{const v=await S.user.verificar(u.email,pw);done({id:v.id,name:v.name,rol:v.rol,db:S.db.as(v.cliente),cerrar:v.cerrar})}
+      try{const v=await S.user.verificar(u.email,pw);
+        const no=m=>{v.cerrar();g("fz-ok").disabled=false;g("fz-ok").textContent="Firmar y guardar";g("fz-err").innerHTML=m};
+        if(ot&&ot.tecnicoId&&v.id!==ot.tecnicoId&&v.rol!=="admin")return no("Esta orden está asignada a <b>"+esc(ot.tecnicoNombre||"otro técnico")+"</b>. Solo esa persona o un administrador pueden firmarla.");
+        let firma=null;
+        if(opts.digital){firma=firmaDe(v.id);if(!firma)return no(esc(v.name)+" todavía no cargó su firma digital. Se carga en <b>Menú → Mi cuenta</b>.")}
+        done({id:v.id,name:v.name,rol:v.rol,firma,db:S.db.as(v.cliente),cerrar:v.cerrar})}
       catch(x){g("fz-ok").disabled=false;g("fz-ok").textContent="Firmar y guardar";g("fz-p").value="";g("fz-p").focus();
         g("fz-err").textContent=x&&x.code==="bad_password"?"Contraseña incorrecta.":(x&&x.message)||"No se pudo verificar."}
     });
   });
 }
 /* Ejecuta fn(db, firmante) con la sesión del técnico que firmó; devuelve false si se canceló */
-async function conFirma(titulo,detalle,fn){
-  const f=await firmar(titulo,detalle);if(!f)return false;
+async function conFirma(titulo,detalle,fn,opts){
+  const f=await firmar(titulo,detalle,opts);if(!f)return false;
   try{await fn(f.db,f)}finally{f.cerrar()}
   return true;
 }
@@ -2051,9 +2204,10 @@ function formFalla(o,eqId){
   '<fieldset class="full"><legend>¿Cómo afecta?</legend><div class="radios col">'+FALLAS.map(([k,l])=>'<label><input type="radio" name="tf" value="'+k+'"'+(o.tipoFalla===k?' checked':'')+'> '+esc(l)+'</label>').join("")+'</div>'+
   '<label class="f" id="g-perd"><span>¿Cuánta capacidad se pierde? (%)</span><input id="f-perd" inputmode="numeric" value="'+esc(isNum(o.perdida)?o.perdida:50)+'"></label></fieldset>'+
   '<label class="f"><span>Tiempo estimado de reparación (h) *</span><input id="f-t" inputmode="decimal" value="'+esc(isNum(o.tEst)?o.tEst:"")+'" placeholder="ej. 3"></label>'+
-  '<label class="f"><span>A cargo</span><input id="f-asig" value="'+esc(o.asignado||"")+'"></label>'+
+  (editing&&o.tecnicoId&&!S.isAdmin?'<label class="f"><span>Técnico asignado</span><input value="'+esc(tecnicoDe(o))+'" disabled></label>':
+   '<label class="f"><span>Técnico asignado'+(editing?'':' (opcional)')+'</span><select id="f-tec"><option value="">'+(editing?esc(tecnicoDe(o)||"Sin asignar"):"Lo toma el primer técnico que firme")+'</option></select></label>')+
   '<div class="urg-prev full" id="f-prev"></div>'+
-  '<details class="full"'+(o.urgManual?' open':'')+'><summary>Cambiar la urgencia a mano</summary><div class="fg" style="margin-top:8px"><label class="f"><span>Urgencia</span><select id="f-man"><option value="">Usar la calculada</option>'+Object.keys(URG).map(k=>'<option value="'+k+'"'+(o.urgManual===k?' selected':'')+'>'+k+' · '+URG[k].l+'</option>').join("")+'</select></label><label class="f"><span>Motivo *</span><input id="f-mot" value="'+esc(o.motivoManual||"")+'" placeholder="Pedido urgente del cliente…"></label></div></details>'+
+  '<details class="full adm"'+(o.urgManual?' open':'')+'><summary>Cambiar la urgencia a mano</summary><div class="fg" style="margin-top:8px"><label class="f"><span>Urgencia</span><select id="f-man"><option value="">Usar la calculada</option>'+Object.keys(URG).map(k=>'<option value="'+k+'"'+(o.urgManual===k?' selected':'')+'>'+k+' · '+URG[k].l+'</option>').join("")+'</select></label><label class="f"><span>Motivo *</span><input id="f-mot" value="'+esc(o.motivoManual||"")+'" placeholder="Pedido urgente del cliente…"></label></div></details>'+
   '<div class="err full" id="err"></div><div class="m-acts full"><button type="button" class="btn" data-act="close">Cancelar</button><button type="submit" class="btn primary">'+(editing?'Guardar':'Reportar falla')+'</button></div></form>',
   r=>{const g=id=>r.querySelector("#"+id);
     const read=()=>{const tf=r.querySelector('input[name=tf]:checked').value;const eid=pick?g("f-eq").value:o.equipoId;
@@ -2063,6 +2217,7 @@ function formFalla(o,eqId){
       const c=calcUrg(x.f,e);const man=g("f-man").value;
       g("f-prev").innerHTML='<div class="urg-row">'+urgChip(man||c.u,true)+'<div><b>'+esc(URG[man||c.u].meta)+'</b><br><span class="hint">'+esc(URG[man||c.u].accion)+'</span></div></div><p class="hint" style="margin:6px 0 0">'+(man?'Calculada: '+c.u+'. ':'')+esc(c.why)+'</p>'};
     r.querySelectorAll('input[name=tf]').forEach(x=>x.addEventListener("change",upd));
+    const tsel=g("f-tec");if(tsel&&S.user)S.user.firmantes().then(l=>{tsel._lista=l;tsel.insertAdjacentHTML("beforeend",l.filter(x=>x.rol==="tecnico"||x.rol==="admin").map(x=>'<option value="'+esc(x.id)+'"'+(x.id===o.tecnicoId?' selected':'')+'>'+esc(x.nombre||x.email)+'</option>').join(""))}).catch(()=>{});
     const sim=()=>{const box=g("f-sim");if(!box||!box.isConnected)return;const eid=pick?g("f-eq").value:o.equipoId;const d=g("f-desc").value;
       const l=d.trim().length>=4?similares(d,eid,o.id?"ot"+o.id:null,3):[];
       box.innerHTML=l.length?'<div class="sim-box"><h3>Fallas parecidas que ya se resolvieron</h3>'+l.map(c=>casoCard(c,palabras(d))).join("")+'</div>':''};
@@ -2077,10 +2232,15 @@ function formFalla(o,eqId){
       if(man&&!val("f-mot")){fail("Si cambiás la urgencia a mano, anotá el motivo.");return}
       const c=calcUrg(x.f,e);
       const d={equipoId:e.id,equipoCodigo:e.codigo,desc,tipoFalla:x.tf,perdida:c.p,tEst:x.f.tEst,urg:c.u,porQue:c.why,holgura:c.h,
-        urgManual:man||null,motivoManual:man?val("f-mot"):"",asignado:val("f-asig")};
+        urgManual:man||null,motivoManual:man?val("f-mot"):""};
+      const ts=g("f-tec");const tsel=ts&&ts.value?(ts._lista||[]).find(x=>x.id===ts.value):null;
+      if(tsel){d.tecnicoId=tsel.id;d.tecnicoNombre=tsel.nombre||tsel.email;d.asignado=d.tecnicoNombre}
       try{
         if(editing){
-          const ok=await conFirma("editar "+otNum(o),otDetalle(o),(db,f)=>db.doc("ots/"+o.id).update(Object.assign(d,{historial:addHist(o,histEntry(f,"Editó la orden"))})));
+          const reas=tsel&&tsel.id!==o.tecnicoId;
+          const cambios=difCampos(o,d,[["desc","Descripción"],["tipoFalla","Cómo afecta",fallaLabel],["perdida","Capacidad perdida (%)"],["tEst","Tiempo estimado (h)"],["urg","Urgencia"],["urgManual","Urgencia manual"],["tecnicoNombre","Técnico"]]);
+          if(!cambios.length){closeModal();toast("No hubo cambios");return}
+          const ok=await conFirma("editar "+otNum(o),otDetalle(o)+'<div style="margin-top:6px">'+cambiosHTML(cambios)+'</div>',(db,f)=>db.doc("ots/"+o.id).update(Object.assign(d,{historial:addHist(o,histEntry(f,reas?"Editó la orden y la reasignó":"Editó la orden",{cambios}))})),{ot:o});
           if(!ok)return}
         else{Object.assign(d,{tipo:"falla",estado:"Abierta",reportado:new Date().toISOString(),reportadoPor:S.me&&S.me.id||null,reportadoNombre:S.me&&S.me.name||"",
             historial:[{fecha:new Date().toISOString(),accion:"Reportó la falla",porId:S.me&&S.me.id||null,porNombre:S.me&&S.me.name||""}]});
@@ -2118,13 +2278,14 @@ function formCerrarOT(o){
         otId:o.id,urgencia:u,respuestaH:respH,respuestaOk:respH<=URG[u].resp,afectoEntregas:isNum(o.holgura)&&perdidaReal!==null?perdidaReal>=Number(o.holgura):null,
         porId:S.me&&S.me.id||null,creado:new Date().toISOString()};
       if(res==="Resuelto")reg.fechaCierre=f;
-      try{const ok=await conFirma("terminar "+otNum(o),otDetalle(o)+'<br><span class="hint">'+esc(estLbl(o.estado))+' → Terminada · '+esc(res)+'</span>',async(db,f)=>{
-          reg.porId=f.id;if(!o.asignado)reg.tecnico=f.name;reg.otNumero=o.numero||null;
+      try{const ok=await conFirma("finalizar "+otNum(o),otDetalle(o)+'<br><span class="hint">'+esc(estLbl(o.estado))+' → Terminada · '+esc(res)+'</span>',async(db,f)=>{
+          reg.porId=f.id;reg.tecnico=o.tecnicoNombre||o.asignado||f.name;reg.otNumero=o.numero||null;
+          reg.firmaId=f.firma.id;reg.firmaNombre=f.name;reg.firmadoEl=new Date().toISOString();
           const ref=await db.collection("registros").add(reg);
-          await db.doc("ots/"+o.id).update({estado:"Cerrada",estadoAnterior:o.estado,cierre:new Date().toISOString(),registroId:ref.id,inicio:o.inicio||null,historial:addHist(o,histEntry(f,estLbl(o.estado)+" → Terminada",{resultado:res}))});
+          await db.doc("ots/"+o.id).update(asignar(o,f,{estado:"Cerrada",estadoAnterior:o.estado,cierre:new Date().toISOString(),registroId:ref.id,inicio:o.inicio||null,firmaId:f.firma.id,historial:addHist(o,histEntry(f,estLbl(o.estado)+" → Terminada (firmada)",{resultado:res}))}));
           const eo={"Enviado a reparación externa":"En reparación externa","Equipo fuera de servicio":"Fuera de servicio","Pendiente de repuesto":"Esperando repuesto","Resuelto":"Operativo"}[res];
           const otrasAbiertas=openOts(x=>x.equipoId===o.equipoId&&x.id!==o.id).length;
-          if(e&&eo&&!(eo==="Operativo"&&otrasAbiertas)&&(e.estadoOp||"Operativo")!==eo)await db.doc("equipos/"+e.id).update({estadoOp:eo})});
+          if(e&&eo&&!(eo==="Operativo"&&otrasAbiertas)&&(e.estadoOp||"Operativo")!==eo)await db.doc("equipos/"+e.id).update({estadoOp:eo})},{ot:o,digital:true});
         if(!ok)return;
         closeModal();toast(otNum(o)+" terminada y registrada en el historial");render()}catch(z){firmaErr(z)}
     });
@@ -2171,6 +2332,7 @@ document.addEventListener("click",async ev=>{
   if(a==="ov"&&ev.target!==b)return;
   if(!S.db&&!["ov","close","filtro","open-eq","ins","eqtab","ck-row-add","ck-row-del","tag","copy-link"].includes(a)){toast("Sin conexión con la base de datos.");return}
   if(ADMIN_ACTS.has(a)&&!S.isAdmin){toast("Solo un administrador puede hacer esto.");return}
+  if(S.isAdmin&&REAUTH[a]&&window.PM_REAUTH){const [txt,siempre]=REAUTH[a];if(!(await window.PM_REAUTH(txt,{siempre})))return}
   if(WRITE_ACTS.has(a)&&!canW()){toast("Tu usuario es de solo lectura. Pedile al administrador que te asigne el rol Técnico.");return}
   switch(a){
     case "ov":case "close":closeModal();break;
@@ -2184,6 +2346,10 @@ document.addEventListener("click",async ev=>{
     case "edit-task":formTarea(S.ta.get(id));break;
     case "del-task":formDelTask(S.ta.get(id));break;
     case "ot-anular":formAnularOT(S.ot.get(id));break;
+    case "ot-reasignar":formReasignar(S.ot.get(id));break;
+    case "reg-remito":{const r=S.re.find(x=>x.id===id);if(r)save("Remito_"+(r.otNumero?otNum({numero:r.otNumero}):"intervencion")+"_"+safe((S.eq.get(r.equipoId)||{}).codigo||"")+".html",remitoSuelto(r));break}
+    case "ot-gen":genOT(S.ta.get(id));break;
+    case "firma-cargar":if(window.PM_CUENTA)window.PM_CUENTA("perfil");break;
     case "ot-editprev":formEditPrev(S.ot.get(id));break;
     case "reg-edit":formEditReg(S.re.find(x=>x.id===id));break;
     case "reg-del":formDelReg(S.re.find(x=>x.id===id));break;
@@ -2254,8 +2420,9 @@ document.addEventListener("click",async ev=>{
   }
 });
 document.addEventListener("keydown",ev=>{if(ev.key!=="Escape")return;const fc=$('#firma-root [data-act="firma-cancel"]');if(fc){fc.click();return}closeModal()});
-$("#btn-new-eq").addEventListener("click",()=>{if(!S.db){toast("Sin conexión con la base de datos.");return}if(!S.isAdmin){toast("Solo un administrador puede crear equipos.");return}formEquipo()});
+$("#btn-new-eq").addEventListener("click",()=>{if(!S.db){toast("Sin conexión con la base de datos.");return}if(!S.isAdmin){toast("Solo un administrador puede crear equipos.");return}if(window.PM_REAUTH){window.PM_REAUTH("Dar de alta un equipo",{siempre:false}).then(ok=>{if(ok)formEquipo()});return}formEquipo()});
 document.addEventListener("change",ev=>{if(ev.target&&ev.target.id==="inf-mes"&&ev.target.value){S.mes=ev.target.value;render()}
+  if(ev.target&&(ev.target.id==="aud-q"||ev.target.id==="aud-s")){S.audF={quien:$("#aud-q").value,sens:$("#aud-s").checked};render();return}
   if(ev.target&&(ev.target.id==="fs-tipo"||ev.target.id==="fs-res")){S.fs=Object.assign({},S.fs,{tipo:$("#fs-tipo").value,resueltas:$("#fs-res").checked});const b=$("#fs-res-box");if(b)b.innerHTML=resultadosFallas()}});
 document.addEventListener("input",ev=>{if(ev.target&&ev.target.id==="fs-q"){S.fs=Object.assign({},S.fs,{q:ev.target.value});clearTimeout(render.fs);render.fs=setTimeout(()=>{const b=$("#fs-res-box");if(b)b.innerHTML=resultadosFallas()},150)}});
 $("#f-empresa").addEventListener("change",ev=>{S.empresa=ev.target.value;render()});
@@ -2283,6 +2450,7 @@ else{
     db.collection("equipos").onSnapshot(s=>{S.eq=new Map(s.docs.map(d=>[d.id,Object.assign({id:d.id},d.data())]));S.loaded.eq=true;render();if(pendingTok)openFromHash()},fail);
     db.collection("tareas").onSnapshot(s=>{S.ta=new Map(s.docs.map(d=>[d.id,Object.assign({id:d.id},d.data())]));S.loaded.ta=true;render();syncPrev()},fail);
     applyRole();
+    db.collection("firmas").onSnapshot(s=>{S.firmas=new Map(s.docs.map(d=>[d.id,Object.assign({id:d.id},d.data())]));S.loaded.firmas=true;if(S.view==="tablero"&&!$("#modal-root").innerHTML)render()},()=>{});
     db.collection("ots").onSnapshot(s=>{S.ot=new Map(s.docs.map(d=>[d.id,Object.assign({id:d.id},d.data())]));S.loaded.ot=true;render();syncPrev()},fail);
     db.doc("config/codigos").onSnapshot(d=>{S.cfg=d.exists?d.data():null;applyCfg();if(!$("#modal-root").innerHTML)render()},fail);
     db.collection("manuales").onSnapshot(s=>{S.ma=new Map(s.docs.map(d=>[d.id,Object.assign({id:d.id},d.data())]));render()},fail);
