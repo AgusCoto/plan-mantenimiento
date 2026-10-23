@@ -1,0 +1,43 @@
+# Mantiene activa la base de datos de Supabase.
+# En el plan gratuito, Supabase pausa el proyecto después de 7 días sin uso.
+# Esta tarea hace una consulta liviana cada 3 días para que nunca llegue a pausarse.
+# Toma la dirección y la clave pública de los secretos del repositorio
+# (SUPABASE_URL y SUPABASE_ANON_KEY) o, si no están, de src/config.js.
+name: Mantener activa la base
+
+on:
+  schedule:
+    - cron: "17 11 */3 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Consultar la base
+        env:
+          URL_SECRETO: ${{ secrets.SUPABASE_URL }}
+          KEY_SECRETO: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          URL="$URL_SECRETO"; KEY="$KEY_SECRETO"
+          if [ -z "$URL" ] || [ -z "$KEY" ]; then
+            URL=$(grep -oP 'supabaseUrl:\s*"\K[^"]*' src/config.js || true)
+            KEY=$(grep -oP 'supabaseAnonKey:\s*"\K[^"]*' src/config.js || true)
+          fi
+          if [ -z "$URL" ] || [ -z "$KEY" ]; then
+            echo "::error::Faltan los datos de la base: cargá los secretos SUPABASE_URL y SUPABASE_ANON_KEY en GitHub."
+            exit 1
+          fi
+          URL="${URL%/}"
+          # Consulta a la base (pasa por Postgres) y al servicio de usuarios.
+          code=$(curl -s -o /dev/null -w "%{http_code}" "$URL/rest/v1/docs?select=id&limit=1" -H "apikey: $KEY" -H "Authorization: Bearer $KEY")
+          auth=$(curl -s -o /dev/null -w "%{http_code}" "$URL/auth/v1/health" -H "apikey: $KEY")
+          echo "Base de datos: HTTP $code · Usuarios: HTTP $auth"
+          if [ "$code" != "200" ]; then
+            echo "::error::La base no respondió bien (HTTP $code). Si está pausada, entrá a supabase.com y tocá Restore project."
+            exit 1
+          fi

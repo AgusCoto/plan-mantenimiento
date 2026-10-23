@@ -105,7 +105,7 @@ El botón **"Sugerir ítems con IA"** del checklist del fabricante usa la API de
 
 ## Para tener en cuenta
 
-- **Plan gratuito de Supabase:** si el proyecto pasa **7 días sin uso**, se pausa. Con uso diario no pasa, y si pasa se reactiva desde el panel con un clic. Para producción conviene el plan Pro (USD 25/mes), que además hace copias de seguridad diarias.
+- **Plan gratuito de Supabase:** si el proyecto pasa **7 días sin uso**, se pausa (los datos no se pierden; se reactiva con **Restore project**). Para evitarlo, la tarea **Actions → Mantener activa la base** consulta la base cada 3 días. Necesita los secretos `SUPABASE_URL` y `SUPABASE_ANON_KEY` en **Settings → Secrets and variables → Actions**. El plan Pro (USD 25/mes) no se pausa y hace copias de seguridad diarias.
 - **Copia de seguridad manual:** **Historial → Descargar CSV**, o en Supabase **Table Editor → docs → Export**.
 - **Actualizar la app:** cuando haya cambios, se vuelve a ejecutar *Instaladores* y se instala la versión nueva encima. Los datos no se tocan porque están en la nube.
 
