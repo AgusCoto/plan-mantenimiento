@@ -68,8 +68,21 @@ Ejecutá el `-setup.exe`. Si aparece *"Windows protegió su PC"*, tocá **Más i
 |---|---|
 | **Administrador** | Todo: alta y baja de equipos, manuales, códigos y usuarios |
 | **Técnico** | Reportar y cerrar fallas, registrar intervenciones, tareas y checklists, actualizar horómetros |
-| **Solo lectura** | Ver todo, sin modificar |
+| **Dirección** (solo lectura) | Ver qué equipos tienen fallas, qué se está atendiendo y qué queda pendiente; resumen semanal e informe mensual |
+| **Operario** (sin usuario) | Escanear la etiqueta de un equipo y enviar un aviso de anomalía |
 | **Sin acceso** | Nada (usuarios recién creados) |
+
+### Operarios: avisos de anomalías
+
+Los operarios no necesitan usuario. Entran con el **código de su planta** y su nombre:
+
+1. El gerente define un código por planta en **Configuración → Operarios** (de 4 a 12 letras o números; anotalo, porque después no se puede volver a ver).
+2. El operario escanea el QR o el NFC del equipo, toca **Soy operario: reportar una anomalía**, escribe el código y su nombre (quedan guardados en el celular), marca qué nota (ruidos, olores, chispas, humo, pérdidas…), si la máquina funciona o está parada, agrega fotos o un audio y envía.
+3. El aviso llega a **Avisos de operarios**. Ahí un técnico o el gerente lo convierte en orden de trabajo, lo vincula a una orden que ya está abierta o lo descarta indicando el motivo.
+
+Con el código, el operario solo ve los equipos de su planta y solo puede enviar avisos. Si el código se filtra, cambialo en Configuración y los celulares lo van a pedir de nuevo.
+
+Para activarlo, ejecutá una vez `supabase/actualizacion-operarios.sql` en Supabase (**SQL Editor → New query → pegar → Run**).
 
 ## Paso 5 (opcional): versión web para el celular, QR y NFC
 

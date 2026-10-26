@@ -144,6 +144,8 @@
   .pm-sw button[aria-selected="true"]{color:var(--fg);border-bottom-color:var(--accent)}
   .pm-users td select{width:auto}
   .pm-paso{background:var(--surface-2);border-radius:10px;padding:10px 12px;font-size:14px}
+  .pm-op-box{background:var(--accent-soft);border-radius:12px;padding:12px}
+  .pm-op{background:#C8102E!important;border-color:#C8102E!important;color:#fff!important}
   .pm-big{width:100%;justify-content:center;padding:14px;font-size:16px;font-weight:600}
   #pm-man summary{cursor:pointer;color:var(--accent);font-size:13px}
   #who[data-pm]{cursor:pointer;border-radius:8px;padding:2px 6px}
@@ -223,10 +225,14 @@
     tick();
   }
 
+  const tieneEquipo = () => { const h = decodeURIComponent((location.hash || "").slice(1)); return !!h && !/^conectar=/.test(h) && h.length < 60; };
   function loginScreen(mode, msg) {
     mode = mode || "in";
     const el = overlay(`<form class="pm-box" id="pm-login">
       <div style="display:flex;gap:12px;align-items:center"><img src="iconos/icono.svg" alt="" width="48" height="48" style="border-radius:11px"><div><h2>W-Main</h2><p class="hint" style="margin:0">Plan de mantenimiento</p></div></div>
+      ${mode === "in" ? `<div class="pm-op-box"><button class="btn pm-big pm-op" type="button" id="pm-op">Soy operario: reportar una anomalía</button>
+        <p class="hint" style="margin:6px 0 0">${tieneEquipo() ? "Escaneaste la etiqueta de un equipo. " : ""}Solo necesitás el código de tu planta y tu nombre.</p></div>
+      <p class="hint" style="margin:0;text-align:center">Personal de mantenimiento y dirección: ingresá con tu usuario</p>` : ""}
       <nav class="pm-sw" role="tablist"><button type="button" role="tab" data-m="in" aria-selected="${mode === "in"}">Ingresar</button><button type="button" role="tab" data-m="up" aria-selected="${mode === "up"}">Crear usuario</button></nav>
       ${mode === "up" ? field("pm-name", "Nombre y apellido", 'required autocomplete="name"') : ""}
       ${field("pm-mail", "Email", 'type="email" required autocomplete="email"')}
@@ -238,6 +244,8 @@
     </form>`);
     el.querySelectorAll("[data-m]").forEach((b) => b.addEventListener("click", () => loginScreen(b.dataset.m)));
     el.querySelector("#pm-cfg").addEventListener("click", () => setupScreen());
+    const op = el.querySelector("#pm-op");
+    if (op) op.addEventListener("click", () => { if (window.PM_OPERARIO) window.PM_OPERARIO(); });
     const err = el.querySelector("#pm-err");
     const fg = el.querySelector("#pm-forgot");
     if (fg) fg.addEventListener("click", async () => {
@@ -287,6 +295,9 @@
     sb = window.supabase.createClient(CFG.supabaseUrl, CFG.supabaseAnonKey, { auth: { persistSession: true, autoRefreshToken: true } });
   } catch (e) { setupScreen("Los datos de conexión no son válidos: " + e.message); return; }
 
+  window.PM_RPC = (fn, args) => sb.rpc(fn, args);
+  window.PM_FOTOS = async (avisoId) => { const { data, error } = await sb.from("avisos_fotos").select("id,tipo,data").eq("aviso_id", avisoId).order("id"); if (error) throw error; return data || []; };
+  window.PM_LOGIN = () => { if (!started) loginScreen(); };
   let started = false;
   let me = null;
   sb.auth.onAuthStateChange((event, session) => {
@@ -294,7 +305,15 @@
     if (session && !started) { started = true; setTimeout(() => start(session), 0); }
     else if (!session && started) { location.reload(); }
   });
-  sb.auth.getSession().then(({ data }) => { if (!data.session) loginScreen(); });
+  const domListo = () => new Promise(r => document.readyState === "loading" ? document.addEventListener("DOMContentLoaded", r, { once: true }) : r());
+  sb.auth.getSession().then(async ({ data }) => {
+    if (data.session) return;
+    await domListo();
+    if (started) return;
+    let op = null; try { op = JSON.parse(localStorage.getItem("pm-operario") || "null"); } catch (_) {}
+    if (op && op.codigo && tieneEquipo() && window.PM_OPERARIO) { window.PM_OPERARIO(); return; }
+    loginScreen();
+  });
 
   function passwordScreen() {
     const el = overlay(`<form class="pm-box" id="pm-pw"><h2>Nueva contraseña</h2>${field("pm-np", "Contraseña nueva", 'type="password" minlength="6" required autocomplete="new-password"')}<div class="pm-err" id="pm-err"></div><div class="pm-row"><button class="btn primary" type="submit">Guardar</button></div></form>`);

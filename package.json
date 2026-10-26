@@ -1,6 +1,6 @@
 {
   "name": "plan-mantenimiento",
-  "version": "1.0.13",
+  "version": "1.0.14",
   "private": true,
   "description": "W-Main: aplicación de escritorio (Mac y Windows) con base de datos en Supabase",
   "scripts": {
