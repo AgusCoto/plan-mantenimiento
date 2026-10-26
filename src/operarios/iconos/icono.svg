@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+<defs>
+  <linearGradient id="bgop" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#E8344E"/><stop offset="0.55" stop-color="#C8102E"/><stop offset="1" stop-color="#6E0716"/></linearGradient>
+  <radialGradient id="shineop" cx="0.35" cy="0.2" r="0.8"><stop offset="0" stop-color="#FFFFFF" stop-opacity="0.18"/><stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/></radialGradient>
+</defs>
+<g transform="translate(0,0) scale(1)">
+  <rect width="1024" height="1024" rx="0" fill="url(#bgop)"/>
+  <rect width="1024" height="1024" rx="0" fill="url(#shineop)"/>
+  <path d="M454.2,256.5 L463.2,185.6 L560.8,185.6 L569.8,256.5 L615.4,271.3 L664.4,219.3 L743.3,276.6 L709.0,339.3 L737.2,378.0 L807.3,364.8 L837.5,457.5 L772.9,488.0 L772.9,536.0 L837.5,566.5 L807.3,659.2 L737.2,646.0 L709.0,684.7 L743.3,747.4 L664.4,804.7 L615.4,752.7 L569.8,767.5 L560.8,838.4 L463.2,838.4 L454.2,767.5 L408.6,752.7 L359.6,804.7 L280.7,747.4 L315.0,684.7 L286.8,646.0 L216.7,659.2 L186.5,566.5 L251.1,536.0 L251.1,488.0 L186.5,457.5 L216.7,364.8 L286.8,378.0 L315.0,339.3 L280.7,276.6 L359.6,219.3 L408.6,271.3 Z M687,512 A175,175 0 1,0 337,512 A175,175 0 1,0 687,512 Z" fill="#FFFFFF" fill-rule="evenodd"/>
+  <path d="M512 420 L512 545" fill="none" stroke="#FFFFFF" stroke-width="62" stroke-linecap="round"/><circle cx="512" cy="620" r="36" fill="#FFFFFF"/>
+</g>
+</svg>

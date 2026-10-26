@@ -210,29 +210,6 @@ body.noadm [data-act=edit-task],body.noadm [data-act=new-task],body.noadm [data-
 body.noadm #inf-nota{pointer-events:none;opacity:.75}
 body.tec .solo-control{display:none!important}
 body.dir .no-dir{display:none!important}
-#op-root{position:fixed;inset:0;z-index:150;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch}
-.op-wrap{max-width:560px;margin:0 auto;padding:calc(14px + env(safe-area-inset-top,0px)) 16px calc(28px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:14px}
-.op-top{display:flex;gap:10px;align-items:center}
-.op-top img{border-radius:10px}
-.op-top b{display:block;font-size:16px}
-.op-card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:12px;box-shadow:var(--shadow-sm)}
-.op-card h2{margin:0;font-size:20px}
-.op-card p{margin:0}
-.op-eq{border-left:5px solid var(--accent)}
-.op-eq .code{font-size:13px}
-.op-chips{display:flex;flex-wrap:wrap;gap:8px}
-.op-chips label{display:flex;align-items:center;gap:6px;border:1.5px solid var(--line);border-radius:999px;padding:9px 13px;font-size:14.5px;cursor:pointer;background:var(--surface);user-select:none}
-.op-chips input{position:absolute;opacity:0;width:1px;height:1px}
-.op-chips label:has(input:checked){background:var(--accent);border-color:var(--accent);color:#fff}
-.op-func{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.op-func label{border:1.5px solid var(--line);border-radius:12px;padding:10px 8px;text-align:center;font-size:13.5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px}
-.op-func input{position:absolute;opacity:0;width:1px;height:1px}
-.op-func label:has(input:checked){border-color:var(--accent);background:var(--accent-soft);font-weight:600}
-.op-func label.parada:has(input:checked){border-color:var(--bad);background:var(--bad-soft)}
-.op-adj{display:flex;gap:8px;flex-wrap:wrap}
-.op-adj img{width:84px;height:84px;object-fit:cover;border-radius:10px;border:1px solid var(--line)}
-.op-ok{text-align:center;align-items:center}
-.op-ok .num{font-family:var(--f-mono);font-size:30px;font-weight:700;color:var(--accent)}
 .av-card{background:var(--surface);border:1px solid var(--line);border-left:5px solid var(--warn-bar);border-radius:var(--radius);padding:12px 14px;display:flex;flex-direction:column;gap:8px;box-shadow:var(--shadow-sm)}
 .av-card.Convertido{border-left-color:var(--ok)} .av-card.Descartado,.av-card.Duplicado{border-left-color:var(--none);opacity:.85}
 .av-card.parada{border-left-color:var(--bad)}
@@ -475,17 +452,16 @@ main.wrap{padding-top:22px}
 <script src="vendor/qrcode.js"></script>
 <script src="vendor/jsqr.js"></script>
 <script src="vendor/supabase.js"></script>
+<script src="catalogo.js"></script>
 <script src="config.js"></script>
 <script src="backend.js"></script>
 <script>if("serviceWorker" in navigator&&location.protocol==="https:"&&!window.__TAURI__)navigator.serviceWorker.register("sw.js").catch(()=>{});</script>
 <script>
 (function(){
 "use strict";
-const EMP0={IP:"Inyectora de plásticos",LH:"Limpieza hogar",PH:"Pinturas",AL:"Alimentos",GR:"Grupo (pañol / sin asignar)"};
+const {EMP0,AREAS0,TIPOS0}=window.PM_CAT;
 /* EMP se rearma con la configuración guardada (empresas agregadas y nombres modificados) */
 const EMP=Object.assign({},EMP0);
-const AREAS0=[["INY","Inyección"],["SOP","Soplado"],["MOL","Molienda / recuperado"],["ELA","Elaboración / mezcla"],["ENV","Envasado / llenado"],["EMP","Etiquetado y empaque"],["DEP","Depósito / logística"],["SER","Servicios generales (aire, agua, vapor, energía)"],["LAB","Calidad / laboratorio"],["EFL","Efluentes"],["EDI","Edilicio"],["TAL","Taller / pañol de mantenimiento"]];
-const TIPOS0=[["INY","Inyectora",0],["SOP","Sopladora",0],["MOL","Molino",0],["MDE","Molde / matriz",1],["CHI","Chiller / enfriador",0],["COM","Compresor",1],["SEC","Secador / deshumidificador",0],["MEZ","Mezclador / agitador",0],["DIS","Dispersor",0],["MAR","Marmita / reactor",0],["BOM","Bomba",1],["LLE","Llenadora / envasadora",0],["TAP","Tapadora",0],["ETQ","Etiquetadora",0],["CIN","Cinta transportadora",0],["TAN","Tanque / recipiente",0],["CAL","Caldera",0],["INT","Intercambiador / pasteurizador",0],["TAB","Tablero eléctrico",0],["MOT","Motor eléctrico / motorreductor",1],["API","Apiladora",1],["AUT","Autoelevador / zorra",1],["HER","Herramienta eléctrica",1],["SOL","Soldadora",1],["GEN","Grupo electrógeno",1],["BAL","Balanza",0],["EXT","Extracción / ventilación",0],["ROB","Robot / manipulador",0],["OTR","Otro",0]];
 const MOV=new Set(["Alta","Traslado","Baja","Reactivación"]);
 const URG={U1:{l:"Emergencia",resp:1,meta:"Respuesta inmediata (menos de 1 h)",accion:"Se atiende ya, con todos los recursos disponibles. Se interrumpe cualquier otro trabajo."},
   U2:{l:"Urgente",resp:4,meta:"Dentro del mismo turno (menos de 4 h)",accion:"Se atiende en el turno. Puede postergar preventivos no críticos."},
@@ -531,14 +507,11 @@ const UNIT_OPTS=[["dias","días"],["semanas","semanas"],["meses","meses"],["anio
 const UNIT_DAYS={dias:1,semanas:7,meses:30.4,anios:365};
 function baseUrl(){return ((S.cfg&&S.cfg.publicUrl)||window.PM_PUBLIC_URL||(!window.__TAURI__&&/^https?:/.test(location.protocol)?location.origin+location.pathname:"")).replace(/#.*$/,"")}
 const RESERVED=/^(settings|sidebar|customize|upgrade|downloads|comment-)/i;
-const nombres=k=>((S.cfg&&S.cfg.nombres)||{})[k]||{};
-function areas(){if(S.cfg&&Array.isArray(S.cfg.areasLista))return S.cfg.areasLista.map(x=>[x.c,x.d]);const m=new Map(AREAS0);((S.cfg&&S.cfg.areas)||[]).forEach(a=>{if(a&&a.c&&!m.has(a.c))m.set(a.c,a.d)});const ren=nombres("areas");for(const k of m.keys())if(ren[k])m.set(k,ren[k]);return [...m]}
-function tipos(){if(S.cfg&&Array.isArray(S.cfg.tiposLista))return S.cfg.tiposLista.map(x=>[x.c,{d:x.d,movil:!!x.movil}]);const m=new Map(TIPOS0.map(t=>[t[0],{d:t[1],movil:!!t[2]}]));((S.cfg&&S.cfg.tipos)||[]).forEach(t=>{if(t&&t.c&&!m.has(t.c))m.set(t.c,{d:t.d,movil:!!t.movil})});const ren=nombres("tipos");for(const [k,i] of m)if(ren[k])m.set(k,{d:ren[k],movil:i.movil});return [...m]}
+function areas(){return window.PM_CAT.areas(S.cfg)}
+function tipos(){return window.PM_CAT.tipos(S.cfg)}
 function applyCfg(){
   for(const k of Object.keys(EMP))delete EMP[k];
-  if(S.cfg&&Array.isArray(S.cfg.empresasLista))S.cfg.empresasLista.forEach(x=>{if(x&&x.c)EMP[x.c]=x.d});
-  else{Object.assign(EMP,EMP0);((S.cfg&&S.cfg.empresas)||[]).forEach(x=>{if(x&&x.c&&!(x.c in EMP))EMP[x.c]=x.d});
-    const ren=nombres("emp");for(const k of Object.keys(EMP))if(ren[k])EMP[k]=ren[k]}
+  Object.assign(EMP,window.PM_CAT.empresas(S.cfg));
   const sel=$("#f-empresa");if(!sel)return;
   if(S.empresa&&!(S.empresa in EMP))S.empresa="";
   sel.innerHTML='<option value="">Todas las empresas</option>'+Object.entries(EMP).filter(([k])=>k!=="GR").map(([k,v])=>'<option value="'+esc(k)+'">'+esc(k+" · "+v)+'</option>').join("");
@@ -1282,7 +1255,6 @@ function viewCelulares(){
     '<p class="hint">El QR contiene la dirección de la base y su clave pública, no contraseñas. Sin usuario habilitado no se ve ningún dato.</p></div></section>'+pasos;
 }
 /* ---------- avisos de operarios ---------- */
-const SINTOMAS=["Ruido extraño","Vibración","Olor raro / a quemado","Humo","Chispas","Pérdida de aceite","Pérdida de agua o aire","Recalentamiento","No arranca o se detiene","Funciona mal o lento","Pieza suelta o rota","Otro"];
 const FUNC=[["normal","Funciona normal","🟢"],["limitado","Funciona con problemas","🟡"],["parado","Está parada","🔴"]];
 const funcLbl=k=>(FUNC.find(x=>x[0]===k)||[0,""])[1];
 const avNum=a=>"R-"+String(a&&a.numero||"").padStart(4,"0");
@@ -1301,7 +1273,7 @@ function avCard(a,acciones){
   const e=S.eq.get(a.equipoId);const ot=a.otId&&S.ot.get(a.otId);
   return '<article class="av-card '+esc(a.estado)+(a.funcionamiento==="parado"&&a.estado==="Nuevo"?' parada':'')+'"><div class="ot-top"><span class="av-num">'+esc(avNum(a))+'</span><span class="chip'+(a.estado==="Nuevo"?' st-vencida':a.estado==="Convertido"?' st-ok':'')+'">'+esc(a.estado)+'</span>'+(a.funcionamiento?'<span class="chip'+(a.funcionamiento==="parado"?' st-vencida':a.funcionamiento==="limitado"?' st-proxima':'')+'">'+esc(funcLbl(a.funcionamiento))+'</span>':'')+'</div>'+
     '<div><span class="code">'+esc(e?e.codigo:a.equipoCodigo||"")+'</span> <b>'+esc(e?e.nombre:"")+'</b></div>'+
-    ((a.sintomas||[]).length?'<div class="op-chips" style="gap:6px">'+(a.sintomas||[]).map(x=>'<span class="chip">'+esc(x)+'</span>').join("")+'</div>':'')+
+    ((a.sintomas||[]).length?'<div style="display:flex;flex-wrap:wrap;gap:6px">'+(a.sintomas||[]).map(x=>'<span class="chip">'+esc(x)+'</span>').join("")+'</div>':'')+
     (a.descripcion?'<div style="white-space:pre-wrap">'+esc(a.descripcion)+'</div>':'')+
     '<div class="meta"><span>Operario: <b>'+esc(a.operario||"")+'</b> · </span><span>'+esc(new Date(a.fecha).toLocaleString("es-AR",{dateStyle:"short",timeStyle:"short"}))+' · hace '+fmtH(hoursSince(a.fecha))+'</span>'+(a.revisadoPorNombre?'<span>Revisó: '+esc(a.revisadoPorNombre)+'</span>':'')+'</div>'+
     ((a.fotos||a.audio)?'<div class="av-adj" data-av="'+esc(a.id)+'"><span class="hint">Cargando fotos…</span></div>':'')+
@@ -1341,118 +1313,25 @@ function avAOt(a){
   formFalla(null,a.equipoId,{aviso:a,desc,tipoFalla:a.funcionamiento==="parado"?"total":a.funcionamiento==="limitado"?"parcial":"menor"});
 }
 
-/* ---------- pantalla del operario (sin cuenta: código de planta + nombre) ---------- */
-let OP={};
-function opRoot(html){let r=document.getElementById("op-root");if(!r){r=document.createElement("div");r.id="op-root";document.body.appendChild(r)}
-  r.innerHTML='<div class="op-wrap"><div class="op-top"><img src="iconos/icono.svg" alt="" width="40" height="40"><div><b>W-Main</b><span class="hint">Aviso de anomalía'+(OP.nombre?' · '+esc(OP.nombre):'')+'</span></div></div>'+html+'</div>';r.scrollTop=0;return r}
-function opCerrar(){const r=document.getElementById("op-root");if(r)r.remove()}
-window.PM_OPERARIO=async function(){
-  let mem=null;try{mem=JSON.parse(localStorage.getItem("pm-operario")||"null")}catch(_){}
-  if(mem&&mem.codigo){opRoot('<div class="op-card"><p>Cargando…</p></div>');if(await opIngresar(mem.codigo,mem.nombre,true))return}
-  opPantallaIngreso(mem);
-};
-function opPantallaIngreso(mem,err){
-  const r=opRoot('<form id="op-in" class="op-card" novalidate><h2>Reportar una anomalía</h2><p>Ingresá el código de tu planta (te lo da mantenimiento) y tu nombre. Se recuerdan en este celular.</p>'+
-    '<label class="f"><span>Código de planta</span><input id="op-c" inputmode="numeric" autocomplete="off" style="font-size:20px;letter-spacing:.2em"></label>'+
-    '<label class="f"><span>Tu nombre y apellido</span><input id="op-n" autocomplete="name" value="'+esc(mem&&mem.nombre||"")+'"></label>'+
-    '<div class="err" id="op-e">'+esc(err||"")+'</div><button class="btn primary pm-big" type="submit">Continuar</button></form>'+
-    '<p style="text-align:center"><button class="btn link" id="op-volver" type="button">Soy de mantenimiento o de la dirección: ingresar con mi usuario</button></p>');
-  r.querySelector("#op-volver").addEventListener("click",()=>{opCerrar();if(window.PM_LOGIN)window.PM_LOGIN()});
-  r.querySelector("#op-in").addEventListener("submit",async ev=>{ev.preventDefault();
-    const c=r.querySelector("#op-c").value.trim(),n=r.querySelector("#op-n").value.trim();
-    if(!c||n.length<2){r.querySelector("#op-e").textContent="Completá el código y tu nombre.";return}
-    const b=r.querySelector("#op-in button[type=submit]");b.disabled=true;b.textContent="Verificando…";
-    if(!(await opIngresar(c,n,false))){b.disabled=false;b.textContent="Continuar"}});
-}
-async function opIngresar(codigo,nombre,silencioso){
-  let res;try{res=await window.PM_RPC("operario_ingresar",{p_codigo:codigo})}catch(x){res={error:x}}
-  if(res.error){const m=(res.error.message||"No se pudo verificar el código").replace(/^.*?: /,"");
-    if(silencioso){opPantallaIngreso({nombre},/incorrecto/.test(m)?"El código de planta cambió: pedí el nuevo a mantenimiento.":m)}
-    else{const e=document.getElementById("op-e");if(e)e.textContent=/Failed to fetch|NetworkError/.test(m)?"Sin conexión. Revisá internet.":m}
-    return false}
-  try{localStorage.setItem("pm-operario",JSON.stringify({codigo,nombre}))}catch(_){}
-  OP={codigo,nombre,empresa:res.data.empresa,equipos:res.data.equipos||[]};
-  S.cfg=res.data.config||null;applyCfg();
-  let tok="";try{tok=decodeURIComponent((location.hash||"").slice(1))}catch(_){}
-  const T=tok.toUpperCase();
-  const eq=T?OP.equipos.find(e=>String(e.idActivo||"").toUpperCase()===T||String(e.codigo||"").toUpperCase()===T||e.id===tok||(e.codigosAnteriores||[]).some(c=>String(c).toUpperCase()===T)):null;
-  opFormulario(eq,!!T&&!eq);
-  return true;
-}
-function opFormulario(eq,noEncontrado){
-  const eqs=OP.equipos;const areasEq=[...new Set(eqs.map(e=>e.area))];
-  const selEq=eq?'<div class="op-card op-eq"><span class="hint">Equipo</span><div class="code">'+esc(eq.codigo)+'</div><b style="font-size:17px">'+esc(eq.nombre)+'</b><span class="hint">'+esc([EMP[OP.empresa],areaDesc(eq.area),eq.ubicacion].filter(Boolean).join(" · "))+'</span>'+
-      '<button class="btn link" type="button" id="op-otro" style="align-self:flex-start">No es este equipo</button></div>'
-    :'<div class="op-card"><h2>¿Qué equipo?</h2>'+(noEncontrado?'<div class="banner" style="margin:0">La etiqueta escaneada no es de un equipo de tu planta. Elegilo de la lista.</div>':'')+
-      '<label class="f"><span>Empresa / planta</span><input value="'+esc(OP.empresa+" · "+(EMP[OP.empresa]||""))+'" disabled></label>'+
-      '<label class="f"><span>Sector</span><select id="op-a"><option value="">Elegí…</option>'+areasEq.map(a=>'<option value="'+esc(a)+'">'+esc(a+" · "+areaDesc(a))+'</option>').join("")+'</select></label>'+
-      '<label class="f"><span>Tipo de equipo</span><select id="op-t" disabled><option value="">Elegí el sector primero</option></select></label>'+
-      '<label class="f"><span>Equipo (número)</span><select id="op-q" disabled><option value="">Elegí el tipo primero</option></select></label></div>';
-  const r=opRoot(selEq+
-    '<div class="op-card"><h2>¿Qué notás?</h2><p class="hint">Tocá todo lo que corresponda</p><div class="op-chips">'+SINTOMAS.map((x,i)=>'<label><input type="checkbox" name="op-s" value="'+esc(x)+'">'+esc(x)+'</label>').join("")+'</div></div>'+
-    '<div class="op-card"><h2>¿La máquina…?</h2><div class="op-func">'+FUNC.map(([k,l,ic])=>'<label class="'+k+'"><input type="radio" name="op-f" value="'+k+'"><span style="font-size:20px">'+ic+'</span>'+esc(l)+'</label>').join("")+'</div></div>'+
-    '<div class="op-card"><h2>Contalo en pocas palabras</h2><textarea id="op-d" rows="4" placeholder="Qué ves, escuchás u olés; desde cuándo; cuándo pasa (al arrancar, con carga…)"></textarea>'+
-      '<div style="display:flex;gap:8px;flex-wrap:wrap"><label class="btn" style="cursor:pointer">📷 Agregar foto<input type="file" id="op-ph" accept="image/*" capture="environment" multiple hidden></label>'+
-      (window.MediaRecorder?'<button class="btn" type="button" id="op-au">🎤 Grabar sonido (20 s)</button>':'')+'</div>'+
-      '<div class="op-adj" id="op-prev"></div><p class="hint" id="op-adj-h">Hasta 3 fotos y 1 grabación. Son opcionales.</p></div>'+
-    '<div class="err" id="op-e"></div><button class="btn primary pm-big" type="button" id="op-send">Enviar aviso a mantenimiento</button>'+
-    '<p style="text-align:center"><button class="btn link" type="button" id="op-salir">Cambiar de operario</button></p>');
-  let equipo=eq;const fotos=[];let audio=null;
-  r.addEventListener("change",()=>{const e=r.querySelector("#op-e");if(e)e.textContent=""});
-  const prev=()=>{r.querySelector("#op-prev").innerHTML=fotos.map((f,i)=>'<img src="'+f+'" alt="Foto '+(i+1)+'">').join("")+(audio?'<audio controls src="'+audio+'"></audio>':'')};
-  const otro=r.querySelector("#op-otro");if(otro)otro.addEventListener("click",()=>opFormulario(null,false));
-  const sa=r.querySelector("#op-a"),st=r.querySelector("#op-t"),sq=r.querySelector("#op-q");
-  if(sa){sa.addEventListener("change",()=>{const l=[...new Set(eqs.filter(e=>e.area===sa.value).map(e=>e.tipo))];
-      st.innerHTML='<option value="">Elegí…</option>'+l.map(t=>'<option value="'+esc(t)+'">'+esc(t+" · "+((tipoInfo(t)||{}).d||""))+'</option>').join("");st.disabled=!sa.value;sq.innerHTML='<option value="">Elegí el tipo primero</option>';sq.disabled=true;equipo=null});
-    st.addEventListener("change",()=>{const l=eqs.filter(e=>e.area===sa.value&&e.tipo===st.value);
-      sq.innerHTML='<option value="">Elegí…</option>'+l.map(e=>'<option value="'+esc(e.id)+'">'+esc("Nº "+(e.numero||"")+" · "+e.nombre)+'</option>').join("");sq.disabled=!st.value;equipo=null});
-    sq.addEventListener("change",()=>{equipo=eqs.find(e=>e.id===sq.value)||null})}
-  r.querySelector("#op-ph").addEventListener("change",async ev=>{for(const f of [...ev.target.files]){if(fotos.length>=3)break;try{fotos.push(await comprimirFoto(f))}catch(_){}}ev.target.value="";prev()});
-  const au=r.querySelector("#op-au");
-  if(au)au.addEventListener("click",async()=>{
-    if(au._rec){au._rec.stop();return}
-    try{const stream=await navigator.mediaDevices.getUserMedia({audio:true});
-      const mime=["audio/webm;codecs=opus","audio/mp4","audio/webm"].find(m=>window.MediaRecorder.isTypeSupported&&MediaRecorder.isTypeSupported(m))||"";
-      const rec=new MediaRecorder(stream,mime?{mimeType:mime,audioBitsPerSecond:32000}:{audioBitsPerSecond:32000});const partes=[];
-      rec.ondataavailable=e=>{if(e.data.size)partes.push(e.data)};
-      rec.onstop=()=>{stream.getTracks().forEach(t=>t.stop());clearTimeout(au._t);au._rec=null;au.textContent="🎤 Grabar de nuevo";
-        const fr=new FileReader();fr.onload=()=>{audio=fr.result;prev()};fr.readAsDataURL(new Blob(partes,{type:rec.mimeType||"audio/webm"}))};
-      rec.start();au._rec=rec;au.textContent="⏹ Detener grabación";au._t=setTimeout(()=>{if(rec.state==="recording")rec.stop()},20000);
-    }catch(_){r.querySelector("#op-e").textContent="No se pudo usar el micrófono: permití el acceso."}});
-  r.querySelector("#op-salir").addEventListener("click",()=>{try{localStorage.removeItem("pm-operario")}catch(_){}OP={};opPantallaIngreso(null)});
-  r.querySelector("#op-send").addEventListener("click",async()=>{
-    const e=r.querySelector("#op-e");const sint=[...r.querySelectorAll('input[name=op-s]:checked')].map(x=>x.value);
-    const func=(r.querySelector('input[name=op-f]:checked')||{}).value||"";const desc=r.querySelector("#op-d").value.trim();
-    if(!equipo){e.textContent="Elegí el equipo.";return}
-    if(!sint.length&&!desc){e.textContent="Marcá qué notás o escribí una descripción.";return}
-    if(!func){e.textContent="Indicá si la máquina funciona o está parada.";return}
-    const b=r.querySelector("#op-send");b.disabled=true;b.textContent="Enviando…";
-    const adj=fotos.map(d=>({tipo:"foto",data:d})).concat(audio?[{tipo:"audio",data:audio}]:[]);
-    let res;try{res=await window.PM_RPC("reportar_anomalia",{p_codigo:OP.codigo,p_nombre:OP.nombre,p_equipo_id:equipo.id,p_datos:{sintomas:sint,descripcion:desc,funcionamiento:func},p_adjuntos:adj})}catch(x){res={error:x}}
-    if(res.error){b.disabled=false;b.textContent="Enviar aviso a mantenimiento";const m=(res.error.message||"").replace(/^.*?: /,"");e.textContent=/Failed to fetch|NetworkError/.test(m)?"Sin conexión. Revisá internet y probá de nuevo.":m||"No se pudo enviar.";return}
-    opListo(res.data,equipo);
-  });
-}
-function opListo(num,eq){
-  const r=opRoot('<div class="op-card op-ok"><div style="font-size:44px">✅</div><h2>¡Gracias, '+esc((OP.nombre||"").split(" ")[0])+'!</h2><p>Tu aviso fue enviado a mantenimiento.</p><div class="num">'+esc(num)+'</div><p class="hint">'+esc(eq.codigo+" · "+eq.nombre)+'</p>'+
-    '<p>Si la máquina representa un riesgo para las personas, avisá además al supervisor.</p></div>'+
-    '<button class="btn primary pm-big" type="button" id="op-mas">Reportar otra cosa de este equipo</button><button class="btn pm-big" type="button" id="op-otro2">Reportar otro equipo</button>');
-  r.querySelector("#op-mas").addEventListener("click",()=>opFormulario(eq,false));
-  r.querySelector("#op-otro2").addEventListener("click",()=>{try{history.replaceState(null,"",location.pathname+location.search)}catch(_){}opFormulario(null,false)});
-}
-function comprimirFoto(file){return new Promise((res,rej)=>{const img=new Image();const url=URL.createObjectURL(file);
-  img.onload=()=>{const k=Math.min(1,1280/Math.max(img.naturalWidth,img.naturalHeight));const w=Math.round(img.naturalWidth*k),h=Math.round(img.naturalHeight*k);
-    const c=document.createElement("canvas");c.width=w;c.height=h;c.getContext("2d").drawImage(img,0,0,w,h);URL.revokeObjectURL(url);
-    let q=.72,d=c.toDataURL("image/jpeg",q);while(d.length>800000&&q>.3){q-=.1;d=c.toDataURL("image/jpeg",q)}res(d)};
-  img.onerror=()=>{URL.revokeObjectURL(url);rej()};img.src=url})}
-
 /* ---------- configuración: códigos de planta para operarios ---------- */
+function opAppUrl(){const b=baseUrl();return b?b.replace(/[^/]*$/,"")+"operarios/":""}
+function cartelOperarios(){
+  const app=opAppUrl();
+  return '<!doctype html><html lang="es"><head><meta charset="utf-8"><title>App de operarios</title><style>body{font-family:Arial,sans-serif;text-align:center;margin:40px;color:#111}h1{font-size:40px;margin:0 0 6px;color:#C8102E}p{font-size:22px;margin:8px 0}.qr svg{width:340px;height:340px}.pasos{display:inline-block;text-align:left;font-size:20px;margin-top:16px}.url{font-family:monospace;font-size:15px;color:#444;word-break:break-all}</style></head><body>'+
+    '<h1>¿Ves algo raro en una máquina?</h1><p><b>Ruidos, olores, chispas, humo, pérdidas…</b> Avisale a mantenimiento desde el celular.</p><div class="qr">'+qrSvg(app,8)+'</div><p class="url">'+esc(app)+'</p>'+
+    '<ol class="pasos"><li>Escaneá este código con la cámara del celular.</li><li>Instalá la app: iPhone → Compartir → <b>Agregar a inicio</b>. Android → <b>Instalar app</b>.</li><li>Entrá con el <b>código de planta</b> (pedíselo a tu supervisor) y tu nombre.</li><li>Escaneá la etiqueta de la máquina y contá qué notás.</li></ol></body></html>';
+}
 function viewOperariosCfg(){
   if(!S.isAdmin)return '<div class="banner">Los códigos de planta los administra el gerente de mantenimiento.</div>';
   if(!S.opCods){S.opCods="cargando";window.PM_RPC("estado_codigos_operario",{}).then(r=>{S.opCods=r.error?[]:(r.data||[]);render()});}
   const lista=Array.isArray(S.opCods)?S.opCods:[];
-  return '<section class="code-spec"><h3 style="margin:0">Cómo reporta un operario</h3><ol class="rules"><li>Escanea con el celular el QR o la etiqueta NFC del equipo.</li><li>Toca <b>Soy operario: reportar una anomalía</b>.</li><li>La primera vez escribe el <b>código de su planta</b> y su nombre (quedan guardados en ese celular).</li><li>Marca qué nota, si la máquina sigue funcionando, agrega fotos o un audio y envía. El aviso llega a <b>Avisos de operarios</b>.</li></ol>'+
-    '<p class="hint" style="margin:0">El operario no tiene cuenta: con el código solo puede ver los equipos de su planta y enviar avisos. Si un código se filtra, cambialo acá y los celulares lo van a pedir de nuevo.</p></section>'+
+  const app=opAppUrl();
+  return '<section class="code-spec" style="display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px;align-items:start"><div style="display:flex;flex-direction:column;gap:8px"><h3 style="margin:0">App de operarios</h3>'+
+    '<p style="margin:0">Los operarios usan una app aparte, <b>W-Main Operarios</b>, que solo sirve para avisar anomalías. No tiene usuarios: entran con el <b>código de su planta</b> y su nombre.</p>'+
+    '<ol class="rules"><li>El operario escanea este QR (o abre la dirección) y la instala en el celular: en iPhone, <b>Compartir → Agregar a inicio</b>; en Android, <b>Instalar app</b>.</li><li>La primera vez escribe el código de su planta y su nombre.</li><li>Desde la app escanea el QR o el NFC del equipo, marca qué nota, si la máquina funciona o está parada, agrega fotos o un audio y envía.</li><li>El aviso llega a <b>Avisos de operarios</b>, y el operario ve en su app cómo sigue (recibido, en reparación, resuelto).</li></ol>'+
+    '<p class="hint" style="margin:0">Con el código solo se ven los equipos de esa planta y solo se pueden enviar avisos. Si un código se filtra, cambialo acá y los celulares lo van a pedir de nuevo.</p>'+
+    (app?'<div class="inline" style="flex-wrap:wrap"><code style="word-break:break-all">'+esc(app)+'</code><button class="btn sm" data-act="op-cartel">Descargar cartel con el QR</button></div>':'<div class="banner" style="margin:0">Configurá la dirección de la versión web (pestaña Celulares) para ver el QR de la app.</div>')+'</div>'+
+    (app?'<div style="text-align:center;background:#fff;border-radius:10px;padding:8px">'+qrSvg(app,4)+'<div class="hint">W-Main Operarios</div></div>':'')+'</section>'+
     '<h3 class="rp-h">Códigos de planta</h3><div class="tbl-wrap"><table><thead><tr><th>Planta</th><th>Estado</th><th>Nuevo código (4 a 12 letras o números)</th><th></th></tr></thead><tbody>'+
     Object.entries(EMP).map(([k,v])=>{const c=lista.find(x=>x.empresa===k);return '<tr><td><b>'+esc(k)+'</b> · '+esc(v)+'</td><td>'+(S.opCods==="cargando"?'…':c?'<span class="chip st-ok">Activo</span> <span class="hint">desde '+fmtD(String(c.actualizado).slice(0,10))+'</span>':'<span class="chip">Sin código</span>')+'</td>'+
       '<td><input id="opc-'+esc(k)+'" inputmode="numeric" autocomplete="off" placeholder="'+(c?'Cambiar código':'Definir código')+'" style="max-width:200px"></td><td><div class="acts" style="justify-content:flex-start"><button class="btn sm primary" data-act="op-cod" data-k="'+esc(k)+'">Guardar</button>'+(c?'<button class="btn sm danger" data-act="op-cod-del" data-k="'+esc(k)+'">Quitar</button>':'')+'</div></td></tr>'}).join("")+'</tbody></table></div>'+
@@ -2660,6 +2539,7 @@ document.addEventListener("click",async ev=>{
     case "av-desc":formAvDesc(S.av.get(id));break;
     case "av-ver":avisoModal(id);break;
     case "av-foto":{ev.preventDefault();const w=window.open("about:blank","_blank");if(w){w.document.write('<title>Foto del aviso</title><body style="margin:0;background:#000;display:grid;place-items:center;min-height:100vh"><img src="'+b.dataset.src+'" style="max-width:100%;max-height:100vh"></body>');w.document.close()}break}
+    case "op-cartel":save("Cartel_app_operarios.html",cartelOperarios());break;
     case "sem-dl":save("Resumen_semanal_"+todayStr()+(S.empresa?"_"+S.empresa:"")+".html",printableSemanal());break;
     case "op-cod":{const k=b.dataset.k;const v=val("opc-"+k);if(!/^[0-9A-Za-z]{4,12}$/.test(v)){toast("El código tiene que tener entre 4 y 12 letras o números.");break}
       const r=await window.PM_RPC("set_codigo_operario",{p_empresa:k,p_codigo:v});if(r.error){toast((r.error.message||"No se pudo guardar").replace(/^.*?: /,""));break}

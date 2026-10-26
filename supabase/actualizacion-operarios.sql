@@ -177,3 +177,24 @@ end $$;
 drop trigger if exists reglas_avisos on public.docs;
 create trigger reglas_avisos before update on public.docs
   for each row execute function public.reglas_avisos();
+
+-- ---------- App de operarios: cómo siguen los avisos que envió el operario ----------
+-- Devuelve solo número, estado y avance de la orden (nada de otros datos), y solo de su planta.
+create or replace function public.estado_avisos_operario(p_codigo text, p_numeros int[]) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare e text;
+begin
+  e := public._empresa_de_codigo(p_codigo);
+  if coalesce(array_length(p_numeros, 1), 0) > 50 then
+    raise exception 'Demasiados avisos para consultar';
+  end if;
+  return coalesce((select jsonb_agg(jsonb_build_object(
+      'numero', (a.data->>'numero')::int,
+      'estado', a.data->>'estado',
+      'orden', o.data->>'estado',
+      'cierre', o.data->>'cierre'))
+    from public.docs a
+    left join public.docs o on o.col = 'ots' and o.id = a.data->>'otId'
+    where a.col = 'avisos' and a.data->>'empresa' = e and (a.data->>'numero')::int = any(p_numeros)), '[]'::jsonb);
+end $$;
+grant execute on function public.estado_avisos_operario(text, int[]) to anon, authenticated;

@@ -225,13 +225,16 @@
     tick();
   }
 
+  // La app de operarios vive en la carpeta operarios/ de la versión web (no en el programa de escritorio)
+  const appOperarios = () => window.__TAURI__ || !/^https?:/.test(location.protocol) ? "" : location.href.replace(/#.*$/, "").replace(/[?].*$/, "").replace(/[^/]*$/, "") + "operarios/";
+  const irAOperarios = () => { location.href = appOperarios() + (tieneEquipo() ? location.hash : ""); };
   const tieneEquipo = () => { const h = decodeURIComponent((location.hash || "").slice(1)); return !!h && !/^conectar=/.test(h) && h.length < 60; };
   function loginScreen(mode, msg) {
     mode = mode || "in";
     const el = overlay(`<form class="pm-box" id="pm-login">
       <div style="display:flex;gap:12px;align-items:center"><img src="iconos/icono.svg" alt="" width="48" height="48" style="border-radius:11px"><div><h2>W-Main</h2><p class="hint" style="margin:0">Plan de mantenimiento</p></div></div>
-      ${mode === "in" ? `<div class="pm-op-box"><button class="btn pm-big pm-op" type="button" id="pm-op">Soy operario: reportar una anomalía</button>
-        <p class="hint" style="margin:6px 0 0">${tieneEquipo() ? "Escaneaste la etiqueta de un equipo. " : ""}Solo necesitás el código de tu planta y tu nombre.</p></div>
+      ${mode === "in" && appOperarios() ? `<div class="pm-op-box"><button class="btn pm-big pm-op" type="button" id="pm-op">Soy operario: reportar una anomalía</button>
+        <p class="hint" style="margin:6px 0 0">${tieneEquipo() ? "Escaneaste la etiqueta de un equipo. " : ""}Se abre la app de operarios: solo necesitás el código de tu planta y tu nombre.</p></div>
       <p class="hint" style="margin:0;text-align:center">Personal de mantenimiento y dirección: ingresá con tu usuario</p>` : ""}
       <nav class="pm-sw" role="tablist"><button type="button" role="tab" data-m="in" aria-selected="${mode === "in"}">Ingresar</button><button type="button" role="tab" data-m="up" aria-selected="${mode === "up"}">Crear usuario</button></nav>
       ${mode === "up" ? field("pm-name", "Nombre y apellido", 'required autocomplete="name"') : ""}
@@ -245,7 +248,7 @@
     el.querySelectorAll("[data-m]").forEach((b) => b.addEventListener("click", () => loginScreen(b.dataset.m)));
     el.querySelector("#pm-cfg").addEventListener("click", () => setupScreen());
     const op = el.querySelector("#pm-op");
-    if (op) op.addEventListener("click", () => { if (window.PM_OPERARIO) window.PM_OPERARIO(); });
+    if (op) op.addEventListener("click", irAOperarios);
     const err = el.querySelector("#pm-err");
     const fg = el.querySelector("#pm-forgot");
     if (fg) fg.addEventListener("click", async () => {
@@ -297,7 +300,6 @@
 
   window.PM_RPC = (fn, args) => sb.rpc(fn, args);
   window.PM_FOTOS = async (avisoId) => { const { data, error } = await sb.from("avisos_fotos").select("id,tipo,data").eq("aviso_id", avisoId).order("id"); if (error) throw error; return data || []; };
-  window.PM_LOGIN = () => { if (!started) loginScreen(); };
   let started = false;
   let me = null;
   sb.auth.onAuthStateChange((event, session) => {
@@ -311,7 +313,8 @@
     await domListo();
     if (started) return;
     let op = null; try { op = JSON.parse(localStorage.getItem("pm-operario") || "null"); } catch (_) {}
-    if (op && op.codigo && tieneEquipo() && window.PM_OPERARIO) { window.PM_OPERARIO(); return; }
+    // Un operario que ya usó la app y escanea una etiqueta con la cámara del celular va directo a su app
+    if (op && op.codigo && tieneEquipo() && appOperarios()) { location.replace(appOperarios() + location.hash); return; }
     loginScreen();
   });
 

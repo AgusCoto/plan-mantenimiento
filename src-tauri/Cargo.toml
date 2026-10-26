@@ -1,6 +1,6 @@
 [package]
 name = "plan-mantenimiento"
-version = "1.0.14"
+version = "1.0.15"
 description = "Plan de Mantenimiento"
 edition = "2021"
 
