@@ -47,7 +47,7 @@ language sql stable security definer set search_path = public as $$
     when 'preventivo_ejecuciones' then 'la realización del preventivo «' || coalesce((select tarea || '» en ' || equipo from public.preventivos where id = (r->>'preventivo_id')::uuid), '?»')
     when 'reportes'               then 'el reporte «' || (r->>'tipo') || '» en ' || (r->>'equipo')
     when 'adjuntos'               then 'un archivo (' || (r->>'tipo') || ') de un reporte'
-    when 'movimientos'            then 'el registro de ' || case r->>'tipo' when 'produccion' then 'producción' else r->>'tipo' end || ': ' || (r->>'producto') || ' × ' || (r->>'cantidad')
+    when 'movimientos'            then 'el registro de ' || case r->>'tipo' when 'produccion' then 'producción' else r->>'tipo' end || ': ' || (r->>'producto') || ' × ' || trim_scale((r->>'cantidad')::numeric)::text
     when 'manuales'               then 'el manual «' || (r->>'nombre') || '» de ' || (r->>'equipo')
     when 'cuentas'                then 'la cuenta de ' || (r->>'nombre') || ' (' || (r->>'usuario') || ')'
     when 'empresas'               then 'la empresa ' || (r->>'sigla')
@@ -98,8 +98,12 @@ begin
         when tg_table_name = 'ordenes' and dif ? 'estado' and a->>'estado' = 'cerrada' then 'Reabrió '
         when tg_table_name = 'equipos' and dif ? 'estado' and b->>'estado' = 'baja' then 'Dio de baja '
         when tg_table_name = 'equipos' and (dif ? 'empresa' or dif ? 'area' or dif ? 'ubicacion') then 'Reubicó '
+        when tg_table_name in ('equipos','ordenes','reportes') and dif ? 'estado' and (select count(*) from jsonb_object_keys(dif - 'orden_id')) = 1
+          then 'Cambió a «' || case b->>'estado' when 'operativo' then 'Operativo' when 'detenido' then 'Detenido' when 'reparacion' then 'En reparación'
+                                  when 'abierta' then 'Abierta' when 'curso' then 'En curso' when 'revisar' then 'Para revisar'
+                                  when 'nuevo' then 'Nuevo' when 'analisis' then 'En análisis' when 'ot' then 'OT generada' when 'descartado' then 'Descartado'
+                                  else b->>'estado' end || '» '
         when tg_table_name = 'movimientos' and dif ? 'estado' then case b->>'estado' when 'revisado' then 'Marcó como revisado ' else 'Observó ' end
-        when tg_table_name = 'reportes' and dif ? 'estado' then 'Cambió el estado de '
         else 'Modificó ' end
         || public._etiqueta(tg_table_name, to_jsonb(new));
     end if;
