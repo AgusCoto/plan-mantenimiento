@@ -80,7 +80,7 @@ begin
     raise exception 'El número de la orden no se puede cambiar.' using errcode = '42501';
   end if;
   if new.estado = 'cerrada' and (tg_op = 'INSERT' or old.estado <> 'cerrada') then
-    new.cerrada := now();
+    new.cerrada := case when auth.uid() is null and new.cerrada is not null then new.cerrada else now() end;
     new.cerrada_por := coalesce(auth.uid(), new.cerrada_por);
     new.cerrada_por_nombre := coalesce(public._nombre_cuenta(auth.uid()), new.cerrada_por_nombre);
   elsif new.estado <> 'cerrada' then
@@ -110,6 +110,7 @@ create or replace function public.ficha_mueve_orden() returns trigger
 language plpgsql security definer set search_path = public as $$
 declare est text;
 begin
+  if auth.uid() is null and current_setting('planta.carga_masiva', true) = '1' then return new; end if;
   select estado into est from public.ordenes where id = new.orden_id for update;
   if est = 'cerrada' then
     raise exception 'La orden está cerrada: pedile al gerente que la reabra.' using errcode = '42501';

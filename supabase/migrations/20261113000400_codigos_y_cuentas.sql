@@ -184,7 +184,7 @@ begin
     raise exception 'No podés cambiar el estado de esa cuenta.' using errcode = '42501';
   end if;
   update public.cuentas set activo = p_activo where id = p_cuenta;
-  update auth.users set banned_until = case when p_activo then null else 'infinity'::timestamptz end where id = p_cuenta;
+  update auth.users set banned_until = case when p_activo then null else '2999-12-31'::timestamptz end where id = p_cuenta;
   if not p_activo then delete from auth.sessions where user_id = p_cuenta; end if;
 end $$;
 

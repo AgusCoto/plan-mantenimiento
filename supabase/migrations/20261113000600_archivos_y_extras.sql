@@ -82,7 +82,7 @@ begin
     and not exists (select 1 from public.movimientos v where v.equipo = e.codigo);
   get diagnostics m = row_count; n := n + m;
   update public.cuentas set activo = false where ejemplo and activo;
-  update auth.users set banned_until = 'infinity' where id in (select id from public.cuentas where ejemplo);
+  update auth.users set banned_until = '2999-12-31'::timestamptz where id in (select id from public.cuentas where ejemplo);
   return jsonb_build_object('ok', true, 'borrados', n);
 end $$;
 revoke execute on function public.borrar_datos_ejemplo() from public, anon;

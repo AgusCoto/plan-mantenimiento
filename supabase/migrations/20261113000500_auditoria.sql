@@ -64,6 +64,11 @@ declare
   op text; res text; aut uuid; c public.cuentas;
   clave text := tg_argv[0];
 begin
+  -- Cargas masivas desde el SQL Editor (migración de W-Main, datos de ejemplo): se anota un solo resumen.
+  -- Desde la app no aplica: ahí siempre hay un usuario conectado.
+  if auth.uid() is null and current_setting('planta.carga_masiva', true) = '1' then
+    return null;
+  end if;
   if tg_op = 'INSERT' then
     b := to_jsonb(new) - ignorar; op := 'alta';
     res := case tg_table_name when 'cuentas' then 'Creó ' when 'fichas' then 'Cargó ' when 'preventivo_ejecuciones' then 'Registró '
