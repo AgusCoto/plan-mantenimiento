@@ -1,21 +1,27 @@
 {
-  "name": "plan-mantenimiento",
-  "version": "1.0.15",
+  "name": "gestion-planta",
+  "version": "2.0.0",
   "private": true,
-  "description": "W-Main: aplicación de escritorio (Mac y Windows) con base de datos en Supabase",
+  "description": "Gestión de Planta: mantenimiento, producción, administración y dirección del grupo, con app de operarios. React + Supabase.",
+  "type": "module",
   "scripts": {
-    "tauri": "tauri",
-    "vendor": "node scripts/vendor.mjs",
-    "dev": "npm run vendor && tauri dev",
-    "build": "npm run vendor && tauri build",
-    "web": "npm run vendor && npx --yes serve src -l 5173"
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@supabase/supabase-js": "2.45.4",
-    "jsqr": "^1.4.0",
-    "qrcode-generator": "1.4.4"
+    "@supabase/supabase-js": "2.49.4",
+    "qrcode": "1.5.4",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
   },
   "devDependencies": {
-    "@tauri-apps/cli": "^2.1.0"
+    "@types/qrcode": "1.5.5",
+    "@types/react": "18.3.12",
+    "@types/react-dom": "18.3.1",
+    "@vitejs/plugin-react": "4.3.4",
+    "typescript": "5.6.3",
+    "vite": "5.4.11"
   }
 }
