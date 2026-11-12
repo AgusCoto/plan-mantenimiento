@@ -1,12 +1,14 @@
-# Publica la versión web (la misma aplicación) en GitHub Pages.
-# Sirve para abrir los equipos desde el celular con el QR o la etiqueta NFC.
-name: Version web
+# Publica Gestión de Planta en GitHub Pages cada vez que cambia la app en main.
+#   Gestión:   https://<usuario>.github.io/<repositorio>/
+#   Operarios: https://<usuario>.github.io/<repositorio>/operarios/
+# Toma los datos de Supabase de los secretos del repositorio (SUPABASE_URL y SUPABASE_ANON_KEY).
+name: Publicar la app
 
 on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ["src/**"]
+    paths: ["src/**", "public/**", "index.html", "operarios/**", "package.json", "package-lock.json", "vite.config.ts", "tsconfig.json", ".github/workflows/web.yml"]
 
 permissions:
   contents: read
@@ -18,21 +20,32 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  deploy:
+  publicar:
     runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
-      - name: Conectar la app con la base
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Revisar y armar la app
         env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-        run: node scripts/config-ci.mjs
+          VITE_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          VITE_PUBLIC_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/
+        run: |
+          if [ -z "$VITE_SUPABASE_URL" ] || [ -z "$VITE_SUPABASE_ANON_KEY" ]; then
+            echo "::warning::Faltan los secretos SUPABASE_URL y SUPABASE_ANON_KEY: la app se publica pero va a mostrar «Falta conectar la base de datos»."
+          fi
+          export VITE_PUBLIC_URL="$(echo "$VITE_PUBLIC_URL" | tr 'A-Z' 'a-z')"
+          npm run build
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: src
+          path: dist
       - id: deployment
         uses: actions/deploy-pages@v4

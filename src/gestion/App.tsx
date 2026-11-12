@@ -59,8 +59,12 @@ function Shell({ cuenta, h, salir }: { cuenta: Cuenta; h: string; salir: () => v
   const R = ROLES[cuenta.rol];
   const [sinCodigo, setSinCodigo] = useState(false);
   useEffect(() => {
-    if (["gm", "gp", "dir"].includes(cuenta.rol)) sb().rpc("tengo_codigo").then(({ data }) => setSinCodigo(data === false));
-  }, [cuenta.rol, cuenta.modificado]);
+    if (!["gm", "gp", "dir"].includes(cuenta.rol)) return;
+    const revisar = () => sb().rpc("tengo_codigo").then(({ data }) => setSinCodigo(data === false));
+    revisar();
+    window.addEventListener("planta:mis-datos", revisar);
+    return () => window.removeEventListener("planta:mis-datos", revisar);
+  }, [cuenta.rol]);
 
   // Códigos de equipo en la dirección: los nuevos (eq-INY-…) y los viejos de W-Main (alias)
   let vista = h;

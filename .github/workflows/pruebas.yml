@@ -1,0 +1,40 @@
+# Prueba los permisos de la base en un Supabase temporal (no toca la base real):
+# aplica las migraciones y cada perfil intenta lo que puede y lo que no puede hacer.
+name: Pruebas de permisos
+
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    paths: ["supabase/**", ".github/workflows/pruebas.yml"]
+
+permissions:
+  contents: read
+
+jobs:
+  permisos:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.58.5
+      - name: Levantar Supabase temporal con las migraciones
+        run: |
+          mkdir -p /tmp/sb && cd /tmp/sb
+          supabase init --force
+          sed -i '/^\[studio\]/,/^enabled/ s/enabled = true/enabled = false/; /^\[inbucket\]/,/^enabled/ s/enabled = true/enabled = false/; /^\[analytics\]/,/^enabled/ s/enabled = true/enabled = false/; /^\[edge_runtime\]/,/^enabled/ s/enabled = true/enabled = false/' supabase/config.toml
+          cp "$GITHUB_WORKSPACE"/supabase/migrations/*.sql supabase/migrations/
+          supabase start -x imgproxy,vector,logflare,supavisor
+          supabase status -o env | grep -E '^(API_URL|ANON_KEY|DB_URL)=' | sed 's/^API_URL=/SUPABASE_URL=/; s/^ANON_KEY=/SUPABASE_ANON_KEY=/; s/"//g' >> "$GITHUB_ENV"
+      - name: Probar permisos
+        run: node supabase/tests/permisos.test.mjs
+      - name: El instalador está al día
+        run: |
+          npm run sql
+          git diff --exit-code supabase/instalar.sql || (echo "::error::supabase/instalar.sql no está al día: ejecutá «npm run sql»." && exit 1)

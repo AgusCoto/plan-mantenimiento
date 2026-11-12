@@ -8,7 +8,10 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "sql": "node scripts/armar-instalador.mjs",
+    "test:permisos": "node supabase/tests/permisos.test.mjs",
+    "test:e2e": "node tests/recorrido.e2e.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.49.4",

@@ -84,6 +84,7 @@ export function MiCuenta({ cuenta }: { cuenta: Cuenta }) {
       if (d.code && !/^[0-9]{4,6}$/.test(d.code)) throw falla("El código tiene que tener de 4 a 6 números.");
       const { error } = await sb().rpc("cambiar_mis_datos", { p_actual: d.cur, p_clave: d.pass || null, p_codigo: d.code || null });
       if (error) throw falla(mensajeError(error));
+      window.dispatchEvent(new Event("planta:mis-datos"));
       toast("Datos actualizados");
     }}>
       <p><b>{cuenta.nombre}</b> · <span className="mono">{cuenta.usuario}</span> · {ROLES[cuenta.rol as Rol].n}</p>
