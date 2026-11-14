@@ -10,7 +10,7 @@ import type { Perfil } from "../sistema/tokens";
 export const VACIO: Datos = {
   empresas: [], usuarios: [], usuario_empresas: [], areas: [], tipos_equipo: [], listas: [], config: [], proveedores: [], equipos: [],
   equipo_alias: [], documentos: [], movimientos_equipo: [], reportes_falla: [], ordenes: [], fichas: [], costos_orden: [],
-  pedidos_compra: [], adjuntos: [], registro_cambios: [], temas: [],
+  pedidos_compra: [], adjuntos: [], registro_cambios: [], temas: [], avisos: [],
 };
 const ORDEN: Partial<Record<Tabla, [string, boolean]>> = {
   empresas: ["orden", true], areas: ["orden", true], tipos_equipo: ["orden", true], listas: ["orden", true], equipos: ["codigo", true],
@@ -22,15 +22,15 @@ const CLAVE: Partial<Record<Tabla, string>> = { tipos_equipo: "sigla", config: "
 export function tablasDe(p: Perfil): Tabla[] {
   const comunes: Tabla[] = ["empresas", "usuarios", "usuario_empresas", "areas", "tipos_equipo", "listas", "config", "equipos", "equipo_alias", "reportes_falla", "adjuntos"];
   if (p === "operario") return comunes;
-  const gestion: Tabla[] = [...comunes, "proveedores", "movimientos_equipo", "ordenes", "fichas", "costos_orden", "pedidos_compra"];
+  const gestion: Tabla[] = [...comunes, "avisos", "proveedores", "movimientos_equipo", "ordenes", "fichas", "costos_orden", "pedidos_compra"];
   if (p === "direccion") return [...gestion, "registro_cambios"];
   if (p === "jefe") return [...gestion, "documentos", "registro_cambios", "temas"];
   return [...gestion, "documentos"];
 }
 
 async function traer(t: Tabla) {
-  if (t === "registro_cambios") {
-    const { data, error } = await sb().from(t).select("*").order("id", { ascending: false }).range(0, 999);
+  if (t === "registro_cambios" || t === "avisos") {
+    const { data, error } = await sb().from(t).select("*").order("id", { ascending: false }).range(0, t === "avisos" ? 199 : 999);
     if (error) throw error;
     return data || [];
   }

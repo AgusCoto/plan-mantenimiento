@@ -210,5 +210,29 @@ try { sql("update public.registro_cambios set nombre = 'otro'"); prueba("ni se e
 r = await jefe.from("ordenes").select("creado_por,creado_en,modificado_por,modificado_en").eq("id", ot.id).single();
 prueba("cada registro tiene creado_por, creado_en, modificado_por y modificado_en", !!(r.data?.creado_por && r.data?.creado_en && r.data?.modificado_por && r.data?.modificado_en), r);
 
+console.log("Avisos");
+const avisosDe = (uid, tipo) => Number(sql(`select count(*) from avisos where usuario_id = '${uid}' and tipo = '${tipo}'`));
+prueba("máquina parada: avisa al jefe, al encargado y al técnico de la empresa", avisosDe(jefe.uid, "maquina_parada") >= 1 && avisosDe(enc.uid, "maquina_parada") >= 1 && avisosDe(tec.uid, "maquina_parada") >= 1);
+prueba("pero no al técnico de otra empresa ni a quien reportó", avisosDe(tec2.uid, "maquina_parada") === 0 && avisosDe(op.uid, "maquina_parada") === 0);
+prueba("orden asignada: avisa al técnico", avisosDe(tec.uid, "orden_asignada") >= 1);
+prueba("compra por aprobar: avisa a dirección", avisosDe(dir.uid, "compra_pendiente") >= 1 && avisosDe(enc.uid, "compra_pendiente") === 0);
+prueba("compra resuelta y préstamo por aprobar: avisan a quien corresponde", avisosDe(tec.uid, "compra_resuelta") >= 1 && avisosDe(dir.uid, "prestamo_pendiente") >= 1 && avisosDe(jefe.uid, "prestamo_resuelto") >= 1);
+r = await tec.from("avisos").select("usuario_id"); prueba("cada uno ve solo sus avisos", filas(r) > 0 && r.data.every((x) => x.usuario_id === tec.uid), r);
+r = await tec.from("avisos").insert({ usuario_id: enc.uid, tipo: "x", titulo: "falso" }).select(); prueba("nadie inventa avisos desde la app", no(r) || !!r.error, r);
+r = await tec.rpc("marcar_avisos_leidos", {}); prueba("se marcan como leídos", !r.error && sql(`select count(*) from avisos where usuario_id = '${tec.uid}' and leido_en is null`) === "0", r.error);
+prueba("solo los propios", sql(`select count(*) from avisos where usuario_id = '${enc.uid}' and leido_en is not null`) === "0");
+r = await tec.rpc("suscribir_push", { p_endpoint: "https://push.ejemplo/abc", p_p256dh: "k", p_auth: "a", p_agente: "prueba" }); prueba("el técnico suscribe su celular", !r.error, r.error);
+r = await enc.rpc("suscribir_push", { p_endpoint: "https://push.ejemplo/abc", p_p256dh: "k2", p_auth: "a2" }); prueba("si otro usuario ingresa en ese celular, la suscripción pasa a él", !r.error && sql("select usuario_id from push_suscripciones where endpoint = 'https://push.ejemplo/abc'") === enc.uid, r.error);
+r = await tec.from("push_suscripciones").select("id"); prueba("nadie ve las suscripciones de otro", no(r), r);
+r = await enc.rpc("suscribir_push", { p_endpoint: "http://malo", p_p256dh: "k", p_auth: "a" }); prueba("se rechazan direcciones inválidas", !!r.error);
+r = await jefe.rpc("tomar_avisos", { p_cantidad: 5 }); prueba("solo la función de envío toma los avisos para mandar", !!r.error);
+r = await jefe.rpc("avisos_diarios"); prueba("los avisos diarios no se disparan desde la app", !!r.error);
+r = await anon.from("servidor").select("*"); const r2 = await jefe.from("servidor").select("*"); prueba("la configuración del servidor no se lee desde la app", (no(r)) && no(r2));
+sql("update ordenes set vence = current_date - 3 where numero = 1 and estado not in ('cerrada','anulada','terminada','verificada')");
+const nVenc = sql("select count(*) from ordenes where vence < current_date and estado in ('abierta','asignada','esperando_repuesto','en_curso')");
+sql("select public.avisos_diarios()");
+prueba("avisos diarios: resumen al jefe y a dirección", avisosDe(jefe.uid, "resumen_diario") === 1 && avisosDe(dir.uid, "resumen_diario") === 1 && avisosDe(enc.uid, "resumen_diario") === 0);
+prueba("y órdenes vencidas al encargado", nVenc === "0" || avisosDe(enc.uid, "orden_vencida") >= 1, nVenc);
+
 console.log(`\n${ok} correctas, ${mal} con problemas`);
 process.exit(mal ? 1 : 0);

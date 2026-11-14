@@ -55,9 +55,11 @@ export interface Cambio {
   resumen: string; cambios: Record<string, unknown> | null; aprobo_id: string | null; aprobo_nombre: string | null;
 }
 
+export interface Aviso { id: number; usuario_id: string; tipo: string; titulo: string; cuerpo: string | null; url: string | null; creado_en: string; leido_en: string | null; enviado_en: string | null; error: string | null }
+
 export interface Datos {
   empresas: Empresa[]; usuarios: Usuario[]; usuario_empresas: UsuarioEmpresa[]; areas: Area[]; tipos_equipo: TipoEquipo[]; listas: ItemLista[]; config: Config[];
   proveedores: Proveedor[]; equipos: Equipo[]; equipo_alias: Alias[]; documentos: Documento[]; movimientos_equipo: Movimiento[]; reportes_falla: Reporte[];
-  ordenes: Orden[]; fichas: Ficha[]; costos_orden: Costo[]; pedidos_compra: Pedido[]; adjuntos: Adjunto[]; registro_cambios: Cambio[]; temas: Tema[];
+  ordenes: Orden[]; fichas: Ficha[]; costos_orden: Costo[]; pedidos_compra: Pedido[]; adjuntos: Adjunto[]; registro_cambios: Cambio[]; temas: Tema[]; avisos: Aviso[];
 }
 export type Tabla = keyof Datos;

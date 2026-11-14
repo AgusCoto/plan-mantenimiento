@@ -1,6 +1,6 @@
 // Service worker: permite instalar la app y abrirla sin señal (la app guarda los datos en IndexedDB).
 // La página y los archivos se buscan primero en la red; si no hay señal, se usa la copia guardada.
-const CACHE = "mantenimiento-v1";
+const CACHE = "mantenimiento-v2";
 self.addEventListener("install", (e) => { self.skipWaiting(); e.waitUntil(caches.open(CACHE).then((c) => c.addAll(["/", "/index.html", "/icono-192.png", "/icono.svg"]).catch(() => {}))); });
 self.addEventListener("activate", (e) => e.waitUntil(self.clients.claim()));
 self.addEventListener("fetch", (e) => {
@@ -18,4 +18,22 @@ self.addEventListener("fetch", (e) => {
     if (r.ok) { const k = r.clone(); caches.open(CACHE).then((x) => x.put(req, k)); }
     return r;
   }).catch(() => caches.match(req, { ignoreSearch: true }).then((c) => c || (req.mode === "navigate" ? caches.match("/index.html") : undefined))));
+});
+
+// Notificaciones push: las manda la función «avisos» de Supabase
+self.addEventListener("push", (e) => {
+  let d = {};
+  try { d = e.data ? e.data.json() : {}; } catch { d = { titulo: "Mantenimiento", cuerpo: e.data ? e.data.text() : "" }; }
+  e.waitUntil(self.registration.showNotification(d.titulo || "Mantenimiento", {
+    body: d.cuerpo || "", icon: "/icono-192.png", badge: "/icono-192.png", tag: d.tag, renotify: !!d.urgente,
+    requireInteraction: !!d.urgente, vibrate: d.urgente ? [300, 120, 300, 120, 300] : [150], data: { url: d.url || "/" },
+  }));
+});
+self.addEventListener("notificationclick", (e) => {
+  e.notification.close();
+  const url = new URL((e.notification.data && e.notification.data.url) || "/", self.location.origin).href;
+  e.waitUntil(self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((ventanas) => {
+    for (const v of ventanas) if (v.url.startsWith(self.location.origin) && "focus" in v) { v.navigate(url); return v.focus(); }
+    return self.clients.openWindow(url);
+  }));
 });

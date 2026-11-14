@@ -4,6 +4,7 @@ import { useSesion } from "../datos/sesion";
 import { useTema } from "../sistema/tema";
 import { sb, falla, mensajeError } from "../datos/supabase";
 import { Campo, Ventana, avisar } from "../comun/ui";
+import { PanelPush } from "../comun/avisos";
 
 export async function guardarPreferencias(usuarioId: string, p: Record<string, unknown>) {
   const { error } = await sb().from("preferencias_usuario").upsert({ usuario_id: usuarioId, ...p });
@@ -40,6 +41,7 @@ export function MiCuenta() {
             <label key={k}><input type="radio" name="tam" checked={tam === k} onChange={() => { setTam(k); tema.setPreferencias({ tamano: k }); }} /><span>{n}</span></label>
           ))}
         </div></div>
+      {u.perfil !== "operario" && <div className="campo"><span>Avisos en este celular</span><PanelPush /></div>}
       <details>
         <summary style={{ cursor: "pointer", fontWeight: 600, minHeight: 40 }}>Cambiar la contraseña</summary>
         <div className="form" style={{ marginTop: "var(--e2)" }}>

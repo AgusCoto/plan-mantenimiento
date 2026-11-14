@@ -184,7 +184,7 @@ prueba("el encargado cierra la orden", await aviso(enc, /Orden cerrada/) && sql(
 await tec2.goto(APP + "ordenes/" + idOt); await tec2.waitForSelector("h1");
 prueba("un técnico de otra empresa no ve la orden", /No existe o no tenés acceso/.test(await tec2.textContent("main")));
 await op.goto(APP); await op.waitForSelector("text=Mis reportes");
-prueba("el operario ve su reporte como atendido", /Atendido/.test(await op.textContent(".op")));
+prueba("el operario ve su reporte como atendido", !!(await op.waitForSelector(".op .pastilla:has-text('Atendido')", { timeout: 8000 }).catch(() => null)));
 
 // Un reporte que se descarta
 await op.goto(APP + "e/INY-COM-001"); await op.click(".falla:has-text('Ruido')"); await op.click("button:has-text('No, funciona')"); await op.click("button:has-text('3. Enviar reporte')");
@@ -319,6 +319,35 @@ await enc.context().setOffline(false);
 prueba("se sincroniza la edición", await esperarBarra(enc, /^Conectado$/));
 prueba("gana la última modificación (la del encargado, hecha después)", sql(`select descripcion from ordenes where id = '${idOt2}'`) === "Cambio del encargado sin señal");
 prueba("y el conflicto queda en el registro de cambios", sql("select count(*) from registro_cambios where operacion = 'conflicto' and tabla = 'ordenes'") === "1");
+
+console.log("Avisos");
+await tec.goto(APP); await tec.waitForSelector(".campanita");
+const insignia = await tec.$(".campanita .insignia");
+prueba("el técnico tiene avisos sin leer en la campanita", !!insignia && Number(await insignia.textContent()) > 0);
+await tec.click(".campanita"); await tec.waitForSelector(".ventana:has-text('Avisos')");
+const textoAvisos = await tec.textContent(".ventana");
+prueba("ve «Máquina parada» y la orden que le asignaron", /Máquina parada: INY-INY-001/.test(textoAvisos) && /Te asignaron la OT-0001/.test(textoAvisos), textoAvisos.slice(0, 300));
+await foto(tec, "50-avisos");
+await tec.click(".ventana button.item:has-text('Te asignaron la OT-0001')"); await tec.waitForURL(/\/ordenes\//);
+prueba("tocar un aviso lleva a la orden", /\/ordenes\/[0-9a-f-]{36}$/.test(tec.url()));
+await tec.waitForTimeout(2500); await tec.reload(); await tec.waitForSelector(".campanita");
+prueba("al abrirlos quedan leídos", !(await tec.$(".campanita .insignia")));
+prueba("el operario no tiene campanita", !(await op.$(".campanita")));
+await jefe.context().grantPermissions(["notifications"]);
+await jefe.goto(APP); await jefe.waitForSelector(".campanita"); await jefe.click(".campanita");
+await jefe.waitForSelector(".ventana button:has-text('Activar avisos en este celular')");
+const avisoPush = aviso(jefe, /servicio de notificaciones/);
+await jefe.click(".ventana button:has-text('Activar avisos en este celular')");
+const jefeId = sql("select id from usuarios where usuario = 'jefe'");
+const subOk = await (async () => { for (let i = 0; i < 40; i++) { if (sql(`select count(*) from push_suscripciones where usuario_id = '${jefeId}'`) === "1") return true; await jefe.waitForTimeout(250); } return false; })();
+prueba("el jefe activa los avisos en su celular (el navegador de prueba no tiene servicio push: debe explicar por qué)", subOk || await avisoPush);
+if (subOk) {
+  await foto(jefe, "51-avisos-activos");
+  await jefe.click(".encabezado ~ * , body", { position: { x: 5, y: 5 } }).catch(() => {});
+  await jefe.keyboard.press("Escape");
+  await jefe.click("button:has-text('Salir')"); await jefe.waitForSelector("#l-u");
+  prueba("al salir de la cuenta, el celular deja de recibir sus avisos", sql(`select count(*) from push_suscripciones where usuario_id = '${jefeId}'`) === "0");
+}
 
 console.log(`\n${ok} correctas, ${mal} con problemas, ${errores.length} errores de página`);
 await b.close();

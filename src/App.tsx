@@ -10,6 +10,7 @@ import { Ico } from "./sistema/iconos";
 import { Avisos, Ventanas, abrir, confirmar } from "./comun/ui";
 import { estadoCola } from "./datos/cola";
 import { EstadoConexion } from "./comun/conexion";
+import { Campanita } from "./comun/avisos";
 import { Ingreso } from "./pantallas/Ingreso";
 import { MiCuenta } from "./pantallas/MiCuenta";
 import { Inicio } from "./pantallas/Inicio";
@@ -90,6 +91,7 @@ function Marco({ perfil }: { perfil: Perfil }) {
         </a>
         <span className="sp" />
         <EstadoConexion />
+        <Campanita />
         <div className="quien">
           <span><b>{u.nombre}</b> <span className="suave">· {tema.t(perfil)}</span></span>
           <button className="boton chico" onClick={() => abrir(<MiCuenta />)}>Mi cuenta</button>

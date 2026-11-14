@@ -231,3 +231,9 @@ input[type=color] { width: 44px; height: 38px; border: var(--borde) solid var(--
 .listo { text-align: center; display: flex; flex-direction: column; gap: var(--e3); align-items: center; padding: var(--e6) 0; }
 .listo .ic { width: 72px; height: 72px; border-radius: 50%; display: grid; place-items: center; background: var(--ok); color: var(--superficie); font-size: 40px; }
 button.conexion { border: 0; cursor: pointer; font-family: inherit; color: inherit; min-height: 32px; }
+.campanita { position: relative; padding-inline: var(--e2); }
+.campanita svg { width: 20px; height: 20px; }
+.campanita .insignia { position: absolute; top: -6px; right: -6px; }
+/* Ítems de lista que son botones (avisos, menú de movimientos) */
+button.item { border: 0; border-bottom: var(--borde) solid var(--linea); border-radius: 0; padding-inline: var(--e2); min-height: 48px; }
+button.item:last-child { border-bottom: 0; }

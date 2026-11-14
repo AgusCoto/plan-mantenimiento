@@ -9,7 +9,8 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "sql": "node scripts/armar-instalador.mjs",
-    "test:permisos": "node supabase/tests/permisos.test.mjs"
+    "test:permisos": "node supabase/tests/permisos.test.mjs",
+    "test:avisos": "node --experimental-strip-types supabase/tests/funcion-avisos.test.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.49.4",
@@ -26,6 +27,7 @@
     "@types/react-dom": "18.3.1",
     "@vitejs/plugin-react": "4.3.4",
     "typescript": "5.6.3",
-    "vite": "5.4.11"
+    "vite": "5.4.11",
+    "web-push": "^3.6.7"
   }
 }

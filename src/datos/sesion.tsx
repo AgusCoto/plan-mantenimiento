@@ -3,6 +3,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 import { sb, emailDe, mensajeError } from "./supabase";
 import { useTema } from "../sistema/tema";
 import type { Usuario } from "./tipos";
+import { olvidarEsteCelular } from "./push";
 
 interface Ctx { usuario: Usuario | null; listo: boolean; aviso: string | null; entrar: (u: string, clave: string) => Promise<string | null>; salir: () => Promise<void>; recargarUsuario: () => void }
 const C = createContext<Ctx | null>(null);
@@ -57,7 +58,7 @@ export function SesionProvider({ children }: { children: ReactNode }) {
       const { error } = await sb().auth.signInWithPassword({ email: u.includes("@") ? u : emailDe(u), password: clave });
       return error ? mensajeError(error) : null;
     },
-    salir: async () => { try { localStorage.removeItem("mant-usuario"); } catch { /* */ } await sb().auth.signOut(); },
+    salir: async () => { try { localStorage.removeItem("mant-usuario"); } catch { /* */ } await olvidarEsteCelular(); await sb().auth.signOut(); },
     recargarUsuario: () => setTocar((x) => x + 1),
   };
   return <C.Provider value={v}>{children}</C.Provider>;
