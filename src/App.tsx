@@ -17,6 +17,7 @@ import { Inicio } from "./pantallas/Inicio";
 import { Apariencia } from "./pantallas/apariencia/Apariencia";
 import { Usuarios } from "./pantallas/Usuarios";
 import { Registro } from "./pantallas/Registro";
+import { Exportar } from "./pantallas/Exportar";
 import { rutasExtra, menuExtra } from "./pantallas/rutas";
 import type { Perfil } from "./sistema/tokens";
 
@@ -79,6 +80,7 @@ function Marco({ perfil }: { perfil: Perfil }) {
     { a: "/usuarios", texto: "Usuarios", ico: "usuarios", perfiles: ["jefe"] },
     { a: "/apariencia", texto: "Apariencia", ico: "apariencia", perfiles: ["jefe"] },
     { a: "/registro", texto: "Registro de cambios", ico: "registro", perfiles: ["jefe", "direccion"] },
+    { a: "/exportar", texto: "Exportar datos", ico: "descargar", perfiles: ["jefe", "direccion"] },
   ];
   const menu = todos.filter((m) => m.perfiles.includes(perfil));
   const operario = perfil === "operario";
@@ -134,6 +136,7 @@ function Pantallas({ perfil }: { perfil: Perfil }) {
       <Route path="/usuarios" element={<Solo perfiles={["jefe"]} perfil={perfil}><Usuarios /></Solo>} />
       <Route path="/apariencia" element={<Solo perfiles={["jefe"]} perfil={perfil}><Apariencia /></Solo>} />
       <Route path="/registro" element={<Solo perfiles={["jefe", "direccion"]} perfil={perfil}><Registro /></Solo>} />
+      <Route path="/exportar" element={<Solo perfiles={["jefe", "direccion"]} perfil={perfil}><Exportar /></Solo>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mantenimiento</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { font: 16px/1.5 system-ui, sans-serif; margin: 0; padding: 24px 16px; background: #f4f6f8; color: #142030; }
+  @media (prefers-color-scheme: dark) { body { background: #10161d; color: #e7edf3; } a { color: #8cc2ff; } }
+  main { max-width: 480px; margin: 10vh auto 0; text-align: center; }
+  a { color: #0a5aa8; font-weight: 600; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Mantenimiento</h1>
+  <p id="msg">Abriendo la app nueva…</p>
+  <p><a id="ir" href="__APP_URL__/">Abrir la app de mantenimiento</a></p>
+</main>
+<script>
+  // Las etiquetas viejas (W-Main) llevan esta dirección con el código del equipo después de «#».
+  // La app nueva reconoce los códigos viejos, así que solo hace falta pasarle el código.
+  (function () {
+    var app = "__APP_URL__".replace(/\/+$/, "");
+    var t = "";
+    try { t = decodeURIComponent((location.hash || "").slice(1)); } catch (e) { t = (location.hash || "").slice(1); }
+    if (!t) { var m = /[?&]equipo=([^&#]+)/.exec(location.search); if (m) t = decodeURIComponent(m[1]); }
+    var destino = t ? app + "/e/" + encodeURIComponent(t) : app + "/";
+    document.getElementById("ir").href = destino;
+    location.replace(destino);
+  })();
+</script>
+</body>
+</html>

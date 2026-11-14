@@ -10,10 +10,13 @@
     "preview": "vite preview",
     "sql": "node scripts/armar-instalador.mjs",
     "test:permisos": "node supabase/tests/permisos.test.mjs",
-    "test:avisos": "node --experimental-strip-types supabase/tests/funcion-avisos.test.mjs"
+    "test:avisos": "node --experimental-strip-types supabase/tests/funcion-avisos.test.mjs",
+    "test:ejemplo": "node supabase/tests/datos-ejemplo.test.mjs",
+    "test:e2e": "node tests/recorrido.e2e.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.49.4",
+    "fflate": "^0.8.2",
     "idb": "8.0.0",
     "jspdf": "2.5.2",
     "qrcode": "1.5.4",

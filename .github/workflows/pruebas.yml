@@ -1,18 +1,19 @@
-# Prueba los permisos de la base en un Supabase temporal (no toca la base real):
-# aplica las migraciones y cada perfil intenta lo que puede y lo que no puede hacer.
-name: Pruebas de permisos
+# Pruebas automáticas en un Supabase temporal (no toca la base real):
+# permisos de cada perfil, la función de avisos, los datos de ejemplo y que la app compile.
+name: Pruebas
 
 on:
   workflow_dispatch:
   pull_request:
   push:
-    paths: ["supabase/**", ".github/workflows/pruebas.yml"]
+    paths: ["supabase/**", "src/**", "package*.json", ".github/workflows/pruebas.yml"]
 
 permissions:
   contents: read
 
 jobs:
-  permisos:
+  base:
+    name: Permisos, avisos y datos de ejemplo
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -32,10 +33,29 @@ jobs:
           mkdir -p supabase/migrations
           cp "$GITHUB_WORKSPACE"/supabase/migrations/*.sql supabase/migrations/
           supabase start -x imgproxy,vector,logflare,supavisor
-          supabase status -o env | grep -E '^(API_URL|ANON_KEY|DB_URL)=' | sed 's/^API_URL=/SUPABASE_URL=/; s/^ANON_KEY=/SUPABASE_ANON_KEY=/; s/"//g' >> "$GITHUB_ENV"
-      - name: Probar permisos
+          supabase status -o env | grep -E '^(API_URL|ANON_KEY|SERVICE_ROLE_KEY|DB_URL)=' | sed 's/^API_URL=/SUPABASE_URL=/; s/^ANON_KEY=/SUPABASE_ANON_KEY=/; s/"//g' >> "$GITHUB_ENV"
+      - name: Permisos de cada perfil
         run: node supabase/tests/permisos.test.mjs
+      - name: Función de envío de avisos
+        run: node --experimental-strip-types supabase/tests/funcion-avisos.test.mjs
+      - name: Datos de ejemplo (en una base vacía)
+        run: |
+          cd /tmp/sb && supabase db reset --no-seed && cd "$GITHUB_WORKSPACE"
+          sleep 5
+          node supabase/tests/datos-ejemplo.test.mjs
       - name: El instalador está al día
         run: |
           npm run sql
           git diff --exit-code supabase/instalar.sql || (echo "::error::supabase/instalar.sql no está al día: ejecutá «npm run sql»." && exit 1)
+
+  app:
+    name: La app compila
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build

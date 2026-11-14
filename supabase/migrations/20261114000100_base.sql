@@ -51,6 +51,8 @@ end $$;
 create or replace function public.no_se_borra() returns trigger
 language plpgsql as $$
 begin
+  -- Única excepción: borrar_datos_ejemplo(), que corre desde el SQL Editor (sin usuario de la app)
+  if auth.uid() is null and current_setting('planta.borrar_ejemplo', true) = '1' then return old; end if;
   raise exception 'Los registros de % no se borran: se dan de baja o se desactivan.', tg_table_name using errcode = '42501';
 end $$;
 

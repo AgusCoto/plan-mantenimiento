@@ -320,6 +320,31 @@ prueba("se sincroniza la edición", await esperarBarra(enc, /^Conectado$/));
 prueba("gana la última modificación (la del encargado, hecha después)", sql(`select descripcion from ordenes where id = '${idOt2}'`) === "Cambio del encargado sin señal");
 prueba("y el conflicto queda en el registro de cambios", sql("select count(*) from registro_cambios where operacion = 'conflicto' and tabla = 'ordenes'") === "1");
 
+console.log("Exportar datos");
+await jefe.goto(APP + "exportar"); await jefe.waitForSelector("h1:has-text('Exportar datos')");
+const [xl] = await Promise.all([jefe.waitForEvent("download", { timeout: 30000 }), jefe.click("button:has-text('Excel (.xlsx)')")]);
+const rutaXl = await xl.path();
+let leido = "";
+try {
+  leido = execFileSync("python3", ["-I", "-c", `
+import openpyxl, sys, json
+wb = openpyxl.load_workbook(open(sys.argv[1], "rb"), read_only=True)
+eq = wb["Equipos"]; filas = list(eq.iter_rows(values_only=True)); cab = filas[0]
+ot = list(wb["Órdenes"].iter_rows(values_only=True)); oc = ot[0]
+print(json.dumps({"hojas": wb.sheetnames, "codigos": sorted(r[cab.index("codigo")] for r in filas[1:]),
+  "duenas": sorted(set(r[cab.index("empresa_duena_id")] for r in filas[1:])), "equipo_ot": ot[1][oc.index("equipo_id")] if len(ot) > 1 else None,
+  "asignado": [r[oc.index("asignado_a")] for r in ot[1:]]}))`, rutaXl], { encoding: "utf8" });
+} catch (e) { leido = "ERROR " + String(e.stderr || e.message).split("\n").slice(-4).join(" "); }
+const xj = (() => { try { return JSON.parse(leido); } catch { return {}; } })();
+prueba("el Excel abre y tiene una hoja por tabla", Array.isArray(xj.hojas) && ["Equipos", "Órdenes", "Fichas de trabajo", "Registro de cambios", "Movimientos"].every((h) => xj.hojas.includes(h)), leido.slice(0, 300));
+prueba("con los equipos por código y la empresa por sigla", xj.codigos?.includes("INY-INY-001") && xj.duenas?.includes("LIM") && !xj.duenas?.some((x) => /^[0-9a-f-]{36}$/.test(x)), xj.duenas);
+prueba("y las órdenes con el equipo y el técnico por nombre", /^(INY|LIM|PIN|SAL)-/.test(xj.equipo_ot || "") && xj.asignado?.includes("Diego Ríos"), leido.slice(0, 300));
+const [cz] = await Promise.all([jefe.waitForEvent("download", { timeout: 30000 }), jefe.click("button:has-text('CSV')")]);
+const zipTxt = execFileSync("python3", ["-I", "-c", "import zipfile,sys; z=zipfile.ZipFile(sys.argv[1]); print('|'.join(z.namelist())); print(z.read('Equipos.csv').decode('utf-8-sig').splitlines()[0][:80])", await cz.path()], { encoding: "utf8" });
+prueba("el CSV viene en un .zip, un archivo por tabla, separado con «;»", /Equipos\.csv/.test(zipTxt) && /Órdenes\.csv/.test(zipTxt) && /;/.test(zipTxt.split("\n")[1]), zipTxt.slice(0, 200));
+await op.goto(APP + "exportar"); await op.waitForSelector(".op h1");
+prueba("el operario no exporta", !/exportar/.test(op.url()));
+
 console.log("Avisos");
 await tec.goto(APP); await tec.waitForSelector(".campanita");
 const insignia = await tec.$(".campanita .insignia");
