@@ -30,9 +30,17 @@ jobs:
           fi
           URL="${URL%/}"
           # Consulta a la base (pasa por Postgres) y al servicio de usuarios.
-          code=$(curl -s -o /dev/null -w "%{http_code}" "$URL/rest/v1/temas?select=version&limit=1" -H "apikey: $KEY" -H "Authorization: Bearer $KEY")
-          auth=$(curl -s -o /dev/null -w "%{http_code}" "$URL/auth/v1/health" -H "apikey: $KEY")
+          code=$(curl -s -o /dev/null -w "%{http_code}" "$URL/rest/v1/temas?select=version&limit=1" -H "apikey: $KEY" -H "Authorization: Bearer $KEY" || true)
+          auth=$(curl -s -o /dev/null -w "%{http_code}" "$URL/auth/v1/health" -H "apikey: $KEY" || true)
           echo "Base de datos: HTTP $code · Usuarios: HTTP $auth"
+          if [ "$code" = "000" ]; then
+            echo "::error::No se encontró la dirección de la base ($URL). Revisá el secreto SUPABASE_URL: tiene que ser la Project URL de Supabase (https://xxxx.supabase.co)."
+            exit 1
+          fi
+          if [ "$code" = "404" ]; then
+            echo "::error::La base responde, pero todavía no tiene instalada la app nueva (falta correr supabase/instalar.sql)."
+            exit 1
+          fi
           if [ "$code" != "200" ]; then
             echo "::error::La base no respondió bien (HTTP $code). Si está pausada, entrá a supabase.com y tocá Restore project."
             exit 1
