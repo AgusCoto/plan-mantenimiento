@@ -165,6 +165,26 @@ r = await op2.from("equipos").select("id"); prueba("el desactivado ya no ve nada
 await entrar("operario2").then(() => prueba("y no puede ingresar", false), () => prueba("y no puede ingresar", true));
 r = await jefe.rpc("estado_usuario", { p_id: jefe.uid, p_activo: false }); prueba("el jefe no se desactiva a sí mismo", !!r.error);
 
+console.log("Apariencia");
+const fabrica = JSON.parse((await import("node:fs")).readFileSync(new globalThis.URL("../../src/sistema/fabrica.json", import.meta.url), "utf8"));
+r = await anon.from("temas").select("tokens,version").eq("activo", true).single();
+prueba("sin sesión se lee el tema activo (pantalla de ingreso)", r.data?.version === 1, r);
+prueba("el tema de fábrica de la base es igual al de la app (fabrica.json)", JSON.stringify(r.data?.tokens) === JSON.stringify(fabrica) || JSON.stringify(Object.keys(r.data?.tokens || {}).sort()) === JSON.stringify(Object.keys(fabrica).sort()) && r.data.tokens.areas.mant.principal === fabrica.areas.mant.principal);
+r = await anon.from("temas").select("version").eq("activo", false); prueba("sin sesión no se ven las versiones viejas", no(r) || r.data.every((x) => x.version === 1), r);
+const nuevo = structuredClone(fabrica); nuevo.areas.mant.principal = "#0B4F8F";
+r = await dir.rpc("guardar_tema", { p_tokens: nuevo }); prueba("dirección no cambia la apariencia", !!r.error);
+r = await tec.rpc("guardar_tema", { p_tokens: nuevo }); prueba("el técnico no cambia la apariencia", !!r.error);
+const ilegible = structuredClone(fabrica); ilegible.colores.claro.tinta = "#C8CDD2";
+r = await jefe.rpc("guardar_tema", { p_tokens: ilegible }); prueba("la base no guarda texto ilegible sin confirmar (contraste < 4,5:1)", r.data?.ok === false && r.data.problemas.length > 0, r.data);
+r = await jefe.rpc("guardar_tema", { p_tokens: nuevo, p_nota: "Azul más oscuro" }); prueba("el jefe guarda una versión nueva y queda activa", r.data?.ok === true && r.data.version === 2, r);
+r = await jefe.from("temas").update({ tokens: ilegible }).eq("version", 2).select(); prueba("una versión guardada no se edita", !!r.error || no(r), r);
+r = await jefe.from("temas").delete().eq("version", 1).select(); prueba("el tema de fábrica no se borra", !!r.error || no(r), r);
+try { sql("delete from public.temas where de_fabrica"); prueba("ni desde el SQL Editor", false); } catch { prueba("ni desde el SQL Editor", true); }
+r = await jefe.rpc("volver_a_tema", { p_version: 1 }); prueba("se vuelve al tema de fábrica con un botón (como versión 3)", r.data?.version === 3, r);
+r = await tec.from("preferencias_usuario").upsert({ usuario_id: tec.uid, tema: "oscuro", tamano: "grande" }).select(); prueba("cada usuario guarda su tema y tamaño", filas(r) === 1, r);
+r = await tec.from("preferencias_usuario").upsert({ usuario_id: enc.uid, tema: "oscuro" }).select(); prueba("y no puede cambiar las de otro", !!r.error || no(r), r);
+r = await enc.from("preferencias_usuario").select("tema"); prueba("ni verlas", no(r), r);
+
 console.log("Registro de cambios");
 r = await dir.from("registro_cambios").select("operacion,resumen,nombre,aprobo_nombre").order("id");
 const reg = r.data || [];

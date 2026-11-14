@@ -80,6 +80,7 @@ begin
     for k in select key from jsonb_each(b) loop
       if (a -> k) is distinct from (b -> k) then dif := dif || jsonb_build_object(k, jsonb_build_array(a -> k, b -> k)); end if;
     end loop;
+    if tg_table_name = 'temas' and not (b->>'activo')::boolean then return null; end if;  -- la versión que se deja de usar
     if dif = '{}'::jsonb then
       if tg_table_name = 'usuarios' then op := 'modificacion'; dif := null; res := 'Cambió la contraseña de ' || public._etiqueta(tg_table_name, b);
       else return null; end if;

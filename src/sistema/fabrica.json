@@ -1,0 +1,148 @@
+{
+  "marca": {
+    "nombre": "Mantenimiento",
+    "logo_url": null,
+    "icono_192": null,
+    "icono_512": null,
+    "fondo_carga": "#0B2A4A"
+  },
+  "modo": "sistema",
+  "colores": {
+    "claro": {
+      "fondo": "#EEF1F4",
+      "superficie": "#FFFFFF",
+      "superficie_2": "#E4E9EE",
+      "tinta": "#16202A",
+      "tinta_suave": "#566472",
+      "linea": "#D3DAE1",
+      "placa": "#DCE2E8",
+      "placa_borde": "#B9C3CD"
+    },
+    "oscuro": {
+      "fondo": "#0E1318",
+      "superficie": "#161D24",
+      "superficie_2": "#1F2831",
+      "tinta": "#E5EAF0",
+      "tinta_suave": "#94A2AF",
+      "linea": "#2B3640",
+      "placa": "#222D38",
+      "placa_borde": "#3A4856"
+    }
+  },
+  "estados": {
+    "claro": {
+      "ok": "#1D7544",
+      "alerta": "#9A5B00",
+      "critico": "#B93228",
+      "sin_datos": "#566472"
+    },
+    "oscuro": {
+      "ok": "#55C487",
+      "alerta": "#E5A645",
+      "critico": "#F06B5F",
+      "sin_datos": "#94A2AF"
+    }
+  },
+  "areas": {
+    "mant": {
+      "nombre": "Mantenimiento",
+      "principal": "#0A5AA8",
+      "detalle": "#3D7FC4",
+      "barra": "#0B2A4A",
+      "logo": "mant",
+      "logo_url": null,
+      "integrar_w": true
+    },
+    "prod": {
+      "nombre": "Producción",
+      "principal": "#12784F",
+      "detalle": "#2FA36F",
+      "barra": "#0E3B29",
+      "logo": "prod",
+      "logo_url": null,
+      "integrar_w": true
+    },
+    "admin": {
+      "nombre": "Administración",
+      "principal": "#6B3FB8",
+      "detalle": "#8D66D6",
+      "barra": "#2E1A52",
+      "logo": "admin",
+      "logo_url": null,
+      "integrar_w": true
+    },
+    "dir": {
+      "nombre": "Dirección",
+      "principal": "#2F3742",
+      "detalle": "#D4A93A",
+      "barra": "#1C2128",
+      "logo": "dir",
+      "logo_url": null,
+      "integrar_w": true
+    },
+    "op": {
+      "nombre": "Operarios",
+      "principal": "#C2410C",
+      "detalle": "#1F1A17",
+      "barra": "#1F1A17",
+      "logo": "op",
+      "logo_url": null,
+      "integrar_w": true
+    }
+  },
+  "perfil_area": {
+    "jefe": "mant",
+    "encargado": "mant",
+    "tecnico": "mant",
+    "operario": "op",
+    "direccion": "dir"
+  },
+  "fuentes": {
+    "titulos": "Archivo",
+    "texto": "IBM Plex Sans",
+    "codigos": "IBM Plex Mono",
+    "tamano": "normal"
+  },
+  "forma": {
+    "radio": "suave",
+    "densidad": "auto",
+    "borde": 1,
+    "franja": "rayada"
+  },
+  "vocabulario": {},
+  "etiqueta": {
+    "tamano": "70x40",
+    "campos": [
+      "codigo",
+      "nombre",
+      "empresa",
+      "area",
+      "telefono"
+    ],
+    "logo": true,
+    "hoja": "a4"
+  },
+  "informes": {
+    "secciones": [
+      "realizados",
+      "parada",
+      "externas",
+      "gasto",
+      "preventivos",
+      "mtbf"
+    ],
+    "destinatarios": [],
+    "dia": "lunes",
+    "hora": "08:00"
+  },
+  "oficina": {
+    "tarjetas": [
+      "parados",
+      "ordenes",
+      "reportes"
+    ],
+    "empresas": [],
+    "rotacion_seg": 20,
+    "tamano_texto": "grande"
+  }
+}
