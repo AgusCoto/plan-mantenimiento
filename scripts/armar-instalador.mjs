@@ -5,7 +5,7 @@ import path from "node:path";
 const dir = "supabase/migrations";
 const partes = fs.readdirSync(dir).filter((f) => f.endsWith(".sql")).sort();
 const cab = `-- =====================================================================
--- Gestión de Planta · INSTALACIÓN / ACTUALIZACIÓN COMPLETA
+-- App de mantenimiento · INSTALACIÓN / ACTUALIZACIÓN COMPLETA
 -- Pegá todo este archivo en Supabase → SQL Editor → New query → Run.
 -- Se puede volver a ejecutar sin perder datos. Si el proyecto tenía W-Main, al final
 -- migra sus datos (una sola vez) y muestra el resumen.

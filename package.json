@@ -1,0 +1,17 @@
+{
+  "name": "app-mantenimiento",
+  "version": "2.0.0",
+  "private": true,
+  "description": "App de mantenimiento del grupo (INY, LIM, PIN, SAL): equipos, órdenes de trabajo, reportes de falla y apariencia editable. React + Supabase.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "sql": "node scripts/armar-instalador.mjs",
+    "test:permisos": "node supabase/tests/permisos.test.mjs"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "2.49.4"
+  }
+}
