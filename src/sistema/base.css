@@ -230,3 +230,4 @@ input[type=color] { width: 44px; height: 38px; border: var(--borde) solid var(--
 .enviar { position: sticky; bottom: var(--e3); }
 .listo { text-align: center; display: flex; flex-direction: column; gap: var(--e3); align-items: center; padding: var(--e6) 0; }
 .listo .ic { width: 72px; height: 72px; border-radius: 50%; display: grid; place-items: center; background: var(--ok); color: var(--superficie); font-size: 40px; }
+button.conexion { border: 0; cursor: pointer; font-family: inherit; color: inherit; min-height: 32px; }

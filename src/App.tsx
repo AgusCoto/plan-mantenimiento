@@ -7,7 +7,8 @@ import { DatosProvider, useDatos } from "./datos/store";
 import { configurado } from "./datos/supabase";
 import { Logo } from "./sistema/logos";
 import { Ico } from "./sistema/iconos";
-import { Avisos, Ventanas, abrir } from "./comun/ui";
+import { Avisos, Ventanas, abrir, confirmar } from "./comun/ui";
+import { estadoCola } from "./datos/cola";
 import { EstadoConexion } from "./comun/conexion";
 import { Ingreso } from "./pantallas/Ingreso";
 import { MiCuenta } from "./pantallas/MiCuenta";
@@ -92,7 +93,11 @@ function Marco({ perfil }: { perfil: Perfil }) {
         <div className="quien">
           <span><b>{u.nombre}</b> <span className="suave">· {tema.t(perfil)}</span></span>
           <button className="boton chico" onClick={() => abrir(<MiCuenta />)}>Mi cuenta</button>
-          <button className="boton chico" onClick={() => { nav("/"); s.salir(); }}>Salir</button>
+          <button className="boton chico" onClick={() => {
+            const n = estadoCola().ops.length;
+            if (!n) { nav("/"); s.salir(); return; }
+            confirmar("Hay cargas sin enviar", <>Tenés {n} {n === 1 ? "carga guardada" : "cargas guardadas"} en este celular que todavía no llegaron al servidor. Si salís, se envían cuando vuelvas a ingresar con tu usuario en este celular.</>, "Salir igual", async () => { nav("/"); await s.salir(); });
+          }}>Salir</button>
         </div>
       </header>
       {d.error && !d.desdeCopia && <div className="nota" style={{ margin: "var(--e3) var(--lado) 0" }}>No se pudieron leer los datos ({d.error}). Recargá la página.</div>}

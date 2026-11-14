@@ -193,7 +193,7 @@ prueba("sin máquina parada, el equipo sigue operativo", estadoEq("INY-COM-001")
 await enc.goto(APP + "reportes"); await enc.click("article button:has-text('Descartar')"); await enc.fill(".ventana input[name=motivo]", "Ruido normal de la purga");
 await enc.click(".ventana button[type=submit]"); prueba("el encargado descarta el reporte con motivo", await aviso(enc, /Reporte descartado/));
 await op.goto(APP); await op.waitForSelector("text=Mis reportes");
-prueba("el operario ve el motivo del descarte", /Ruido normal de la purga/.test(await op.textContent(".op")));
+prueba("el operario ve el motivo del descarte", !!(await op.waitForSelector("text=Ruido normal de la purga", { timeout: 8000 }).catch(() => null)));
 await foto(op, "28-operario-mis-reportes");
 await op.goto(APP + "ordenes"); await op.waitForSelector(".op h1");
 prueba("el operario no entra a las órdenes", !/\/ordenes/.test(op.url()), op.url());
@@ -256,6 +256,69 @@ await enc.click(".ventana button.item:has-text('Marcar detenido')"); await enc.f
 prueba("el encargado detiene el equipo", await aviso(enc, /Equipo detenido/) && estadoEq("INY-INY-001") === "detenido");
 await tec.goto(APP + "equipos/" + idIny); await tec.waitForSelector(".placa");
 prueba("el técnico no tiene el botón de movimientos", !(await tec.$(".encabezado button:has-text('Movimientos')")));
+
+console.log("Sin señal");
+const barra = (p) => p.textContent(".conexion");
+const esperarBarra = async (p, re) => { const fin = Date.now() + 20000; while (Date.now() < fin) { if (re.test(await barra(p).catch(() => ""))) return true; await p.waitForTimeout(250); } return false; };
+// El operario abre la app con señal (queda guardada en el celular) y después se queda sin señal
+await op.goto(APP); await op.waitForSelector(".op h1"); await op.reload(); await op.waitForSelector(".op h1"); await op.waitForTimeout(1500);
+await op.context().setOffline(true);
+prueba("la barra avisa «Sin señal»", await esperarBarra(op, /Sin señal/));
+await op.goto(APP + "e/INY-INY-001").catch(() => {}); await op.waitForSelector(".fallas", { timeout: 15000 }).catch(() => {});
+prueba("sin señal, la app abre igual y la etiqueta lleva al reporte", !!(await op.$(".fallas")), op.url());
+await op.click(".falla:has-text('Temperatura alta')"); await op.click("button:has-text('No, funciona')");
+await op.click("summary:has-text('Agregar foto')");
+await op.setInputFiles("input[accept='image/*,video/*']", { name: "temp.png", mimeType: "image/png", buffer: png }); await op.waitForSelector(".captura .medios img");
+await op.click("button:has-text('3. Enviar reporte')");
+await op.waitForSelector("h1:has-text('Reporte guardado')", { timeout: 10000 }).catch(() => {});
+prueba("el reporte queda guardado en el celular", /quedó guardado en el celular/.test(await op.textContent(".op")));
+prueba("la barra cuenta las cargas pendientes (reporte, foto y su registro)", /Sin señal: 3 cargas pendientes/.test(await barra(op)), await barra(op));
+await op.click("text=Volver al inicio"); await op.waitForSelector("text=Mis reportes");
+prueba("«Mis reportes» lo muestra sin enviar", /Sin enviar/.test(await op.textContent(".op")));
+await foto(op, "40-sin-senal");
+prueba("todavía no llegó al servidor", sql("select count(*) from reportes_falla where tipo_falla = 'temperatura'") === "0");
+await op.context().setOffline(false);
+prueba("al volver la señal se envía solo", await esperarBarra(op, /^Conectado$/));
+prueba("el reporte, la foto y su registro llegaron", sql("select count(*) from reportes_falla where tipo_falla = 'temperatura'") === "1"
+  && sql("select count(*) from adjuntos a join reportes_falla r on r.id = a.registro_id where r.tipo_falla = 'temperatura'") === "1"
+  && sql("select count(*) from storage.objects o join adjuntos a on a.ruta = o.name where o.bucket_id = 'adjuntos'") === sql("select count(*) from adjuntos where bucket = 'adjuntos'"));
+await op.waitForSelector("text=Recibido"); prueba("y en «Mis reportes» pasa a recibido", !/Sin enviar/.test(await op.textContent(".op")));
+
+// El técnico carga una ficha sin señal
+const idRep = sql("select id from reportes_falla where tipo_falla = 'temperatura'");
+await enc.goto(APP + "ordenes/nueva?reporte=" + idRep); await enc.selectOption("select[name=asignado]", { label: "Diego Ríos · Técnico" });
+await enc.click("button[type=submit]:has-text('Crear')"); await enc.waitForURL(/\/ordenes\/[0-9a-f-]{36}$/);
+const idOt2 = enc.url().split("/").pop();
+await tec.goto(APP + "ordenes/" + idOt2); await tec.waitForSelector("a:has-text('Cargar ficha')"); await tec.waitForTimeout(1500);
+await tec.context().setOffline(true);
+await tec.click("a:has-text('Cargar ficha')"); await tec.fill("textarea[name=trabajo]", "Limpieza del intercambiador"); await tec.fill("input[name=horas]", "1");
+await tec.click("button:has-text('Guardar ficha')");
+prueba("sin señal, la ficha queda guardada", await aviso(tec, /la ficha quedó guardada en el celular/));
+await tec.waitForURL(/\/ordenes\/[0-9a-f-]{36}$/);
+prueba("y se ve en la orden mientras tanto", /Limpieza del intercambiador/.test(await tec.textContent("main")));
+await tec.click("button:has-text('Pedir repuesto')"); await tec.waitForSelector(".ventana");
+await tec.fill(".ventana input[name=descripcion]", "Junta del intercambiador"); await tec.click(".ventana button[type=submit]");
+prueba("el pedido de repuesto también queda en la cola", await aviso(tec, /esperando el repuesto/));
+await tec.context().setOffline(false);
+prueba("al volver la señal se envía todo en orden", await esperarBarra(tec, /^Conectado$/));
+prueba("la ficha y el pedido llegaron y la orden espera el repuesto", sql(`select count(*) from fichas where orden_id = '${idOt2}'`) === "1" && sql(`select estado from ordenes where id = '${idOt2}'`) === "esperando_repuesto"
+  && sql(`select count(*) from pedidos_compra where orden_id = '${idOt2}'`) === "1", sql(`select estado from ordenes where id = '${idOt2}'`));
+await dir.goto(APP + "compras"); await dir.waitForSelector("text=Junta del intercambiador");
+await dir.context().setOffline(true);
+await dir.click("td button:has-text('Aprobar')"); await dir.click(".ventana button[type=submit]");
+prueba("aprobar necesita señal (depende del estado del servidor) y lo avisa", await aviso(dir, /hace falta señal/));
+await dir.context().setOffline(false);
+
+// Conflicto: el encargado edita sin señal una orden que el jefe cambió mientras tanto → gana la última
+await enc.goto(APP + "ordenes/" + idOt2); await enc.waitForSelector("button:has-text('Editar / asignar')"); await enc.waitForTimeout(1500);
+await enc.context().setOffline(true);
+sql(`update ordenes set descripcion = 'Cambio del jefe', modificado_en = now() where id = '${idOt2}'`);
+await enc.waitForTimeout(300);
+await enc.click("button:has-text('Editar / asignar')"); await enc.fill(".ventana textarea[name=descripcion]", "Cambio del encargado sin señal"); await enc.click(".ventana button[type=submit]");
+await enc.context().setOffline(false);
+prueba("se sincroniza la edición", await esperarBarra(enc, /^Conectado$/));
+prueba("gana la última modificación (la del encargado, hecha después)", sql(`select descripcion from ordenes where id = '${idOt2}'`) === "Cambio del encargado sin señal");
+prueba("y el conflicto queda en el registro de cambios", sql("select count(*) from registro_cambios where operacion = 'conflicto' and tabla = 'ordenes'") === "1");
 
 console.log(`\n${ok} correctas, ${mal} con problemas, ${errores.length} errores de página`);
 await b.close();

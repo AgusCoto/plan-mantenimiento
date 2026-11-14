@@ -38,7 +38,14 @@ export function SesionProvider({ children }: { children: ReactNode }) {
       if (vivo && p.data) tema.setPreferencias({ tema: p.data.tema, tamano: p.data.tamano });
       setListo(true);
     }
-    sb().auth.getSession().then(({ data }) => revisar(data.session?.user.id));
+    sb().auth.getSession().then(({ data, error }) => {
+      // Sin señal y con el permiso de acceso vencido, no se puede renovar: se sigue con el último usuario
+      // guardado (los datos están en el celular y las cargas quedan en la cola hasta que vuelva la señal).
+      if (!data.session && error && !navigator.onLine) {
+        try { const u = JSON.parse(localStorage.getItem("mant-usuario") || "null"); if (u) { setUsuario(u); tema.setPerfil(u.perfil); setListo(true); return; } } catch { /* */ }
+      }
+      revisar(data.session?.user.id);
+    });
     const { data: sub } = sb().auth.onAuthStateChange((ev, s) => { if (ev === "SIGNED_IN" || ev === "SIGNED_OUT") revisar(s?.user.id); });
     return () => { vivo = false; sub.subscription.unsubscribe(); };
   }, [tocar]); // eslint-disable-line react-hooks/exhaustive-deps

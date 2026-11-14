@@ -3,7 +3,8 @@ import { useDatos } from "../../datos/store";
 import { Pastilla, type ColorEstado } from "../../comun/ui";
 import type { Equipo, EstadoOrden, Orden, Prioridad } from "../../datos/tipos";
 
-export const num4 = (n: number) => String(n).padStart(4, "0");
+/** Número de 4 cifras; una orden cargada sin señal todavía no tiene número (lo da el servidor). */
+export const num4 = (n: number | null | undefined) => (n == null ? "(sin n.º)" : String(n).padStart(4, "0"));
 export const ACTIVAS: EstadoOrden[] = ["abierta", "asignada", "esperando_repuesto", "en_curso"];
 export const TERMINADAS: EstadoOrden[] = ["terminada", "verificada"];
 export const esActiva = (o: Orden) => ACTIVAS.includes(o.estado);

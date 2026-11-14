@@ -4,6 +4,7 @@ import { sb, falla, mensajeError } from "../datos/supabase";
 import { Ventana, abrir } from "./ui";
 import { Ico } from "../sistema/iconos";
 import { useDatos } from "../datos/store";
+import { archivoPendiente, insertar, subirArchivo } from "../datos/cola";
 import type { Adjunto } from "../datos/tipos";
 
 /** Achica la foto en el celular antes de subirla (1600 px de lado mayor, JPEG 82 %). */
@@ -35,11 +36,11 @@ export function duracionVideo(f: Blob): Promise<number | null> {
     v.src = u;
   });
 }
+/** Sube un archivo por la cola de envíos: sin señal queda guardado en el celular y se sube después. */
 export async function subir(bucket: string, ruta: string, blob: Blob, tipo?: string) {
   // Sin reemplazar: cada archivo tiene una ruta única (y nadie tiene permiso para pisar archivos ajenos)
-  const { error } = await sb().storage.from(bucket).upload(ruta, blob, { contentType: tipo || blob.type || "application/octet-stream" });
-  if (error) throw falla("No se pudo subir el archivo: " + mensajeError(error));
-  return ruta;
+  try { return await subirArchivo(bucket, ruta, blob, tipo); }
+  catch (e) { throw falla("No se pudo subir el archivo: " + ((e as { msg?: string }).msg || mensajeError(e))); }
 }
 
 const cache = new Map<string, { url: string; vence: number }>();
@@ -47,6 +48,8 @@ export async function urlFirmada(bucket: string, ruta: string): Promise<string |
   if (ruta.startsWith("data:")) return ruta;  // fotos migradas de W-Main
   const k = bucket + "/" + ruta, c = cache.get(k);
   if (c && c.vence > Date.now()) return c.url;
+  const local = await archivoPendiente(bucket, ruta);   // todavía en el celular, sin subir
+  if (local) { const u = URL.createObjectURL(local); cache.set(k, { url: u, vence: Date.now() + 10 * 60 * 1000 }); return u; }
   const { data, error } = await sb().storage.from(bucket).createSignedUrl(ruta, 3600);
   if (error || !data) return null;
   cache.set(k, { url: data.signedUrl, vence: Date.now() + 50 * 60 * 1000 });
@@ -94,8 +97,7 @@ const EXT: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png", "
 export async function subirAdjuntos(usuarioId: string, tabla: string, registroId: string, medios: Medio[], momento: "antes" | "despues" | null = null) {
   for (const m of medios) {
     const ruta = await subir("adjuntos", `${usuarioId}/${m.id}.${EXT[m.mime] || "bin"}`, m.blob, m.mime);
-    const { error } = await sb().from("adjuntos").insert({ id: m.id, tabla, registro_id: registroId, bucket: "adjuntos", ruta, tipo: m.tipo, momento, mime: m.mime, bytes: m.blob.size, segundos: m.segundos });
-    if (error) throw falla("No se pudo guardar la foto: " + mensajeError(error));
+    await insertar("adjuntos", { id: m.id, tabla, registro_id: registroId, bucket: "adjuntos", ruta, tipo: m.tipo, momento, mime: m.mime, bytes: m.blob.size, segundos: m.segundos });
   }
 }
 

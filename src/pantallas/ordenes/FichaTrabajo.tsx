@@ -71,7 +71,7 @@ export function FichaTrabajo() {
         firma_ruta = await subir("adjuntos", `${s.usuario!.id}/firma-${crypto.randomUUID()}.png`, png, "image/png");
       }
       const fid = crypto.randomUUID();
-      await insertar("fichas", {
+      const fila = await insertar("fichas", { tecnico_id: v("contratista") ? null : s.usuario!.id,
         id: fid, orden_id: o!.id, contratista_id: v("contratista") || null, es_cierre: cierre, trabajo: v("trabajo"), horas: num("horas"), horas_parada: num("horas_parada"),
         causa: cierre ? v("causa") || null : null, supervisor_nombre: v("supervisor") || null, firma_ruta, remito: v("remito") || null, hecho_en: new Date().toISOString(),
       });
@@ -80,7 +80,7 @@ export function FichaTrabajo() {
         await subirAdjuntos(s.usuario!.id, "fichas", fid, despues, "despues");
       } catch { avisar("La ficha se guardó, pero no se pudieron subir todas las fotos."); }
       await d.recargar("fichas", "ordenes", "equipos", "adjuntos");
-      avisar(cierre ? "Orden terminada" : "Ficha guardada"); nav("/ordenes/" + o!.id, { replace: true });
+      avisar(fila?._pendiente ? "Sin señal: la ficha quedó guardada en el celular y se envía al volver la señal" : cierre ? "Orden terminada" : "Ficha guardada"); nav("/ordenes/" + o!.id, { replace: true });
     } catch (x) { setError((x as { msg?: string }).msg || "No se pudo guardar."); setOcupado(false); }
   }
 

@@ -55,7 +55,7 @@ export function Reportar() {
   const [medios, setMedios] = useState<Medio[]>([]);
   const [ocupado, setOcupado] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [listo, setListo] = useState<{ parada: boolean } | null>(null);
+  const [listo, setListo] = useState<{ parada: boolean; pendiente: boolean } | null>(null);
   const e = d.equipo(id);
   if (!e) return <><h1>{tema.t("reportar")}</h1><p className="suave">No encontramos el equipo, o es de una empresa a la que no tenés acceso.</p><Link className="boton" to="/reportar">Buscar otro equipo</Link></>;
   const ubi = d.empresa(e.empresa_ubicacion_id);
@@ -67,8 +67,10 @@ export function Reportar() {
   if (listo) return (
     <div className="listo">
       <div className="ic" aria-hidden="true">✓</div>
-      <h1>Reporte enviado</h1>
-      <p>Mantenimiento ya recibió el aviso de <b>{e.nombre}</b>{listo.parada ? ", con la máquina parada" : ""}.</p>
+      <h1>{listo.pendiente ? "Reporte guardado" : "Reporte enviado"}</h1>
+      {listo.pendiente
+        ? <p className="nota">No hay señal: el reporte de <b>{e.nombre}</b> quedó guardado en el celular y se envía solo cuando vuelva la señal.{listo.parada ? " Como la máquina está parada, avisá también por teléfono." : ""}</p>
+        : <p>Mantenimiento ya recibió el aviso de <b>{e.nombre}</b>{listo.parada ? ", con la máquina parada" : ""}.</p>}
       {listo.parada && tel && <a className="boton grande" href={"tel:" + tel.replace(/[^\d+]/g, "")}>Llamar a mantenimiento ({tel})</a>}
       <Link className="boton pri grande" to="/">Volver al inicio</Link>
     </div>
@@ -80,13 +82,13 @@ export function Reportar() {
     setOcupado(true); setError(null);
     try {
       const rid = crypto.randomUUID();
-      await insertar("reportes_falla", { id: rid, equipo_id: e!.id, tipo_falla: falla, parada, texto: texto.trim() || null, hecho_en: new Date().toISOString() });
+      const fila = await insertar("reportes_falla", { id: rid, equipo_id: e!.id, operario_id: s.usuario!.id, tipo_falla: falla, parada, texto: texto.trim() || null, hecho_en: new Date().toISOString(), estado: "nuevo" });
       if (medios.length) {
         try { await subirAdjuntos(s.usuario!.id, "reportes_falla", rid, medios); }
         catch { avisar("El reporte se envió, pero no se pudieron subir las fotos."); }
       }
       await d.recargar("reportes_falla", "adjuntos", "equipos");
-      setListo({ parada }); window.scrollTo(0, 0);
+      setListo({ parada, pendiente: !!fila?._pendiente }); window.scrollTo(0, 0);
     } catch (x) { setError((x as { msg?: string }).msg || "No se pudo enviar."); }
     setOcupado(false);
   }
@@ -130,7 +132,7 @@ export function MisReportes({ limite }: { limite?: number }) {
   if (!l.length) return <p className="vacio">Todavía no hiciste {tema.t("reportes").toLowerCase()}.</p>;
   return <div className="lista">{l.map((r) => {
     const e = d.equipo(r.equipo_id);
-    const [t, c] = r.estado === "nuevo" ? ["Recibido", "info"] as const : r.estado === "en_orden" ? (e?.estado === "operativo" ? ["Atendido", "ok"] as const : ["En reparación", "alerta"] as const) : ["Descartado", ""] as const;
+    const [t, c] = (r as { _pendiente?: boolean })._pendiente ? ["Sin enviar", "alerta"] as const : r.estado === "nuevo" ? ["Recibido", "info"] as const : r.estado === "en_orden" ? (e?.estado === "operativo" ? ["Atendido", "ok"] as const : ["En reparación", "alerta"] as const) : ["Descartado", ""] as const;
     return <div key={r.id} className="item"><div className="cuerpo-item"><div className="t">{d.item("tipo_falla", r.tipo_falla)?.nombre || r.tipo_falla} · {e?.nombre}</div>
       <div className="meta"><Codigo>{e?.codigo}</Codigo><span>{hace(r.hecho_en)}</span>{r.parada && <span>máquina parada</span>}{r.motivo_descarte && <span>Motivo: {r.motivo_descarte}</span>}</div></div>
       <Pastilla c={c}>{t}</Pastilla></div>;

@@ -3,6 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { sb } from "./supabase";
 import { guardarCopia, leerCopia } from "./local";
+import { conectarDatos, useCola, type Op } from "./cola";
 import type { Datos, Tabla, Equipo, Usuario, Empresa, ItemLista } from "./tipos";
 import type { Perfil } from "../sistema/tokens";
 
@@ -66,6 +67,8 @@ export function DatosProvider({ perfil, usuarioId, children }: { perfil: Perfil;
   const [desdeCopia, setDesdeCopia] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const pend = useRef(new Set<Tabla>());
+  const cola = useCola();
+  const dRef = useRef(d); dRef.current = d;
   const timer = useRef<number>();
 
   const recargar = useCallback(async (...ts: Tabla[]) => {
@@ -104,7 +107,31 @@ export function DatosProvider({ perfil, usuarioId, children }: { perfil: Perfil;
     return () => { vivo = false; sb().removeChannel(canal); document.removeEventListener("visibilitychange", vis); window.removeEventListener("online", enLinea); };
   }, [recargar, tablas, usuarioId]);
 
+  // La cola de envíos usa la copia para saber qué versión se editó, y avisa cuando sincroniza
+  useEffect(() => {
+    conectarDatos(usuarioId, (t, k, val) => ((dRef.current as unknown as Record<string, Record<string, unknown>[]>)[t] || []).find((r) => String(r[k]) === val), () => recargar());
+  }, [usuarioId, recargar]);
+
+  // Lo cargado sin señal se ve enseguida (marcado como pendiente) hasta que llega al servidor
+  const vista = useMemo<Datos>(() => {
+    const ops = cola.ops.filter((o: Op) => !o.error);
+    if (!ops.length) return d;
+    const n = { ...d } as unknown as Record<string, Record<string, unknown>[]>;
+    for (const o of ops) {
+      if (!o.tabla || !tablas.includes(o.tabla as Tabla)) continue;
+      const arr = n[o.tabla] || [];
+      if (o.tipo === "insertar" && o.fila && !arr.some((r) => r.id === o.fila!.id)) {
+        const cuando = new Date(o.ts).toISOString();
+        n[o.tabla] = [{ creado_por: o.usuario, creado_en: cuando, modificado_por: o.usuario, modificado_en: cuando, hecho_en: cuando, ...o.fila, _pendiente: true }, ...arr];
+      } else if (o.tipo === "actualizar") {
+        n[o.tabla] = arr.map((r) => (String(r[o.clave!]) === o.registro ? { ...r, ...o.cambios, _pendiente: true } : r));
+      }
+    }
+    return n as unknown as Datos;
+  }, [d, cola.version, tablas]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const v = useMemo<Ctx>(() => {
+    const d = vista;
     const eq = new Map(d.equipos.map((e) => [e.id, e]));
     const us = new Map(d.usuarios.map((u) => [u.id, u]));
     const em = new Map(d.empresas.map((e) => [e.id, e]));
@@ -121,6 +148,6 @@ export function DatosProvider({ perfil, usuarioId, children }: { perfil: Perfil;
       conf: <T,>(k: string, def: T) => (cf.has(k) && cf.get(k) !== null ? (cf.get(k) as T) : def),
       buscarEquipo: (c) => { const k = c.trim().toUpperCase(); return porCodigo.get(k) || eq.get(c) || eq.get(alias.get(k) || "") || eq.get(alias.get(c.trim()) || ""); },
     };
-  }, [d, cargado, desdeCopia, error, recargar]);
+  }, [vista, cargado, desdeCopia, error, recargar]);
   return <C.Provider value={v}>{children}</C.Provider>;
 }

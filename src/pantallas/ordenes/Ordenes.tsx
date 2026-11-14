@@ -67,12 +67,14 @@ export function NuevaOrden() {
   const [qs] = useSearchParams();
   const d = useDatos(), tema = useTema(), nav = useNavigate();
   const r = d.reportes_falla.find((x) => x.id === qs.get("reporte"));
-  const [equipoId, setEquipoId] = useState(r?.equipo_id || qs.get("equipo") || "");
+  const [elegido, setEquipoId] = useState(qs.get("equipo") || "");
+  const equipoId = r?.equipo_id || elegido;   // el reporte puede llegar después de abrir la pantalla
   const [parada, setParada] = useState(r?.parada ?? d.equipo(qs.get("equipo"))?.estado === "detenido");
   const [ocupado, setOcupado] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const e = d.equipo(equipoId);
   const tecnicos = tecnicosPara(d, e);
+  if (qs.get("reporte") && !r) return <><h1>Nueva {tema.t("orden_abrev")}</h1><p className="vacio">Buscando el reporte… Si no aparece, puede que ya no exista. <Link to="/reportes">Volver a los reportes</Link></p></>;
   if (r && r.estado !== "nuevo") return <><h1>Nueva {tema.t("orden_abrev")}</h1><p className="nota">Ese reporte ya fue atendido.</p><Link to="/reportes">Volver a los reportes</Link></>;
 
   async function guardar(ev: FormEvent<HTMLFormElement>) {

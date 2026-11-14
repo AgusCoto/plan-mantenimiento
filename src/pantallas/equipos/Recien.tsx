@@ -33,6 +33,7 @@ export function Recien({ e, otro }: { e: Equipo; otro: () => void }) {
     <>
       <div className="encabezado"><div><h1>Equipo dado de alta</h1><p>{e.nombre}</p></div></div>
       <section className="panel form" style={{ alignItems: "start" }}>
+        {(e as { _pendiente?: boolean })._pendiente ? <p className="nota">Sin señal: el equipo quedó guardado en el celular. El código, el QR y la etiqueta se generan cuando llegue al servidor (al volver la señal); después los encontrás en su ficha.</p> : <>
         <span className="codigo" style={{ fontSize: "var(--t-2xl)" }}>{e.codigo}</span>
         {qr && <div className="qr"><img src={qr} alt={"QR de " + e.codigo} /></div>}
         <p className="chico suave">El QR y el chip NFC llevan el mismo enlace: {enlaceEquipo(e.codigo)}</p>
@@ -41,7 +42,7 @@ export function Recien({ e, otro }: { e: Equipo; otro: () => void }) {
           <BotonNFC codigo={e.codigo} />
           <button type="button" className="boton" onClick={async () => descargar(`etiqueta-${e.codigo}.pdf`, await pdfEtiquetas([datosEtiqueta(d, e)], { ...tema.tokens, etiqueta: { ...tema.tokens.etiqueta, hoja: "rollo" } }, tel))}>
             <Ico n="descargar" />Etiqueta en PDF</button>
-        </div>
+        </div></>}
         <div className="botones">
           <button type="button" className="boton pri" onClick={otro}>Relevar otro equipo</button>
           <Link className="boton" to={"/equipos/" + e.id}>Ver la ficha</Link>
