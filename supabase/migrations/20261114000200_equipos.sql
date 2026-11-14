@@ -76,6 +76,26 @@ end $$;
 drop trigger if exists b_codigo on public.equipos;
 create trigger b_codigo before insert or update on public.equipos for each row execute function public.codigo_equipo();
 
+-- Campos propios obligatorios del tipo de equipo (los define el jefe en Apariencia → Campos de la ficha)
+create or replace function public.campos_obligatorios() returns trigger
+language plpgsql security definer set search_path = public as $$
+declare c jsonb; faltan text[] := '{}';
+begin
+  if auth.uid() is null and current_setting('planta.carga_masiva', true) = '1' then return new; end if;
+  for c in select jsonb_array_elements(campos) from public.tipos_equipo where sigla = new.tipo loop
+    if coalesce((c->>'obligatorio')::boolean, false) and c->>'tipo' <> 'foto'
+       and coalesce(btrim(new.campos->>(c->>'clave')), '') = '' then
+      faltan := faltan || (c->>'etiqueta');
+    end if;
+  end loop;
+  if array_length(faltan, 1) > 0 then
+    raise exception 'Faltan datos obligatorios de la ficha: %.', array_to_string(faltan, ', ');
+  end if;
+  return new;
+end $$;
+drop trigger if exists b_campos on public.equipos;
+create trigger b_campos before insert or update of campos, tipo on public.equipos for each row execute function public.campos_obligatorios();
+
 -- La sigla de una empresa no se cambia si ya tiene equipos (es parte de sus códigos)
 create or replace function public.sigla_fija() returns trigger
 language plpgsql security definer set search_path = public as $$

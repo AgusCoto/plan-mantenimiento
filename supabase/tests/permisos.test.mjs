@@ -51,7 +51,8 @@ r = await alta(jefe, "INY", "COM"); prueba("el jefe da de alta: código INY-COM-
 const comp = r.data;
 r = await alta(jefe, "INY", "COM", "baja"); prueba("el siguiente es INY-COM-002", r.data?.codigo === "INY-COM-002", r);
 const comp2 = r.data;
-r = await alta(jefe, "LIM", "APL", "media"); prueba("correlativo por empresa y tipo: LIM-APL-001", r.data?.codigo === "LIM-APL-001", r);
+r = await alta(jefe, "LIM", "APL", "media"); prueba("un campo propio obligatorio (capacidad del apilador) se exige en la base", !!r.error && /Capacidad de carga/.test(r.error.message), r.error);
+r = await alta(jefe, "LIM", "APL", "media", { campos: { capacidad: 1500 } }); prueba("correlativo por empresa y tipo: LIM-APL-001", r.data?.codigo === "LIM-APL-001", r);
 const apl = r.data;
 r = await alta(enc, "INY", "COM"); prueba("el encargado no da de alta equipos", no(r) || !!r.error, r);
 r = await jefe.from("empresas").update({ sigla: "INX" }).eq("sigla", "INY").select(); prueba("la sigla no cambia si la empresa ya tiene equipos", !!r.error, r);

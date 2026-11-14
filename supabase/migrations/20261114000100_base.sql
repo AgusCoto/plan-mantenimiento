@@ -200,7 +200,8 @@ insert into public.tipos_equipo (sigla, nombre, icono, orden, campos) values
   ('CHI','Chiller','chiller',12,'[]'),
   ('BOM','Bomba','bomba',13,'[]'),
   ('CAL','Caldera','caldera',14,'[]'),
-  ('INS','Instalación','instalacion',15,'[]'),
+  ('INS','Instalación eléctrica','instalacion',15,'[]'),
+  ('RED','Red de aire comprimido','aire',16,'[]'),
   ('OTR','Otro','engranaje',99,'[]')
 on conflict (sigla) do nothing;
 
