@@ -218,3 +218,15 @@ input[type=color] { width: 44px; height: 38px; border: var(--borde) solid var(--
 .lt .f { font-size: var(--t-s); color: var(--tinta-suave); }
 .cargando { padding: 40px 0; text-align: center; color: var(--tinta-suave); }
 @media (prefers-reduced-motion: no-preference) { .boton, .mosaico, .falla { transition: border-color .15s, filter .15s; } }
+
+/* Fotos y videos elegidos antes de enviar */
+.captura { display: flex; flex-direction: column; gap: var(--e2); }
+.captura .quitar { position: absolute; top: -8px; right: -8px; width: 32px; height: 32px; border-radius: 50%; border: 0; background: var(--tinta); color: var(--superficie); font-size: 20px; line-height: 1; cursor: pointer; }
+.firma { border: calc(var(--borde) + 1px) dashed var(--linea); border-radius: var(--r-m); background: #fff; touch-action: none; width: 100%; height: 180px; display: block; }
+.si-no { display: grid; grid-template-columns: 1fr 1fr; gap: var(--e2); }
+.si-no button { min-height: 72px; font-size: var(--t-l); font-weight: 700; border-radius: var(--r-l); border: calc(var(--borde) + 1px) solid var(--linea); background: var(--superficie); color: var(--tinta); cursor: pointer; }
+.si-no button[aria-pressed=true].si { background: var(--critico); border-color: var(--critico); color: var(--superficie); }
+.si-no button[aria-pressed=true].no { background: var(--ok); border-color: var(--ok); color: var(--superficie); }
+.enviar { position: sticky; bottom: var(--e3); }
+.listo { text-align: center; display: flex; flex-direction: column; gap: var(--e3); align-items: center; padding: var(--e6) 0; }
+.listo .ic { width: 72px; height: 72px; border-radius: 50%; display: grid; place-items: center; background: var(--ok); color: var(--superficie); font-size: 40px; }

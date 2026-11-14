@@ -72,7 +72,7 @@ function Marco({ perfil }: { perfil: Perfil }) {
   const nuevos = d.reportes_falla.filter((r) => r.estado === "nuevo").length;
   const todos: ItemMenu[] = [
     { a: "/", texto: "Inicio", ico: "inicio", perfiles: ["jefe", "encargado", "tecnico", "direccion", "operario"] },
-    ...menuExtra(tema.t, { nuevos }),
+    ...menuExtra(tema.t, { nuevos, compras: perfil === "direccion" ? d.pedidos_compra.filter((x) => x.estado === "pendiente").length : 0 }),
     { a: "/usuarios", texto: "Usuarios", ico: "usuarios", perfiles: ["jefe"] },
     { a: "/apariencia", texto: "Apariencia", ico: "apariencia", perfiles: ["jefe"] },
     { a: "/registro", texto: "Registro de cambios", ico: "registro", perfiles: ["jefe", "direccion"] },

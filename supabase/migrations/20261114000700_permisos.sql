@@ -33,7 +33,8 @@ end $$;
 
 -- ---------- Usuarios: mantenimiento y dirección ven a todos; el operario, solo a sí mismo ----------
 select public._politica('ver', 'usuarios', 'select', 'public.es(''jefe'',''encargado'',''tecnico'',''direccion'') or id = auth.uid()');
-select public._politica('ver', 'usuario_empresas', 'select', 'public.es(''jefe'') or usuario_id = auth.uid()');
+-- El encargado también las ve: las necesita para asignar órdenes a quien tiene acceso al equipo
+select public._politica('ver', 'usuario_empresas', 'select', 'public.es(''jefe'',''encargado'') or usuario_id = auth.uid()');
 
 -- ---------- Apariencia: el tema activo lo ve cualquiera (también la pantalla de ingreso); lo cambia el jefe ----------
 select public._politica('ver_activo', 'temas', 'select', 'activo or de_fabrica', null, 'anon, authenticated');

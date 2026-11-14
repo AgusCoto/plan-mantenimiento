@@ -102,6 +102,10 @@ r = await dir.from("ordenes").update({ descripcion: "x" }).eq("id", ot.id).selec
 r = await enc.rpc("orden_prioridad", { p_orden: ot.id, p_prioridad: "media" }); prueba("el encargado no cambia la prioridad", !!r.error);
 r = await dir.rpc("orden_prioridad", { p_orden: ot.id, p_prioridad: "alta" }); prueba("dirección confirma o cambia la prioridad", !r.error, r.error);
 r = await tec2.from("ordenes").select("id"); prueba("el técnico de LIM no ve órdenes de INY", no(r), r);
+r = await enc.from("ordenes").update({ asignado_a: tec2.uid }).eq("id", ot.id).select(); prueba("no se asigna una orden a un técnico sin acceso a la empresa del equipo", !!r.error, r);
+r = await enc.from("ordenes").insert({ equipo_id: comp.id, titulo: "Otra", asignado_a: op.uid }).select(); prueba("ni a un operario", !!r.error, r);
+r = await enc.from("usuario_empresas").select("usuario_id").eq("usuario_id", tec.uid); prueba("el encargado ve a qué empresas accede cada técnico (para asignar)", filas(r) === 1, r);
+r = await tec.from("usuario_empresas").select("usuario_id").eq("usuario_id", tec2.uid); prueba("el técnico no ve las empresas de otros", no(r), r);
 
 console.log("Fichas, costos y compras");
 r = await tec2.from("fichas").insert({ orden_id: ot.id, trabajo: "x", horas: 1 }).select(); prueba("un técnico no asignado no carga fichas", no(r) || !!r.error, r);

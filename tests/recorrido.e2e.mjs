@@ -102,6 +102,102 @@ await anon.waitForSelector(".placa"); prueba("y después de ingresar vuelve al e
 await jefe.goto(APP + "e/LH-DEP-API-001"); await jefe.waitForSelector("h1");
 prueba("un código desconocido avisa que no existe", /No encontramos/.test(await jefe.textContent("main")));
 
+console.log("Reporte del operario y orden de trabajo completa");
+const estadoEq = (c) => sql(`select estado from equipos where codigo = '${c}'`);
+const op = await como("operario", true);
+await foto(op, "20-operario-inicio");
+await op.goto(APP + "e/INY-INY-001"); await op.waitForSelector(".fallas");
+prueba("operario: la etiqueta abre el reporte de esa máquina", /\/reportar\//.test(op.url()), op.url());
+await op.click(".falla:has-text('Pérdida de aceite')");                                   // toque 1
+await op.click("button:has-text('Sí, parada')");                                          // toque 2
+await op.click("summary:has-text('Agregar foto')");
+await op.setInputFiles("input[accept='image/*,video/*']", { name: "aceite.png", mimeType: "image/png", buffer: png });
+await op.waitForSelector(".captura .medios img");
+await op.fill("textarea", "Gotea aceite debajo del cilindro");
+await foto(op, "21-operario-reporte");
+await op.click("button:has-text('3. Enviar reporte')");                                    // toque 3
+await op.waitForSelector("h1:has-text('Reporte enviado')");
+prueba("el reporte se envía en 3 toques (más la foto opcional)", true);
+prueba("con la máquina parada, el equipo queda «detenido»", estadoEq("INY-INY-001") === "detenido", estadoEq("INY-INY-001"));
+prueba("la foto quedó adjunta al reporte", sql("select count(*) from adjuntos where tabla = 'reportes_falla'") === "1");
+await foto(op, "22-operario-enviado");
+await op.click("text=Volver al inicio"); await op.waitForSelector("text=Mis reportes");
+prueba("«Mis reportes» lo muestra como recibido", /Recibido/.test(await op.textContent(".op")));
+
+const enc = await como("encargado");
+await enc.click("nav a[href='/reportes']"); await enc.waitForSelector("article.panel");
+prueba("el encargado ve el reporte con la foto", /Pérdida de aceite/.test(await enc.textContent("main")) && !!(await enc.waitForSelector("article .medios img", { timeout: 8000 }).catch(() => null)));
+await foto(enc, "23-bandeja-reportes");
+await enc.click("article a:has-text('Crear')"); await enc.waitForSelector("select[name=asignado]");
+await enc.selectOption("select[name=asignado]", { label: "Diego Ríos · Técnico" });
+await enc.click("button[type=submit]:has-text('Crear')"); await enc.waitForURL(/\/ordenes\/[0-9a-f-]{36}$/);
+const idOt = enc.url().split("/").pop();
+let cab = await enc.textContent(".encabezado");
+prueba("orden creada desde el reporte: urgente (equipo crítico y parado) y asignada", /Urgente/.test(cab) && /Asignada/.test(cab), cab.slice(0, 160));
+prueba("el equipo pasa a «en reparación»", estadoEq("INY-INY-001") === "en_reparacion");
+await foto(enc, "24-orden-creada");
+
+await tec.goto(APP + "ordenes/" + idOt); await tec.waitForSelector("text=Empezar el trabajo");
+await tec.click("text=Empezar el trabajo"); prueba("el técnico empieza el trabajo", await aviso(tec, /Trabajo empezado/));
+await tec.click("button:has-text('Pedir repuesto')");
+await tec.fill(".ventana input[name=descripcion]", "Juego de sellos del cilindro"); await tec.fill(".ventana input[name=monto]", "120.000");
+await tec.click(".ventana button[type=submit]");
+prueba("pide el repuesto y la orden queda esperando", await aviso(tec, /esperando el repuesto/) && sql(`select estado from ordenes where id = '${idOt}'`) === "esperando_repuesto");
+
+await jefe.goto(APP + "compras"); await jefe.waitForSelector("text=PC-0001");
+prueba("sin tope configurado, el jefe no aprueba compras", !(await jefe.$("td button:has-text('Aprobar')")));
+await dir.goto(APP + "compras"); await dir.waitForSelector("text=PC-0001");
+await dir.click("td button:has-text('Aprobar')"); await dir.click(".ventana button[type=submit]");
+prueba("dirección aprueba el pedido", await aviso(dir, /Pedido aprobado/));
+prueba("queda registrado quién aprobó", sql("select count(*) from registro_cambios where tabla = 'pedidos_compra' and aprobo_id is not null") !== "0");
+await dir.goto(APP + "ordenes/" + idOt); await dir.waitForSelector("text=Falta que dirección la confirme");
+await dir.click("button:has-text('Confirmar urgente')");
+prueba("dirección confirma la prioridad", await aviso(dir, /Prioridad confirmada/));
+await foto(dir, "25-direccion-orden");
+await enc.goto(APP + "compras"); await enc.click("button[role=tab]:has-text('Aprobados')"); await enc.click("button:has-text('Llegó')"); await enc.click(".ventana button[type=submit]");
+prueba("llega el repuesto y la orden vuelve a «en curso»", await aviso(enc, /Recepción registrada/) && sql(`select estado from ordenes where id = '${idOt}'`) === "en_curso");
+
+await tec.goto(APP + "ordenes/" + idOt + "/ficha"); await tec.fill("textarea[name=trabajo]", "Desarme del cilindro, diagnóstico de sellos"); await tec.fill("input[name=horas]", "2");
+await tec.click("button:has-text('Guardar ficha')"); await tec.waitForURL(/\/ordenes\/[0-9a-f-]{36}$/);
+prueba("el técnico carga una ficha de trabajo", /Desarme del cilindro/.test(await tec.textContent("main")));
+await tec.click("a:has-text('Ficha de cierre')"); await tec.waitForSelector("canvas.firma");
+await tec.fill("textarea[name=trabajo]", "Cambio de sellos y prueba en vacío"); await tec.fill("input[name=horas]", "1,5"); await tec.fill("input[name=horas_parada]", "4");
+await tec.selectOption("select[name=causa]", "desgaste");
+await tec.setInputFiles(".captura:has-text('después') input[accept='image/*'][multiple]", { name: "despues.png", mimeType: "image/png", buffer: png });
+await tec.fill("input[name=supervisor]", "Carla Méndez");
+await tec.click("button:has-text('Terminar la orden')");
+prueba("equipo crítico: sin firma no se termina", await aviso(tec, /Falta la firma/));
+const cv = await (await tec.$("canvas.firma")).boundingBox();
+await tec.mouse.move(cv.x + 30, cv.y + 120); await tec.mouse.down();
+for (let i = 1; i <= 12; i++) await tec.mouse.move(cv.x + 30 + i * 18, cv.y + 120 - Math.sin(i / 2) * 50);
+await tec.mouse.up();
+await foto(tec, "26-ficha-cierre-firma");
+await tec.click("button:has-text('Terminar la orden')"); await tec.waitForURL(/\/ordenes\/[0-9a-f-]{36}$/);
+prueba("con la firma del supervisor, la orden queda verificada", sql(`select estado from ordenes where id = '${idOt}'`) === "verificada");
+prueba("y el equipo vuelve a «operativo»", estadoEq("INY-INY-001") === "operativo");
+prueba("la ficha muestra la firma", !!(await tec.waitForSelector("img[alt='Firma del supervisor']", { timeout: 8000 }).catch(() => null)));
+const total = await tec.textContent("main");
+prueba("costos: 3,5 h de mano de obra", /3,5 h/.test(total));
+await foto(tec, "27-orden-verificada");
+await enc.goto(APP + "ordenes/" + idOt); await enc.click("button:has-text('Cerrar la orden')"); await enc.click(".ventana button[type=submit]");
+prueba("el encargado cierra la orden", await aviso(enc, /Orden cerrada/) && sql(`select estado from ordenes where id = '${idOt}'`) === "cerrada");
+await tec2.goto(APP + "ordenes/" + idOt); await tec2.waitForSelector("h1");
+prueba("un técnico de otra empresa no ve la orden", /No existe o no tenés acceso/.test(await tec2.textContent("main")));
+await op.goto(APP); await op.waitForSelector("text=Mis reportes");
+prueba("el operario ve su reporte como atendido", /Atendido/.test(await op.textContent(".op")));
+
+// Un reporte que se descarta
+await op.goto(APP + "e/INY-COM-001"); await op.click(".falla:has-text('Ruido')"); await op.click("button:has-text('No, funciona')"); await op.click("button:has-text('3. Enviar reporte')");
+await op.waitForSelector("h1:has-text('Reporte enviado')");
+prueba("sin máquina parada, el equipo sigue operativo", estadoEq("INY-COM-001") === "operativo");
+await enc.goto(APP + "reportes"); await enc.click("article button:has-text('Descartar')"); await enc.fill(".ventana input[name=motivo]", "Ruido normal de la purga");
+await enc.click(".ventana button[type=submit]"); prueba("el encargado descarta el reporte con motivo", await aviso(enc, /Reporte descartado/));
+await op.goto(APP); await op.waitForSelector("text=Mis reportes");
+prueba("el operario ve el motivo del descarte", /Ruido normal de la purga/.test(await op.textContent(".op")));
+await foto(op, "28-operario-mis-reportes");
+await op.goto(APP + "ordenes"); await op.waitForSelector(".op h1");
+prueba("el operario no entra a las órdenes", !/\/ordenes/.test(op.url()), op.url());
+
 console.log(`\n${ok} correctas, ${mal} con problemas, ${errores.length} errores de página`);
 await b.close();
 process.exit(mal || errores.length ? 1 : 0);

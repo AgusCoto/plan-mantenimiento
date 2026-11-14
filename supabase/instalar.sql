@@ -623,6 +623,15 @@ language sql stable security definer set search_path = public as $$
   select exists (select 1 from public.equipos e where e.id = eq and (public.mi_empresa(e.empresa_duena_id) or public.mi_empresa(e.empresa_ubicacion_id)))
 $$;
 
+-- ¿Puede esta persona trabajar en este equipo? (para asignarle órdenes)
+create or replace function public._puede_trabajar(u uuid, eq uuid) returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists (
+    select 1 from public.usuarios us join public.equipos e on e.id = eq
+    where us.id = u and us.activo and (us.perfil = 'jefe' or (us.perfil in ('tecnico','encargado') and exists (
+      select 1 from public.usuario_empresas ue where ue.usuario_id = u and ue.empresa_id in (e.empresa_duena_id, e.empresa_ubicacion_id)))))
+$$;
+
 -- ---------- Equipos: estado y ubicación solo cambian por funciones (dejan el movimiento registrado) ----------
 create or replace function public.guardia_equipo() returns trigger
 language plpgsql security definer set search_path = public as $$
@@ -680,6 +689,9 @@ begin
   new.requiere_verificacion := e.criticidad = 'alta';   -- producción verifica solo en equipos críticos
   new.prioridad_calculada := public.prioridad_de(e.criticidad, new.parada);
   if auth.uid() is not null then
+    if new.asignado_a is not null and not public._puede_trabajar(new.asignado_a, new.equipo_id) then
+      raise exception 'Esa persona no puede trabajar en este equipo (no es de mantenimiento o no tiene acceso a su empresa).';
+    end if;
     new.prioridad := new.prioridad_calculada; new.prioridad_por := null; new.prioridad_en := null;
     new.estado := case when new.asignado_a is not null or new.contratista_id is not null then 'asignada' else 'abierta' end;
     new.terminada_en := null; new.cerrada_en := null;
@@ -709,6 +721,10 @@ create trigger c_desde_reporte after insert on public.ordenes for each row execu
 create or replace function public.guardia_orden() returns trigger
 language plpgsql security definer set search_path = public as $$
 begin
+  if new.asignado_a is distinct from old.asignado_a and new.asignado_a is not null and auth.uid() is not null
+     and not public._puede_trabajar(new.asignado_a, new.equipo_id) then
+    raise exception 'Esa persona no puede trabajar en este equipo (no es de mantenimiento o no tiene acceso a su empresa).';
+  end if;
   if not public._en_transicion() then
     if (new.estado, new.prioridad, new.prioridad_por, new.prioridad_calculada, new.empresa_cargo_id, new.requiere_verificacion,
         new.terminada_en, new.cerrada_en, new.equipo_id, new.reporte_id, new.parada)
@@ -1366,7 +1382,8 @@ end $$;
 
 -- ---------- Usuarios: mantenimiento y dirección ven a todos; el operario, solo a sí mismo ----------
 select public._politica('ver', 'usuarios', 'select', 'public.es(''jefe'',''encargado'',''tecnico'',''direccion'') or id = auth.uid()');
-select public._politica('ver', 'usuario_empresas', 'select', 'public.es(''jefe'') or usuario_id = auth.uid()');
+-- El encargado también las ve: las necesita para asignar órdenes a quien tiene acceso al equipo
+select public._politica('ver', 'usuario_empresas', 'select', 'public.es(''jefe'',''encargado'') or usuario_id = auth.uid()');
 
 -- ---------- Apariencia: el tema activo lo ve cualquiera (también la pantalla de ingreso); lo cambia el jefe ----------
 select public._politica('ver_activo', 'temas', 'select', 'activo or de_fabrica', null, 'anon, authenticated');

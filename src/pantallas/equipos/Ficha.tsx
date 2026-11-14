@@ -97,6 +97,7 @@ export function Ficha() {
     <>
       <div className="encabezado"><div><Link to="/equipos" className="chico">← {tema.t("equipos")}</Link><h1>{e.nombre}</h1></div><span className="sp" />
         <div className="botones">
+          {e.estado !== "baja" && <Link className="boton" to={"/reportar/" + e.id}><Ico n="reportes" />{tema.t("reportar")}</Link>}
           {["jefe", "encargado"].includes(perfil) && e.estado !== "baja" && <Link className="boton pri" to={"/ordenes/nueva?equipo=" + e.id}><Ico n="mas" />Nueva {tema.t("orden_abrev")}</Link>}
           {perfil === "jefe" && <Link className="boton" to={`/equipos/${e.id}/editar`}>Editar ficha</Link>}
           <AccionesEquipo e={e} />
@@ -155,6 +156,6 @@ export function Ficha() {
 function Horometro({ e }: { e: Equipo }) {
   const d = useDatos();
   const [v, setV] = useState(e.horometro != null ? String(e.horometro) : "");
-  return <span className="botones" style={{ alignItems: "center" }}><input type="number" step="0.1" inputMode="decimal" value={v} onChange={(x) => setV(x.target.value)} style={{ maxWidth: 140 }} aria-label="Horómetro" /> h
+  return <span className="botones" style={{ alignItems: "center" }}><input type="text" inputMode="decimal" pattern="[0-9]+([,.][0-9]+)?" value={v} onChange={(x) => setV(x.target.value)} style={{ maxWidth: 140 }} aria-label="Horómetro" /> h
     <button className="boton chico" onClick={async () => { try { await llamar("cargar_horometro", { p_equipo: e.id, p_valor: Number(v.replace(",", ".")) }); await d.recargar("equipos"); avisar("Horómetro cargado"); } catch (x) { avisar((x as { msg?: string }).msg || "No se pudo cargar"); } }}>Cargar lectura</button></span>;
 }

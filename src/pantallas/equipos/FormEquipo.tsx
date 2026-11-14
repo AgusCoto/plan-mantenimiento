@@ -15,7 +15,7 @@ import type { CampoTipo, Equipo } from "../../datos/tipos";
 function CampoPropio({ c, valor }: { c: CampoTipo; valor: unknown }) {
   const nombre = "campo:" + c.clave, req = !!c.obligatorio;
   const et = c.etiqueta + (c.unidad ? ` (${c.unidad})` : "") + (req ? " *" : "");
-  if (c.tipo === "numero") return <Campo label={et}><input type="number" step="any" name={nombre} required={req} defaultValue={valor as number ?? ""} inputMode="decimal" /></Campo>;
+  if (c.tipo === "numero") return <Campo label={et}><input type="text" name={nombre} required={req} defaultValue={valor != null ? String(valor).replace(".", ",") : ""} inputMode="decimal" pattern="-?[0-9]+([,.][0-9]+)?" title="Un número, por ejemplo 1,5" /></Campo>;
   if (c.tipo === "fecha") return <Campo label={et}><input type="date" name={nombre} required={req} defaultValue={(valor as string) || ""} /></Campo>;
   if (c.tipo === "lista") return <Campo label={et}><select name={nombre} required={req} defaultValue={(valor as string) || ""}><option value="">Elegí…</option>{(c.opciones || []).map((o) => <option key={o}>{o}</option>)}</select></Campo>;
   if (c.tipo === "foto") return <Campo label={et} ayuda={valor ? "Ya tiene foto: elegí otra para reemplazarla" : undefined}><input type="file" name={"foto:" + c.clave} accept="image/*" capture="environment" /></Campo>;

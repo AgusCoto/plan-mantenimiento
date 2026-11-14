@@ -2,6 +2,8 @@
 import { useEffect, useState } from "react";
 import { sb, falla, mensajeError } from "../datos/supabase";
 import { Ventana, abrir } from "./ui";
+import { Ico } from "../sistema/iconos";
+import { useDatos } from "../datos/store";
 import type { Adjunto } from "../datos/tipos";
 
 /** Achica la foto en el celular antes de subirla (1600 px de lado mayor, JPEG 82 %). */
@@ -68,4 +70,67 @@ function Medio({ a, alt }: { a: Adjunto; alt: string }) {
 export function Medios({ adjuntos, alt = "Foto adjunta" }: { adjuntos: Adjunto[]; alt?: string }) {
   if (!adjuntos.length) return <p className="suave chico">Sin fotos ni videos.</p>;
   return <div className="medios">{adjuntos.map((a) => <Medio key={a.id} a={a} alt={(a.momento === "antes" ? "Antes: " : a.momento === "despues" ? "Después: " : "") + alt} />)}</div>;
+}
+
+/* ---------- Fotos y videos para reportes y fichas ---------- */
+export interface Medio { id: string; blob: Blob; tipo: "foto" | "video"; mime: string; segundos: number | null; vista: string }
+
+/** Prepara un archivo elegido en el celular: achica la foto; controla duración y peso del video. */
+export async function prepararMedio(f: File, maxSeg: number, maxMb: number): Promise<Medio> {
+  const id = crypto.randomUUID();
+  const tv = tipoVideo(f);
+  if (tv) {
+    if (f.size > maxMb * 1048576) throw falla(`El video pesa más de ${maxMb} MB. Grabá uno más corto.`);
+    const s = await duracionVideo(f);
+    if (s != null && s > maxSeg + 0.5) throw falla(`El video dura ${Math.round(s)} s: el máximo es ${maxSeg} s.`);
+    return { id, blob: f, tipo: "video", mime: tv, segundos: s, vista: URL.createObjectURL(f) };
+  }
+  if (!f.type.startsWith("image/") && !/\.(jpe?g|png|heic|webp)$/i.test(f.name)) throw falla("Ese archivo no es una foto ni un video.");
+  const b = await achicarFoto(f);
+  return { id, blob: b, tipo: "foto", mime: b.type || "image/jpeg", segundos: null, vista: URL.createObjectURL(b) };
+}
+const EXT: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png", "video/mp4": "mp4", "video/quicktime": "mov", "video/webm": "webm" };
+/** Sube las fotos y videos y los asocia al registro (reporte, ficha, costo o movimiento). */
+export async function subirAdjuntos(usuarioId: string, tabla: string, registroId: string, medios: Medio[], momento: "antes" | "despues" | null = null) {
+  for (const m of medios) {
+    const ruta = await subir("adjuntos", `${usuarioId}/${m.id}.${EXT[m.mime] || "bin"}`, m.blob, m.mime);
+    const { error } = await sb().from("adjuntos").insert({ id: m.id, tabla, registro_id: registroId, bucket: "adjuntos", ruta, tipo: m.tipo, momento, mime: m.mime, bytes: m.blob.size, segundos: m.segundos });
+    if (error) throw falla("No se pudo guardar la foto: " + mensajeError(error));
+  }
+}
+
+/** Botones para sacar fotos o grabar videos, con miniaturas y quitar. */
+export function Captura({ medios, setMedios, video = true, titulo, compacto }: { medios: Medio[]; setMedios: (m: Medio[]) => void; video?: boolean; titulo?: string; compacto?: boolean }) {
+  const [error, setError] = useState<string | null>(null);
+  const [ocupado, setOcupado] = useState(false);
+  const d = useDatos();
+  const maxSeg = Number(d.conf("video_max_segundos", 60)), maxMb = Number(d.conf("video_max_mb", 50));
+  async function elegir(fs: FileList | null) {
+    if (!fs?.length) return;
+    setOcupado(true); setError(null);
+    const nuevos: Medio[] = [];
+    for (const f of Array.from(fs)) {
+      try { nuevos.push(await prepararMedio(f, maxSeg, maxMb)); } catch (e) { setError((e as { msg?: string }).msg || "No se pudo usar el archivo."); }
+    }
+    setMedios([...medios, ...nuevos]); setOcupado(false);
+  }
+  return (
+    <div className="captura">
+      {titulo && <b>{titulo}</b>}
+      <div className="botones">
+        <label className={"boton" + (compacto ? "" : " grande")}><Ico n="camara" />{ocupado ? "Preparando…" : "Foto"}
+          <input type="file" accept="image/*" capture="environment" hidden onChange={(e) => { elegir(e.target.files); e.target.value = ""; }} /></label>
+        {video && <label className={"boton" + (compacto ? "" : " grande")}><Ico n="video" />Video (hasta {maxSeg} s)
+          <input type="file" accept="video/*" capture="environment" hidden onChange={(e) => { elegir(e.target.files); e.target.value = ""; }} /></label>}
+        <label className="boton chico" style={{ alignSelf: "center" }}>De la galería
+          <input type="file" accept={video ? "image/*,video/*" : "image/*"} multiple hidden onChange={(e) => { elegir(e.target.files); e.target.value = ""; }} /></label>
+      </div>
+      {error && <p className="nota critico" role="alert">{error}</p>}
+      {medios.length > 0 && <div className="medios">{medios.map((m) => (
+        <span key={m.id} style={{ position: "relative" }}>
+          {m.tipo === "video" ? <video src={m.vista} muted playsInline /> : <img src={m.vista} alt="Foto elegida" />}
+          <button type="button" className="quitar" aria-label="Quitar" onClick={() => setMedios(medios.filter((x) => x.id !== m.id))}>×</button>
+        </span>))}</div>}
+    </div>
+  );
 }
