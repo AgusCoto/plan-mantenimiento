@@ -1,0 +1,1317 @@
+<!doctype html>
+<html lang="es">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Gestión de Planta</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+/* Layout: barra lateral de navegación por rol + área de trabajo; en celular, barra inferior. App de operarios: una columna con botones grandes. */
+:root{
+  --bg:#EEF1F4; --surface:#FFFFFF; --surface-2:#E4E9EE; --ink:#16202A; --muted:#566472; --line:#D3DAE1;
+  --accent:#0A5AA8; --accent-ink:#FFFFFF; --accent-soft:#DCE8F5;
+  --ok:#1D7544; --ok-soft:#DDF0E4; --warn:#9A5B00; --warn-soft:#FBEBCF; --crit:#B93228; --crit-soft:#F8DEDB;
+  --plate:#DCE2E8; --plate-edge:#B9C3CD;
+  --c-INY:#2F6FC0; --c-LIM:#1F8F82; --c-PIN:#C47E1D; --c-SAL:#A8466F;
+  --f-display:"Archivo","Helvetica Neue",Arial,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E1318; --surface:#161D24; --surface-2:#1F2831; --ink:#E5EAF0; --muted:#94A2AF; --line:#2B3640;
+  --accent:#62A6EC; --accent-ink:#08131F; --accent-soft:#1A2D42;
+  --ok:#55C487; --ok-soft:#173225; --warn:#E5A645; --warn-soft:#3A2B12; --crit:#F06B5F; --crit-soft:#3E1C19;
+  --plate:#222D38; --plate-edge:#3A4856;
+  --c-INY:#6CA3EA; --c-LIM:#4CC3B4; --c-PIN:#E3A54E; --c-SAL:#DC7CA3; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E1318; --surface:#161D24; --surface-2:#1F2831; --ink:#E5EAF0; --muted:#94A2AF; --line:#2B3640;
+  --accent:#62A6EC; --accent-ink:#08131F; --accent-soft:#1A2D42;
+  --ok:#55C487; --ok-soft:#173225; --warn:#E5A645; --warn-soft:#3A2B12; --crit:#F06B5F; --crit-soft:#3E1C19;
+  --plate:#222D38; --plate-edge:#3A4856;
+  --c-INY:#6CA3EA; --c-LIM:#4CC3B4; --c-PIN:#E3A54E; --c-SAL:#DC7CA3; color-scheme:dark}
+
+/* Color por área: cada perfil tiene su acento, su barra superior, su franja y su logo */
+:root{--bar:#0B2A4A;--bar-ink:#FFFFFF;--bar-muted:rgba(255,255,255,.72);--stripe2:#3D7FC4;--detail:var(--accent);--mark:#1E6FC4;--mark-ring:transparent;--gold:#D4A93A}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bar:#0A1A2C;--stripe2:#2C5D91}}
+:root[data-theme="dark"]{--bar:#0A1A2C;--stripe2:#2C5D91}
+[data-area="mant"]{--accent:#0A5AA8;--accent-ink:#FFFFFF;--accent-soft:#DCE8F5;--bar:#0B2A4A;--stripe2:#3D7FC4;--detail:#0A5AA8;--mark:#1E6FC4;--mark-ring:transparent}
+[data-area="prod"]{--accent:#12784F;--accent-ink:#FFFFFF;--accent-soft:#DCF0E6;--bar:#0E3B29;--stripe2:#2FA36F;--detail:#12784F;--mark:#16935F;--mark-ring:transparent}
+[data-area="admin"]{--accent:#6B3FB8;--accent-ink:#FFFFFF;--accent-soft:#ECE4F8;--bar:#2E1A52;--stripe2:#8D66D6;--detail:#6B3FB8;--mark:#7A4CCB;--mark-ring:transparent}
+[data-area="dir"]{--accent:#2F3742;--accent-ink:#FFFFFF;--accent-soft:#E6E8EB;--bar:#1C2128;--stripe2:#C9A23F;--detail:#B08A2E;--mark:#323B47;--mark-ring:#D4A93A}
+[data-area="op"]{--accent:#C2410C;--accent-ink:#FFFFFF;--accent-soft:#FDE7DA;--bar:#1F1A17;--stripe2:#1F1A17;--detail:#C2410C;--mark:#EA580C;--mark-ring:transparent}
+@media (prefers-color-scheme: dark){
+:root:not([data-theme="light"])[data-area="mant"],:root:not([data-theme="light"]) [data-area="mant"]{--accent:#62A6EC;--accent-ink:#08131F;--accent-soft:#1A2D42;--bar:#0A1A2C;--stripe2:#2C5D91;--detail:#62A6EC}
+:root:not([data-theme="light"])[data-area="prod"],:root:not([data-theme="light"]) [data-area="prod"]{--accent:#45C08A;--accent-ink:#062016;--accent-soft:#14301F;--bar:#0A2318;--stripe2:#1F6B49;--detail:#45C08A}
+:root:not([data-theme="light"])[data-area="admin"],:root:not([data-theme="light"]) [data-area="admin"]{--accent:#A98BEA;--accent-ink:#160C2B;--accent-soft:#261A3F;--bar:#1A1030;--stripe2:#5B3C96;--detail:#A98BEA}
+:root:not([data-theme="light"])[data-area="dir"],:root:not([data-theme="light"]) [data-area="dir"]{--accent:#D5B25A;--accent-ink:#1A1408;--accent-soft:#2D2718;--bar:#12161B;--stripe2:#8C7232;--detail:#D5B25A}
+:root:not([data-theme="light"])[data-area="op"],:root:not([data-theme="light"]) [data-area="op"]{--accent:#FB8C3C;--accent-ink:#1E0F04;--accent-soft:#3A2010;--bar:#120F0D;--stripe2:#120F0D;--detail:#FB8C3C}
+}
+:root[data-theme="dark"][data-area="mant"],:root[data-theme="dark"] [data-area="mant"]{--accent:#62A6EC;--accent-ink:#08131F;--accent-soft:#1A2D42;--bar:#0A1A2C;--stripe2:#2C5D91;--detail:#62A6EC}
+:root[data-theme="dark"][data-area="prod"],:root[data-theme="dark"] [data-area="prod"]{--accent:#45C08A;--accent-ink:#062016;--accent-soft:#14301F;--bar:#0A2318;--stripe2:#1F6B49;--detail:#45C08A}
+:root[data-theme="dark"][data-area="admin"],:root[data-theme="dark"] [data-area="admin"]{--accent:#A98BEA;--accent-ink:#160C2B;--accent-soft:#261A3F;--bar:#1A1030;--stripe2:#5B3C96;--detail:#A98BEA}
+:root[data-theme="dark"][data-area="dir"],:root[data-theme="dark"] [data-area="dir"]{--accent:#D5B25A;--accent-ink:#1A1408;--accent-soft:#2D2718;--bar:#12161B;--stripe2:#8C7232;--detail:#D5B25A}
+:root[data-theme="dark"][data-area="op"],:root[data-theme="dark"] [data-area="op"]{--accent:#FB8C3C;--accent-ink:#1E0F04;--accent-soft:#3A2010;--bar:#120F0D;--stripe2:#120F0D;--detail:#FB8C3C}
+*{box-sizing:border-box}
+html,body{min-height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--bar)}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;letter-spacing:-.01em}
+h1{font-size:1.6rem;font-weight:800}
+h2{font-size:1.2rem;font-weight:700}
+h3{font-size:1rem;font-weight:700}
+p{margin:0}
+a{color:var(--accent)}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.num,td.n{font-variant-numeric:tabular-nums}
+.mono{font-family:var(--f-mono)}
+.muted{color:var(--muted)}
+.small{font-size:.85rem}
+.label{font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+
+/* Barra superior */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bar);color:var(--bar-ink);margin-bottom:5px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:10px;
+  display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:14px;font-family:var(--f-display);font-weight:800;font-size:1.05rem}
+.top::after{content:"";position:absolute;left:0;right:0;bottom:-5px;height:5px;background:repeating-linear-gradient(-45deg,var(--accent) 0 9px,var(--stripe2) 9px 18px)}
+.top .muted{color:var(--bar-muted)}
+.top .btn{background:transparent;color:var(--bar-ink);border-color:rgba(255,255,255,.3)}
+.top .btn:hover{border-color:var(--bar-ink);background:rgba(255,255,255,.08)}
+.brand-t{display:flex;flex-direction:column;line-height:1.15}
+.brand-t small{font-family:var(--f-body);font-weight:600;font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--bar-muted)}
+.mark{display:inline-grid;place-items:center;border-radius:7px;background:var(--mark);box-shadow:0 0 0 1.5px var(--mark-ring);padding:4px;flex:none;position:relative;--ring-bg:var(--bg)}
+.top .mark{--ring-bg:var(--bar)}
+.mark .w{position:absolute;right:-22%;bottom:-22%;width:52%;height:52%;border-radius:50%;background:#FFFFFF;color:var(--mark);box-shadow:0 0 0 2px var(--ring-bg);display:grid;place-items:center}
+.mark .w svg{width:70%;height:70%}
+.mark svg{display:block;width:100%;height:100%}
+.areas{display:flex;flex-wrap:wrap;gap:8px 16px}
+.area-chip{display:inline-flex;align-items:center;gap:11px;font-size:.85rem;color:var(--muted)}
+.brand-mark{width:26px;height:26px;border-radius:5px;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-size:.8rem;font-weight:800}
+.top .sp{flex:1}
+.role-chip{display:flex;align-items:center;gap:8px;font-size:.85rem}
+.role-chip b{font-weight:600}
+
+/* Estructura */
+.shell{display:grid;grid-template-columns:220px minmax(0,1fr);min-height:calc(100vh - 65px)}
+.side{border-right:1px solid var(--line);background:var(--surface);padding:16px 10px;display:flex;flex-direction:column;gap:2px}
+.side a{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:6px;text-decoration:none;color:var(--ink);font-weight:500}
+.side a:hover{background:var(--surface-2)}
+.side a.on{background:var(--accent-soft);color:var(--accent);font-weight:600;box-shadow:inset 3px 0 0 var(--detail)}
+.side .badge{margin-left:auto}
+main{min-width:0;padding-block:22px 90px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+.head{display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap}
+.head .sp{flex:1}
+.head p{color:var(--muted)}
+@media (max-width:820px){
+  .shell{grid-template-columns:1fr}
+  .side{position:fixed;left:0;right:0;bottom:0;z-index:25;flex-direction:row;overflow-x:auto;border-right:0;border-top:1px solid var(--line);
+    padding:6px max(8px,env(safe-area-inset-left,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-right,0px));gap:2px}
+  .side a{flex:1 0 auto;flex-direction:column;gap:2px;font-size:.72rem;padding:6px 8px;text-align:center}
+  .side .badge{margin:0}
+  .side a.on{box-shadow:inset 0 3px 0 var(--detail)}
+  .side .ico{font-size:1rem}
+}
+
+/* Componentes */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:8px 14px;font-weight:600;cursor:pointer;text-decoration:none;color:var(--ink);font-size:.9rem;min-height:38px}
+.btn:hover{border-color:var(--muted)}
+.btn.pri{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.pri:hover{filter:brightness(1.08)}
+.btn.danger{color:var(--crit);border-color:var(--crit)}
+.btn.sm{padding:4px 10px;min-height:30px;font-size:.82rem}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btns{display:flex;gap:8px;flex-wrap:wrap}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:16px;min-width:0}
+.panel>h2,.panel>h3{margin-bottom:12px}
+.panel-h{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.panel-h .sp{flex:1}
+.grid{display:grid;gap:16px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr))}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px 14px;display:flex;flex-direction:column;gap:2px;text-decoration:none;color:var(--ink)}
+.kpi .v{font-family:var(--f-display);font-size:1.7rem;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.1}
+.kpi .k{font-size:.8rem;color:var(--muted)}
+.kpi.crit{border-left:4px solid var(--crit)} .kpi.warn{border-left:4px solid var(--warn)} .kpi.ok{border-left:4px solid var(--ok)}
+.pill{display:inline-flex;align-items:center;gap:5px;font-size:.75rem;font-weight:600;padding:2px 8px;border-radius:99px;background:var(--surface-2);color:var(--muted);white-space:nowrap}
+.pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.pill.ok{background:var(--ok-soft);color:var(--ok)} .pill.warn{background:var(--warn-soft);color:var(--warn)} .pill.crit{background:var(--crit-soft);color:var(--crit)} .pill.info{background:var(--accent-soft);color:var(--accent)}
+.badge{background:var(--crit);color:#fff;border-radius:99px;font-size:.7rem;font-weight:700;padding:0 6px;min-width:18px;text-align:center;line-height:18px}
+.code{font-family:var(--f-mono);font-weight:600;font-size:.82rem;background:var(--plate);border:1px solid var(--plate-edge);border-radius:3px;padding:1px 6px;white-space:nowrap;letter-spacing:.02em}
+.emp{display:inline-flex;align-items:center;gap:6px;font-size:.85rem}
+.emp i{width:9px;height:9px;border-radius:2px;display:inline-block;flex:none}
+.tbl-wrap{overflow-x:auto;margin-inline:-4px}
+table{width:100%;border-collapse:collapse;font-size:.88rem}
+th{text-align:left;font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600;padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:9px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+tr.click{cursor:pointer} tr.click:hover td{background:var(--surface-2)}
+td.n,th.n{text-align:right}
+.list{display:flex;flex-direction:column}
+.item{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);align-items:flex-start;text-decoration:none;color:var(--ink);min-width:0}
+.item:last-child{border-bottom:0}
+.item .body{flex:1;min-width:0}
+.item .t{font-weight:600}
+.item .meta{font-size:.8rem;color:var(--muted);display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.empty{color:var(--muted);padding:14px 0;font-size:.9rem}
+.filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.filters input,.filters select{min-height:36px}
+input[type=text],input[type=password],input[type=number],input[type=date],input[type=search],input[type=url],select,textarea{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:7px 10px;width:100%;min-width:0}
+.filters input,.filters select{width:auto}
+textarea{min-height:90px;resize:vertical}
+.field{display:flex;flex-direction:column;gap:4px;min-width:0}
+.field>span{font-size:.82rem;font-weight:600}
+.form{display:grid;gap:12px}
+.form .row{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr));gap:12px}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg label{cursor:pointer}
+.seg input{position:absolute;opacity:0;pointer-events:none}
+.seg span{display:inline-block;padding:7px 12px;border:1px solid var(--line);border-radius:99px;font-size:.88rem;background:var(--surface)}
+.seg input:checked+span{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.seg input:focus-visible+span{outline:2px solid var(--accent);outline-offset:2px}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);overflow-x:auto}
+.tabs button{border:0;background:none;padding:8px 12px;border-bottom:2px solid transparent;cursor:pointer;font-weight:600;color:var(--muted);white-space:nowrap}
+.tabs button.on{color:var(--accent);border-color:var(--accent)}
+.note{padding:10px 14px;border-radius:6px;background:var(--warn-soft);color:var(--ink);font-size:.88rem;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.note.info{background:var(--accent-soft)}
+.note .sp{flex:1}
+.media{display:flex;gap:8px;flex-wrap:wrap}
+.media img,.media video{width:120px;height:90px;object-fit:cover;border-radius:6px;border:1px solid var(--line);background:var(--surface-2);cursor:zoom-in}
+.media .ph{width:120px;height:90px;border-radius:6px;border:1px dashed var(--line);display:grid;place-items:center;font-size:.75rem;color:var(--muted);text-align:center;padding:4px}
+.thumb{width:56px;height:44px;object-fit:cover;border-radius:4px;border:1px solid var(--line);flex:none}
+
+/* Placa del equipo */
+.plate{background:var(--plate);border:1px solid var(--plate-edge);border-radius:8px;padding:16px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px;position:relative}
+.plate::before,.plate::after{content:"";position:absolute;width:8px;height:8px;border-radius:50%;background:var(--plate-edge);top:10px}
+.plate::before{left:10px}.plate::after{right:10px}
+.plate dl{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;margin:10px 0 0;font-size:.88rem}
+.plate dt{color:var(--muted)} .plate dd{margin:0;font-weight:500}
+.qr{background:#fff;padding:8px;border-radius:4px;width:136px;height:136px}
+.qr img,.qr canvas{width:120px!important;height:120px!important;display:block}
+@media (max-width:520px){.plate{grid-template-columns:1fr}.qr{justify-self:start}}
+
+/* Gráficos */
+.chart{width:100%;overflow-x:auto}
+.chart svg{display:block;max-width:100%;height:auto}
+.chart text{fill:var(--muted);font-size:11px;font-family:var(--f-body)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.8rem;color:var(--muted);margin-top:6px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:10px;height:10px;border-radius:2px;display:inline-block}
+.hbar{display:grid;grid-template-columns:minmax(90px,170px) minmax(0,1fr) auto;gap:6px 10px;align-items:center;font-size:.85rem}
+.hbar .track{height:12px;background:var(--surface-2);border-radius:3px;overflow:hidden;display:flex}
+.hbar .fill{height:100%}
+.hbar .val{font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+
+/* Inicio */
+.start{max-width:980px;margin:0 auto;padding-block:28px 60px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:22px}
+.start h1{font-size:clamp(1.6rem,4vw,2.3rem)}
+.apps{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,400px),1fr));gap:16px}
+.app-card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px;display:flex;flex-direction:column;gap:12px}
+.roles{display:flex;flex-direction:column;gap:8px}
+.role{display:grid;grid-template-columns:auto 1fr;gap:2px 12px;align-items:center;text-align:left;border:1px solid var(--line);border-radius:8px;padding:12px;background:var(--surface);cursor:pointer}
+.role:hover{border-color:var(--accent)}
+.role .ri{grid-row:span 2;width:36px;height:36px;border-radius:7px;background:var(--surface-2);display:grid;place-items:center;font-family:var(--f-display);font-weight:800;color:var(--accent)}
+.role b{font-weight:600}
+.role small{color:var(--muted)}
+
+/* App operarios */
+.op{max-width:560px;margin:0 auto;padding-block:18px 60px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:16px}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.tile{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:8px;text-decoration:none;color:var(--ink);min-height:120px;cursor:pointer;text-align:left}
+.tile:hover{border-color:var(--accent)}
+.tile .ti{width:38px;height:38px;border-radius:8px;display:grid;place-items:center;font-size:1.2rem;background:var(--accent-soft);color:var(--accent)}
+.tile b{font-family:var(--f-display);font-size:1.05rem}
+.tile small{color:var(--muted);font-size:.8rem}
+.tile.big{grid-column:1/-1;background:var(--crit-soft);border-color:transparent;min-height:auto;flex-direction:row;align-items:center}
+.tile.big .ti{background:var(--crit);color:#fff}
+.op .form input,.op .form select,.op .form textarea{min-height:46px;font-size:16px}
+.op .btn{min-height:48px;font-size:1rem}
+.upl{border:2px dashed var(--line);border-radius:10px;padding:18px;text-align:center;cursor:pointer;display:block}
+.upl:hover{border-color:var(--accent)}
+.upl input{display:none}
+
+/* Modal */
+.ov{position:fixed;inset:0;z-index:50;background:rgba(10,15,20,.55);display:flex;align-items:flex-start;justify-content:center;overflow-y:auto;
+  padding:max(24px,env(safe-area-inset-top,0px)) max(12px,env(safe-area-inset-right,0px)) 24px max(12px,env(safe-area-inset-left,0px))}
+.modal{background:var(--surface);border-radius:10px;width:min(620px,100%);padding:18px;display:flex;flex-direction:column;gap:14px;border:1px solid var(--line)}
+.modal-h{display:flex;align-items:center;gap:10px}
+.modal-h h2{flex:1}
+.x{border:0;background:none;font-size:1.4rem;cursor:pointer;color:var(--muted);line-height:1}
+.lightbox{max-width:min(960px,100%);max-height:80vh;border-radius:6px;display:block;margin:0 auto}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom,0px));z-index:60;background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:8px;font-size:.9rem;max-width:calc(100% - 32px)}
+.timeline{display:flex;flex-direction:column;gap:0;border-left:2px solid var(--line);margin-left:6px}
+.tl{position:relative;padding:0 0 14px 16px}
+.tl::before{content:"";position:absolute;left:-7px;top:5px;width:12px;height:12px;border-radius:50%;background:var(--surface);border:2px solid var(--muted)}
+.tl.ot::before{border-color:var(--accent)} .tl.prev::before{border-color:var(--ok)} .tl.mov::before{border-color:var(--warn)} .tl.rep::before{border-color:var(--crit)}
+.tl .d{font-size:.78rem;color:var(--muted)}
+.loading{padding:40px 0;text-align:center;color:var(--muted)}
+@media (prefers-reduced-motion:no-preference){.btn,.role,.tile{transition:border-color .15s,filter .15s}}
+</style>
+
+<div id="app"><div class="loading">Cargando…</div></div>
+<div id="modal-root"></div>
+
+<script>
+"use strict";
+/* ============ Configuración ============ */
+const APP_URL = "https://claude.ai/artifact/1Qz4w9ECSPaaqmJCaSgTbs"; // enlace público del artifact, para los códigos QR
+const EMPRESAS = {
+  INY:{n:"Inyectora de plásticos", prod:["Bidón 5 L","Bidón 10 L","Botella 1 L","Botella 500 ml"]},
+  LIM:{n:"Productos de limpieza", prod:["Lavandina 1 L","Detergente 750 ml","Limpiador de pisos 900 ml","Desengrasante 500 ml"]},
+  PIN:{n:"Pinturas", prod:["Látex interior 20 L","Látex exterior 10 L","Esmalte sintético 1 L","Membrana líquida 20 kg"]},
+  SAL:{n:"Salsas y aderezos", prod:["Mayonesa 250 g","Ketchup 500 g","Mostaza 250 g","Salsa golf 250 g"]}
+};
+const AREAS = {PRO:"Producción",SER:"Servicios",LOG:"Logística",MAN:"Mantenimiento",ALM:"Almacén"};
+const TIPOS = {INY:"Inyectora",SOP:"Sopladora",COM:"Compresor",CHI:"Chiller",MOL:"Molino",MEZ:"Mezclador",ENV:"Envasadora",ETQ:"Etiquetadora",BOM:"Bomba",DIS:"Dispersora",APL:"Apilador",CAL:"Caldera",TAB:"Tablero eléctrico",OTR:"Otro"};
+const ESTADOS_EQ = {operativo:["Operativo","ok"],detenido:["Detenido","crit"],reparacion:["En reparación","warn"],baja:["De baja",""]};
+const ESTADOS_OT = {abierta:["Abierta","info"],curso:["En curso","warn"],revisar:["Para revisar","warn"],cerrada:["Cerrada","ok"]};
+const PRIOR = {alta:["Alta","crit"],media:["Media","warn"],baja:["Baja",""]};
+const TIPOS_REP = ["Ruido","Vibración","Pérdida / fuga","Temperatura alta","No arranca","Olor a quemado","Falla eléctrica","Otro"];
+const ESTADOS_REP = {nuevo:["Nuevo","crit"],analisis:["En análisis","warn"],ot:["OT generada","ok"],descartado:["Descartado",""]};
+const ESTADOS_MOV = {pendiente:["Sin revisar","warn"],revisado:["Revisado","ok"],observado:["Observado","crit"]};
+const ROLES = {
+  gm:{n:"Gerente de mantenimiento",app:"gestion",nav:["tablero","equipos","ordenes","preventivos","reportes","informe","empresas","usuarios","registro"]},
+  tec:{n:"Técnico",app:"gestion",nav:["ordenes","equipos","preventivos"]},
+  gp:{n:"Gerente de producción",app:"gestion",nav:["produccion","registros","reportes","informe","empresas","usuarios","registro"]},
+  adm:{n:"Administración",app:"gestion",nav:["listados","informe"]},
+  dir:{n:"Dirección",app:"gestion",nav:["direccion","informe","empresas","usuarios","registro"]},
+  op:{n:"Operario",app:"operarios",nav:[]}
+};
+const NAV = {
+  tablero:["Tablero","▦"],equipos:["Equipos","⚙"],ordenes:["Órdenes","✎"],preventivos:["Preventivos","↻"],reportes:["Reportes","⚠"],
+  informe:["Informe semanal","▤"],produccion:["Tablero","▦"],registros:["Registros","☰"],listados:["Listados","☰"],direccion:["Resumen","▦"],
+  empresas:["Empresas","▣"],usuarios:["Usuarios","◉"],registro:["Registro de cambios","≡"]
+};
+const PERM = {
+  gm:["eq.new","eq.edit","ot.create","ot.manage","prev.manage","prev.do","rep.manage","ficha","seed","emp.rename","users","audit"],
+  tec:["eq.new","ficha","prev.do"], gp:["mov.review","emp.rename","users","audit"], adm:["export"], dir:["emp.rename","users","audit"], op:["rep.create","mov.create"]
+};
+/* Qué cuentas puede crear cada perfil */
+const CREA = {dir:["dir","gm","gp","adm","tec","op"], gm:["tec","op"], gp:["adm","op"]};
+const CON_CODIGO = ["gm","gp","dir"]; // perfiles con código de acceso personal
+const COLS = ["equipos","ordenes","preventivos","reportes","movimientos","usuarios","config"];
+const DATA_COLS = ["equipos","ordenes","preventivos","reportes","movimientos"];
+const SESS_G = "gp_sess_g", SESS_O = "gp_sess_o";
+const AREA = {gm:"mant",tec:"mant",gp:"prod",adm:"admin",dir:"dir",op:"op"};
+const AREA_N = {mant:"Mantenimiento",prod:"Producción",admin:"Administración",dir:"Dirección",op:"Operarios"};
+function gearPath(cx,cy,ro,ri,n){ const st=2*Math.PI/n, pt=(r,a)=>(cx+r*Math.cos(a)).toFixed(2)+" "+(cy+r*Math.sin(a)).toFixed(2); let d="";
+  for(let i=0;i<n;i++){ const a=i*st-Math.PI/2; d+=(i?"L":"M")+pt(ri,a-.32*st)+"L"+pt(ro,a-.18*st)+"L"+pt(ro,a+.18*st)+"L"+pt(ri,a+.32*st) } return d+"Z" }
+const LOGO_GEAR = gearPath(10,14,7.6,5.7,8);
+function logo(area){
+  const S='fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"';
+  const W='M5.2 18.8 13 11 M13 11a4.2 4.2 0 0 1 5.6-5.9l-2.6 2.6.4 1.9 1.9.4 2.6-2.6A4.2 4.2 0 0 1 15 13';
+  const K='fill="none" stroke="var(--mark)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"';
+  const g={
+    /* Llave por detrás del engranaje, y la W grabada en el centro */
+    mant:`<path d="M5 19 15.4 8.6" ${S} stroke-width="2.6"/><path d="M15.4 8.6a3.4 3.4 0 0 1 4.3-4.5l-1.9 1.9.4 1.5 1.5.4 1.9-1.9a3.4 3.4 0 0 1-4.5 4.3" ${S}/><path d="${LOGO_GEAR}" fill="var(--mark)" ${S.replace('fill="none" ','')}/><path d="M7.1 12.3l1.3 3.9 1.6-2.6 1.6 2.6 1.3-3.9" ${S} stroke-width="1.7"/>`,
+    /* La línea de tendencia sube dibujando una W y termina en flecha */
+    prod:`<path d="M3.5 21h17" ${S}/><path d="M6 21v-2.5M10.5 21v-4M15 21v-5.5M19.5 21v-8" ${S} stroke-width="2.2"/><path d="M3 5.5l3 6.5 3.3-4.6 3.3 4.6L20 3.5" ${S}/><path d="M15.6 3.3h4.6v4.6" ${S}/>`,
+    /* La W dentro de la carpeta cierra con un trazo largo, como un tilde */
+    admin:`<path d="M3 6.5a1.5 1.5 0 0 1 1.5-1.5h4.6l2 2.2h8.4A1.5 1.5 0 0 1 21 8.7v9.3a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18z" ${S}/><path d="M6.8 11.4l1.9 4.6 2.4-3.6 2.4 3.6 3.9-6.6" ${S} stroke-width="2"/>`,
+    /* La cima de la pirámide es una W dorada y de su pico central sale la bandera */
+    dir:`<path d="M2.5 20.5h19M4.5 20.5v-3.4h15v3.4M7.5 17.1v-3.4h9v3.4" ${S}/><path d="M8.2 10.2l1.7 3.5 2.1-2.9 2.1 2.9 1.7-3.5" fill="none" stroke="var(--gold)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 10.8V2.6" ${S} stroke-width="1.5"/><path d="M12 2.8h5.4l-1.5 1.7 1.5 1.7H12z" fill="var(--gold)" stroke="var(--gold)" stroke-width="1" stroke-linejoin="round"/>`,
+    /* Casco con la W como escudo en el frente */
+    op:`<path d="M4.5 16.2a7.5 7.5 0 0 1 15 0" ${S}/><path d="M2.5 16.2h19v2.6h-19z" ${S}/><path d="M8.8 10.2l1.4 3.9 1.8-2.8 1.8 2.8 1.4-3.9" ${S} stroke-width="1.7"/>`
+  };
+  return `<svg viewBox="0 0 24 24" aria-hidden="true">${g[area]||g.mant}</svg>`;
+}
+const W_BADGE = `<span class="w" aria-hidden="true"><svg viewBox="0 0 12 12"><path d="M1.2 2.6l2.2 7 2.6-6 2.6 6 2.2-7" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>`;
+const mark = (area,size) => `<span class="mark" data-area="${area}" style="width:${size}px;height:${size}px">${logo(area)}</span>`;
+
+/* ============ Estado ============ */
+const S = {equipos:[],ordenes:[],preventivos:[],reportes:[],movimientos:[],usuarios:[],config:[],auditoria:[]};
+const DEF_EMP = Object.fromEntries(Object.entries(EMPRESAS).map(([k,v])=>[k,v.n]));
+const loaded = {}; let loadErr = null, loadSlow = false;
+let db = null, assets = null, downloads = null, canWrite = true, claudeId = null;
+let me = null, role = null, opEmp = "INY";
+const ui = {eqEmp:"",eqEst:"",eqQ:"",otEst:"activas",repEst:"activos",movTipo:"",movEmp:"",movEst:"",listTab:"produccion",listEmp:"",listDesde:"",listHasta:"",weekOff:0,eqTab:"historial",prevEmp:"",auU:"",auC:""};
+let pendingEq = null;
+
+const MEM = {};
+function lsGet(k){try{const v=localStorage.getItem(k); return v!=null?v:(MEM[k]??null)}catch(e){return MEM[k]??null}}
+function lsSet(k,v){ if(v==null) delete MEM[k]; else MEM[k]=v; try{v==null?localStorage.removeItem(k):localStorage.setItem(k,v)}catch(e){}}
+const can = p => !!role && PERM[role].includes(p) && canWrite;
+
+/* ============ Cuentas y códigos ============ */
+async function hashSecret(secret,salt){
+  const enc=new TextEncoder(); const k=await crypto.subtle.importKey("raw",enc.encode(secret),"PBKDF2",false,["deriveBits"]);
+  const b=await crypto.subtle.deriveBits({name:"PBKDF2",salt:enc.encode(salt),iterations:100000,hash:"SHA-256"},k,256);
+  return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join("");
+}
+const newSalt = () => [...crypto.getRandomValues(new Uint8Array(12))].map(x=>x.toString(16).padStart(2,"0")).join("");
+const checkPass = async (u,p) => !!u && await hashSecret(p,u.salt)===u.passHash;
+const checkCode = async (u,c) => !!u && !!u.codeHash && await hashSecret("code:"+String(c).trim(),u.salt)===u.codeHash;
+async function findManagerByCode(code, rol){ for(const u of S.usuarios.filter(x=>x.rol===rol&&x.activo!==false)) if(await checkCode(u,code)) return u; return null }
+function sessUser(k){ const id=lsGet(k); return id? S.usuarios.find(x=>x.id===id&&x.activo!==false)||null : null }
+function applyConfig(){ const c=S.config.find(x=>x.id==="empresas")||{}; for(const k of Object.keys(EMPRESAS)) EMPRESAS[k].n = (c.nombres&&c.nombres[k]) || DEF_EMP[k] }
+const userName = id => (S.usuarios.find(u=>u.id===id)||{}).nombre || "—";
+
+/* ============ Utilidades ============ */
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const uid = p => p + Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+const pad = n => String(n).padStart(2,"0");
+const ymd = d => d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+const today = () => ymd(new Date());
+const parseD = s => { if(!s) return null; if(s.length===10){const [y,m,d]=s.split("-").map(Number);return new Date(y,m-1,d)} return new Date(s) };
+const fd = s => { const d=parseD(s); return d? pad(d.getDate())+"/"+pad(d.getMonth()+1)+"/"+String(d.getFullYear()).slice(2):"—" };
+const fdt = s => { const d=parseD(s); return d? fd(s)+" "+pad(d.getHours())+":"+pad(d.getMinutes()):"—" };
+const addDays = (d,n) => { const x=new Date(d); x.setDate(x.getDate()+n); return x };
+const daysBetween = (a,b) => Math.round((parseD(b)-parseD(a))/864e5);
+const nf = new Intl.NumberFormat("es-AR"); const nf1 = new Intl.NumberFormat("es-AR",{maximumFractionDigits:1});
+const money = v => "$ " + nf.format(Math.round(v||0));
+const empTag = e => `<span class="emp"><i style="background:var(--c-${e})"></i>${esc(EMPRESAS[e]?.n||e)}</span>`;
+const pill = (map,k) => { const v=map[k]||[k,""]; return `<span class="pill ${v[1]}">${esc(v[0])}</span>` };
+const eqBy = c => S.equipos.find(e=>e.id===c);
+const eqName = c => { const e=eqBy(c); return e? e.nombre : c };
+const weekStart = d => { const x=new Date(d.getFullYear(),d.getMonth(),d.getDate()); const w=(x.getDay()+6)%7; return addDays(x,-w) };
+function prevNext(p){ const base=p.ultima||p.inicio||today(); return ymd(addDays(parseD(base),Number(p.frecuencia)||30)) }
+function prevStatus(p){ const n=prevNext(p); const dd=daysBetween(today(),n); return dd<0?["Vencido","crit",dd]:dd<=7?["Próximo","warn",dd]:["Al día","ok",dd] }
+function toast(msg){ const t=document.createElement("div"); t.className="toast"; t.textContent=msg; document.body.appendChild(t); setTimeout(()=>t.remove(),2600) }
+function eqUrl(code){ return (APP_URL? APP_URL.replace(/#.*$/,"") : "") + "#eq-" + code }
+
+/* ============ Datos ============ */
+async function boot(){
+  render();
+  try{ db = await claude.use("db") }catch(e){ db=null }
+  try{ assets = await claude.use("assets") }catch(e){}
+  try{ downloads = await claude.use("downloads") }catch(e){}
+  try{ const u = await claude.use("user"); if(u){ const w = await u.can("data.write"); if(w===false) canWrite=false; claudeId = await u.id() } }catch(e){}
+  if(!db){ loadErr="nodb"; render(); return }
+  const timer = setTimeout(()=>{ loadSlow=true; render() }, 10000);
+  for(const c of COLS){
+    db.collection(c).onSnapshot(snap=>{
+      S[c] = snap.docs.map(d=>Object.assign({id:d.id}, d.data()));
+      if(c==="config") applyConfig();
+      if(!snap.metadata.fromCache) loaded[c]=true;
+      if(COLS.every(k=>loaded[k])){ clearTimeout(timer); loadSlow=false }
+      scheduleRender();
+    }, err=>{ clearTimeout(timer); loadErr=err.code; render() });
+  }
+  db.collection("auditoria").orderBy("ts","desc").limit(500).onSnapshot(snap=>{ S.auditoria=snap.docs.map(d=>Object.assign({id:d.id},d.data())); if(route()==="registro") scheduleRender() }, ()=>{});
+}
+let rq=false; function scheduleRender(){ if(rq) return; rq=true; requestAnimationFrame(()=>{rq=false; render()}) }
+/* Toda escritura deja constancia de quién y cuándo, y una línea en el registro de cambios */
+function stamp(){ return {por: me? {id:me.id,n:me.nombre}:null, ts:new Date().toISOString()} }
+async function audit(accion,col,ref,extra){
+  if(!accion||!me) return;
+  try{ await db.collection("auditoria").doc(uid("au")).set(Object.assign({ts:new Date().toISOString(),uid:me.id,nombre:me.nombre,rol:me.rol,accion,col:col||"",ref:ref||"",cuentaClaude:claudeId||null},extra||{})) }catch(e){}
+}
+async function put(col,id,data,accion,extra){
+  if(!db) throw {code:"nodb"};
+  const st=stamp();
+  try{ await db.collection(col).doc(id).set(Object.assign({},data,{creadoPor:st.por,creado:st.ts,modPor:st.por,modTs:st.ts})) }catch(e){ handleWriteErr(e); throw e }
+  await audit(accion,col,id,extra);
+}
+async function patch(col,id,data,accion,extra){
+  const st=stamp();
+  try{ await db.collection(col).doc(id).update(Object.assign({},data,{modPor:st.por,modTs:st.ts})) }catch(e){ handleWriteErr(e); throw e }
+  await audit(accion,col,id,extra);
+}
+async function del(col,id,accion){
+  try{ await db.collection(col).doc(id).delete() }catch(e){ handleWriteErr(e); throw e }
+  await audit(accion,col,id);
+}
+function handleWriteErr(e){
+  if(e&&e.code==="invalid_argument"){ canWrite=false; toast("Tu acceso a esta app es de solo lectura. Pedí permiso de Colaborador para cargar datos."); render() }
+  else if(e&&e.code==="quota_exceeded") toast("La base de datos está llena. Borrá registros viejos o datos de ejemplo.");
+  else toast("No se pudo guardar. Revisá la conexión e intentá de nuevo.");
+}
+
+/* ============ Router ============ */
+function route(){ return (location.hash||"").replace(/^#/,"") }
+function go(h){ if(route()===h) render(); else location.hash = h }
+window.addEventListener("hashchange", ()=>{ window.scrollTo(0,0); render() });
+
+function render(){
+  const app = document.getElementById("app");
+  const act = document.activeElement; const fid = act && act.id; const sel = fid && act.selectionStart!=null ? [act.selectionStart,act.selectionEnd] : null;
+  let h = route();
+  const opMode = h==="operarios" || h.startsWith("op-") || h==="op" || (h.startsWith("eq-") && !sessUser(SESS_G));
+  document.documentElement.dataset.area = opMode? "op" : "mant";
+  if(loadErr==="nodb"){ app.innerHTML = `<div class="start">${status()}</div>`; return }
+  if(!COLS.every(k=>loaded[k])){ app.innerHTML = `<div class="start"><div class="loading">Cargando…</div>${status()}</div>`; app.dataset.view=""; return }
+  if(!S.usuarios.length){ if(app.dataset.view!=="setup"){ app.innerHTML = viewSetup(); app.dataset.view="setup" } return }
+  me = sessUser(opMode? SESS_O : SESS_G); role = me? me.rol : null;
+  if(me) document.documentElement.dataset.area = AREA[me.rol];
+  if(!me){ const v="login-"+(opMode?"o":"g")+h; if(app.dataset.view!==v){ app.innerHTML = viewLogin(opMode, h); app.dataset.view=v } return }
+  if(opMode){ opEmp = me.empresa || "INY"; if(h.startsWith("eq-")){ pendingEq=h.slice(3); h="op-reporte"; history.replaceState(null,"","#op-reporte") } else if(h==="operarios") h="op" }
+  if(h.startsWith("g-eq-")){ h=h.slice(2); history.replaceState(null,"","#"+h) }
+  const R = ROLES[role];
+  if(R.app==="operarios"){
+    if(isFormView(h) && app.dataset.view===h && app.dataset.ready==="1"){ return } // no pisar lo que se está escribiendo
+    app.innerHTML = topbar() + `<div class="op">${viewOp(h)}</div>`;
+    app.dataset.view=h; app.dataset.ready = COLS.every(k=>loaded[k]) ? "1":"0";
+    afterRender(); restore(); return;
+  }
+  if(!h || (!R.nav.includes(h.split("-")[0]) && !h.startsWith("eq-") && !h.startsWith("ot-"))) h = R.nav[0];
+  const main = viewMain(h);
+  app.innerHTML = topbar() + `<div class="shell"><nav class="side" aria-label="Secciones">${R.nav.map(n=>navLink(n,h)).join("")}</nav><main><div class="wrap">${status()}${main}</div></main></div>`;
+  app.dataset.view=h;
+  afterRender(); restore();
+  function restore(){ if(fid){ const el=document.getElementById(fid); if(el){ el.focus(); if(sel&&el.setSelectionRange) try{el.setSelectionRange(sel[0],sel[1])}catch(e){} } } }
+}
+function isFormView(h){ return ["op-reporte","op-prod","op-venta","op-compra"].includes(h) }
+function navLink(n,h){
+  const on = h===n || (n==="equipos"&&h.startsWith("eq-")) || (n==="ordenes"&&h.startsWith("ot-"));
+  let b=0;
+  if(n==="reportes") b=S.reportes.filter(r=>r.estado==="nuevo").length;
+  if(n==="registros") b=S.movimientos.filter(m=>m.estado==="pendiente").length;
+  if(n==="ordenes"&&role==="tec") b=S.ordenes.filter(o=>o.estado==="abierta").length;
+  return `<a href="#${n}" class="${on?"on":""}"><span class="ico" aria-hidden="true">${NAV[n][1]}</span>${NAV[n][0]}${b?`<span class="badge">${b}</span>`:""}</a>`;
+}
+function topbar(){
+  const op = role==="op";
+  return `<header class="top"><div class="brand">${mark(AREA[role],36)}<span class="brand-t">${op?"Operarios":"Gestión de Planta"}<small>${op?esc(EMPRESAS[opEmp]?.n||""):AREA_N[AREA[role]]}</small></span></div><span class="sp"></span>
+  <div class="role-chip"><span><b>${esc(me.nombre)}</b> <span class="muted">· ${esc(ROLES[role].n)}</span></span><button class="btn sm" data-act="account">Mi cuenta</button><button class="btn sm" data-act="logout">Salir</button></div></header>`;
+}
+function status(){
+  if(loadErr==="nodb") return `<div class="note">Para ver y cargar datos abrí esta app con tu sesión de claude.ai iniciada.</div>`;
+  if(loadErr) return `<div class="note">No se pudieron leer los datos (${esc(loadErr)}). Recargá la página.</div>`;
+  if(loadSlow) return `<div class="note">Los datos tardan en llegar. Lo que ves puede no estar actualizado.</div>`;
+  if(!canWrite) return `<div class="note info">Tenés acceso de solo lectura: podés ver todo pero no cargar ni modificar.</div>`;
+  return "";
+}
+
+/* ============ Ingreso ============ */
+function viewLogin(opMode, h){
+  const eq = h.startsWith("eq-") ? h.slice(3) : h.startsWith("g-eq-") ? h.slice(5) : null;
+  return `<div class="start" style="max-width:440px">
+    <div class="brand">${mark(opMode?"op":"mant",44)}${opMode?"Operarios":"Gestión de Planta"}</div>
+    <div><h1>${opMode?"App de operarios":"Ingresar"}</h1>
+    <p class="muted">${opMode?"Reportá problemas en las máquinas y cargá producción, ventas y compras.":"Mantenimiento, producción, administración y dirección del grupo."}${eq?` Después de ingresar se abre el equipo <span class="code">${esc(eq)}</span>.`:""}</p></div>
+    <form class="form panel" data-form="login" data-mode="${opMode?"o":"g"}" style="${opMode?"font-size:16px":""}">
+      <label class="field"><span>Usuario</span><input type="text" id="l-u" name="u" required autocomplete="username" autocapitalize="none" spellcheck="false"></label>
+      <label class="field"><span>Contraseña</span><input type="password" id="l-p" name="p" required autocomplete="current-password" style="background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:7px 10px;width:100%;min-height:42px"></label>
+      <p class="small" id="l-err" style="color:var(--crit)" hidden></p>
+      <button class="btn pri" type="submit">Ingresar</button>
+    </form>
+    ${opMode?"":`<div class="areas">${["mant","prod","admin","dir"].map(a=>`<span class="area-chip">${mark(a,26)}${AREA_N[a]}</span>`).join("")}</div>`}
+    <p class="muted small">${opMode? `¿Sos de mantenimiento o de una gerencia? <a href="#${eq?"g-eq-"+esc(eq):"inicio"}">Entrá a Gestión</a>.` : `¿Sos operario? Entrá por la <a href="#operarios">app de operarios</a>.`} Si no tenés cuenta o te olvidaste la contraseña, pedísela a tu gerente.</p>
+  </div>`;
+}
+function viewSetup(){
+  return `<div class="start" style="max-width:520px"><div class="brand">${mark("mant",44)}Gestión de Planta</div>
+    <div><h1>Configuración inicial</h1><p class="muted">Todavía no hay cuentas. Creá la primera; con ella vas a poder crear las de los demás.</p></div>
+    <form class="form panel" data-form="setup">
+      <label class="field"><span>Nombre y apellido</span><input type="text" id="s-n" name="nombre" required></label>
+      <div class="row"><label class="field"><span>Usuario</span><input type="text" id="s-u" name="usuario" required autocapitalize="none" pattern="[a-z0-9._\\-]{3,30}" title="Minúsculas, números, punto o guion"></label>
+      <label class="field"><span>Perfil</span><select id="s-r" name="rol"><option value="gm">Gerente de mantenimiento</option><option value="dir">Dirección</option></select></label></div>
+      <div class="row"><label class="field"><span>Contraseña (mín. 8)</span><input type="password" id="s-p" name="pass" required minlength="8" style="${INP}"></label>
+      <label class="field"><span>Código de acceso (4 a 6 números)</span><input type="password" id="s-c" name="code" required pattern="[0-9]{4,6}" inputmode="numeric" style="${INP}"></label></div>
+      <button class="btn pri" type="submit">Crear cuenta e ingresar</button>
+    </form></div>`;
+}
+const INP = "background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:7px 10px;width:100%;min-height:38px";
+
+/* ============ Vistas de gestión ============ */
+function viewMain(h){
+  if(!COLS.every(k=>loaded[k]) && !loadErr && !S.equipos.length) return `<div class="loading">Cargando datos…</div>`;
+  if(h.startsWith("eq-")) return vEquipo(h.slice(3));
+  if(h.startsWith("ot-")) return vOT(h.slice(3));
+  return ({tablero:vTablero,equipos:vEquipos,ordenes:vOrdenes,preventivos:vPreventivos,reportes:vReportes,informe:vInforme,produccion:vProduccion,registros:vRegistros,listados:vListados,direccion:vDireccion,empresas:vEmpresas,usuarios:vUsuarios,registro:vRegistro}[h]||vTablero)();
+}
+
+/* --- Empresas --- */
+function vEmpresas(){
+  const c = S.config.find(x=>x.id==="empresas");
+  return `<div class="head"><div><h1>Empresas del grupo</h1><p>Gerentes y dirección pueden cambiar el nombre con su código de acceso. La sigla no cambia porque forma parte del código de cada equipo.</p></div></div>
+  <section class="panel"><div class="tbl-wrap"><table><thead><tr><th>Sigla</th><th>Nombre</th><th class="n">Equipos activos</th><th></th></tr></thead><tbody>
+  ${Object.keys(EMPRESAS).map(k=>`<tr><td><span class="code">${k}</span></td><td>${empTag(k)}</td><td class="n">${S.equipos.filter(e=>e.empresa===k&&e.estado!=="baja").length}</td><td>${can("emp.rename")?`<button class="btn sm" data-act="emp-ren" data-k="${k}">Cambiar nombre</button>`:""}</td></tr>`).join("")}
+  </tbody></table></div>${c&&c.modPor?`<p class="small muted" style="margin-top:10px">Último cambio: ${esc(c.modPor.n)} · ${fdt(c.modTs)}</p>`:""}</section>`;
+}
+/* --- Usuarios --- */
+function vUsuarios(){
+  const l=[...S.usuarios].sort((a,b)=>(a.activo===false)-(b.activo===false)||a.rol.localeCompare(b.rol)||a.nombre.localeCompare(b.nombre));
+  const mine = CREA[role]||[];
+  return `<div class="head"><div><h1>Usuarios</h1><p>Cada persona entra con su cuenta y queda registrado lo que hace. Las cuentas no se borran: se desactivan, así se conserva su historial.</p></div><span class="sp"></span>${mine.length&&can("users")?`<button class="btn pri" data-act="user-new">Nueva cuenta</button>`:""}</div>
+  <section class="panel"><div class="tbl-wrap"><table><thead><tr><th>Nombre</th><th>Usuario</th><th>Perfil</th><th>Empresa</th><th>Estado</th><th>Creada por</th><th></th></tr></thead><tbody>
+  ${l.map(u=>{ const ok=mine.includes(u.rol)&&u.id!==me.id&&can("users"); return `<tr><td>${esc(u.nombre)}${u.id===me.id?' <span class="pill info">Vos</span>':""}${u.ejemplo?' <span class="pill">Ejemplo</span>':""}</td><td class="mono">${esc(u.usuario)}</td><td>${esc(ROLES[u.rol]?.n||u.rol)}</td><td>${u.empresa?empTag(u.empresa):"—"}</td><td>${u.activo===false?'<span class="pill">Desactivada</span>':'<span class="pill ok">Activa</span>'}</td><td class="small">${esc(u.creadoPor?.n||"—")}</td>
+  <td>${ok?`<div class="btns"><button class="btn sm" data-act="user-reset" data-id="${esc(u.id)}">Nueva contraseña</button><button class="btn sm" data-act="user-tog" data-id="${esc(u.id)}">${u.activo===false?"Activar":"Desactivar"}</button></div>`:""}</td></tr>` }).join("")}
+  </tbody></table></div></section>`;
+}
+/* --- Registro de cambios --- */
+function vRegistro(){
+  const l=S.auditoria.filter(a=>(!ui.auU||a.uid===ui.auU)&&(!ui.auC||a.col===ui.auC));
+  const cols={equipos:"Equipos",ordenes:"Órdenes",preventivos:"Preventivos",reportes:"Reportes",movimientos:"Producción, ventas y compras",usuarios:"Usuarios",config:"Empresas",sesion:"Ingresos"};
+  const link=a=> a.col==="equipos"&&eqBy(a.ref)? `<a href="#eq-${esc(a.ref)}">ver</a>` : a.col==="ordenes"&&S.ordenes.find(o=>o.id===a.ref)? `<a href="#ot-${esc(a.ref)}">ver</a>` : "";
+  return `<div class="head"><div><h1>Registro de cambios</h1><p>Quién hizo cada carga o modificación, y cuándo. Se muestran los últimos 500 movimientos.</p></div></div>
+  <div class="filters"><select id="f-auu" data-ui="auU"><option value="">Todas las personas</option>${[...S.usuarios].sort((a,b)=>a.nombre.localeCompare(b.nombre)).map(u=>`<option value="${esc(u.id)}" ${ui.auU===u.id?"selected":""}>${esc(u.nombre)}</option>`).join("")}</select>
+  <select id="f-auc" data-ui="auC"><option value="">Todo</option>${Object.entries(cols).map(([k,n])=>`<option value="${k}" ${ui.auC===k?"selected":""}>${n}</option>`).join("")}</select></div>
+  <section class="panel">${l.length?`<div class="tbl-wrap"><table><thead><tr><th>Fecha y hora</th><th>Persona</th><th>Acción</th><th></th></tr></thead><tbody>
+  ${l.map(a=>`<tr><td class="num" style="white-space:nowrap">${fdt(a.ts)}</td><td>${esc(a.nombre)}<div class="small muted">${esc(ROLES[a.rol]?.n||a.rol)}</div></td><td>${esc(a.accion)}${a.autorizo?`<div class="small muted">Autorizado con el código de ${esc(a.autorizo)}</div>`:""}</td><td>${link(a)}</td></tr>`).join("")}
+  </tbody></table></div>`:`<p class="empty">Todavía no hay movimientos registrados${ui.auU||ui.auC?" con este filtro":""}.</p>`}</section>`;
+}
+function seedNote(){
+  const n = DATA_COLS.reduce((a,c)=>a+S[c].filter(x=>x.ejemplo).length,0);
+  if(!n || !can("seed")) return "";
+  return `<div class="note info"><span><b>Datos de ejemplo cargados</b> (${n} registros) para mostrar cómo funciona. Cuando empieces con datos reales, borralos.</span><span class="sp"></span><button class="btn sm" data-act="clear-seed">Borrar datos de ejemplo</button></div>`;
+}
+function vTablero(){
+  const eq = S.equipos.filter(e=>e.estado!=="baja");
+  const det = eq.filter(e=>e.estado==="detenido"), rep = eq.filter(e=>e.estado==="reparacion");
+  const ots = S.ordenes.filter(o=>o.estado!=="cerrada");
+  const venc = S.preventivos.filter(p=>prevStatus(p)[1]==="crit"), prox = S.preventivos.filter(p=>prevStatus(p)[1]==="warn");
+  const nuevos = S.reportes.filter(r=>r.estado==="nuevo").sort((a,b)=>b.ts.localeCompare(a.ts));
+  const urg = ots.filter(o=>o.prioridad==="alta");
+  return `${seedNote()}<div class="head"><div><h1>Tablero de mantenimiento</h1><p>${nf.format(eq.length)} equipos activos en las 4 empresas</p></div><span class="sp"></span>
+    <div class="btns">${can("ot.create")?`<button class="btn pri" data-act="new-ot">Nueva orden de trabajo</button>`:""}</div></div>
+  <div class="kpis">
+    <a class="kpi ok" href="#equipos"><span class="v">${eq.filter(e=>e.estado==="operativo").length}</span><span class="k">Equipos operativos</span></a>
+    <a class="kpi ${det.length?"crit":""}" href="#equipos"><span class="v">${det.length}</span><span class="k">Detenidos</span></a>
+    <a class="kpi ${rep.length?"warn":""}" href="#equipos"><span class="v">${rep.length}</span><span class="k">En reparación</span></a>
+    <a class="kpi ${urg.length?"crit":""}" href="#ordenes"><span class="v">${ots.length}</span><span class="k">OT abiertas · ${urg.length} alta prioridad</span></a>
+    <a class="kpi ${venc.length?"crit":""}" href="#preventivos"><span class="v">${venc.length}</span><span class="k">Preventivos vencidos · ${prox.length} esta semana</span></a>
+    <a class="kpi ${nuevos.length?"warn":""}" href="#reportes"><span class="v">${nuevos.length}</span><span class="k">Reportes nuevos de operarios</span></a>
+  </div>
+  <div class="grid g2">
+    <section class="panel"><div class="panel-h"><h2>Reportes de operarios sin atender</h2><span class="sp"></span><a href="#reportes" class="small">Ver todos</a></div>
+      ${nuevos.length? `<div class="list">${nuevos.slice(0,5).map(repItem).join("")}</div>` : `<p class="empty">No hay reportes nuevos.</p>`}</section>
+    <section class="panel"><div class="panel-h"><h2>Órdenes de trabajo activas</h2><span class="sp"></span><a href="#ordenes" class="small">Ver todas</a></div>
+      ${ots.length? `<div class="list">${sortOT(ots).slice(0,6).map(otItem).join("")}</div>` : `<p class="empty">Sin órdenes abiertas.</p>`}</section>
+    <section class="panel"><div class="panel-h"><h2>Preventivos vencidos y próximos</h2><span class="sp"></span><a href="#preventivos" class="small">Ver plan</a></div>
+      ${[...venc,...prox].length? `<div class="list">${[...venc,...prox].sort((a,b)=>prevNext(a).localeCompare(prevNext(b))).slice(0,6).map(prevItem).join("")}</div>`:`<p class="empty">Todo al día.</p>`}</section>
+    <section class="panel"><div class="panel-h"><h2>Equipos fuera de servicio</h2></div>
+      ${[...det,...rep].length? `<div class="list">${[...det,...rep].map(eqItem).join("")}</div>`:`<p class="empty">Todos los equipos están operativos.</p>`}</section>
+  </div>`;
+}
+function eqItem(e){ return `<a class="item" href="#eq-${esc(e.id)}"><div class="body"><div class="t">${esc(e.nombre)}</div><div class="meta"><span class="code">${esc(e.id)}</span>${empTag(e.empresa)}</div></div>${pill(ESTADOS_EQ,e.estado)}</a>` }
+function sortOT(a){ const pr={alta:0,media:1,baja:2}; return [...a].sort((x,y)=>(pr[x.prioridad]-pr[y.prioridad])||y.creada.localeCompare(x.creada)) }
+function otItem(o){ return `<a class="item" href="#ot-${esc(o.id)}"><div class="body"><div class="t">OT-${esc(o.numero)} · ${esc(o.titulo)}</div><div class="meta"><span class="code">${esc(o.equipo)}</span>${o.asignado?`<span>${esc(o.asignado)}</span>`:""}<span>${fd(o.creada)}</span></div></div><div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end">${pill(ESTADOS_OT,o.estado)}${pill(PRIOR,o.prioridad)}</div></a>` }
+function prevItem(p){ const st=prevStatus(p); return `<div class="item"><div class="body"><div class="t">${esc(p.tarea)}</div><div class="meta"><a href="#eq-${esc(p.equipo)}" class="code">${esc(p.equipo)}</a><span>Cada ${p.frecuencia} días</span><span>Próximo: ${fd(prevNext(p))}</span></div></div><span class="pill ${st[1]}">${st[2]<0?`${-st[2]} días vencido`:st[0]}</span></div>` }
+function repItem(r){
+  const m = (r.media||[])[0];
+  const th = m? (m.tipo==="video"?`<div class="thumb" style="display:grid;place-items:center;background:var(--surface-2)">▶</div>`:`<img class="thumb" src="/_blob/${esc(m.id)}" alt="" loading="lazy">`) : `<div class="thumb" style="background:var(--surface-2)"></div>`;
+  return `<a class="item" href="#reportes" data-act="open-rep" data-id="${esc(r.id)}">${th}<div class="body"><div class="t">${esc(r.tipo)} · ${esc(eqName(r.equipo))}</div><div class="meta"><span class="code">${esc(r.equipo)}</span><span>${esc(r.operario)}</span><span>${fdt(r.ts)}</span>${r.detenida?`<span class="pill crit">Máquina detenida</span>`:""}</div></div>${pill(ESTADOS_REP,r.estado)}</a>`;
+}
+
+/* --- Equipos --- */
+function vEquipos(){
+  const q = ui.eqQ.toLowerCase();
+  let l = S.equipos.filter(e=>(!ui.eqEmp||e.empresa===ui.eqEmp)&&(ui.eqEst?e.estado===ui.eqEst:e.estado!=="baja")&&(!q||(e.id+" "+e.nombre+" "+(e.ubicacion||"")).toLowerCase().includes(q)));
+  l.sort((a,b)=>a.id.localeCompare(b.id));
+  return `<div class="head"><div><h1>Equipos</h1><p>Código: empresa · área · tipo · número. Cada equipo tiene su QR.</p></div><span class="sp"></span>
+    <div class="btns">${S.equipos.length?`<button class="btn" data-act="qr-sheet">Hoja de etiquetas QR</button>`:""}${can("eq.new")?`<button class="btn pri" data-act="new-eq">Nuevo equipo</button>`:""}</div></div>
+  <div class="filters">
+    <input type="search" id="f-eqq" placeholder="Buscar por código, nombre o ubicación" value="${esc(ui.eqQ)}" data-ui="eqQ" style="flex:1;min-width:200px">
+    <select id="f-eqemp" data-ui="eqEmp"><option value="">Todas las empresas</option>${Object.keys(EMPRESAS).map(k=>`<option value="${k}" ${ui.eqEmp===k?"selected":""}>${EMPRESAS[k].n}</option>`).join("")}</select>
+    <select id="f-eqest" data-ui="eqEst"><option value="">Activos</option>${Object.keys(ESTADOS_EQ).map(k=>`<option value="${k}" ${ui.eqEst===k?"selected":""}>${ESTADOS_EQ[k][0]}</option>`).join("")}</select>
+  </div>
+  <section class="panel">${l.length?`<div class="tbl-wrap"><table><thead><tr><th>Código</th><th>Equipo</th><th>Empresa</th><th>Ubicación</th><th>Estado</th><th class="n">OT abiertas</th></tr></thead><tbody>
+    ${l.map(e=>`<tr class="click" data-go="eq-${esc(e.id)}"><td><span class="code">${esc(e.id)}</span></td><td>${esc(e.nombre)}<div class="small muted">${esc(e.modelo||"")}</div></td><td>${empTag(e.empresa)}</td><td>${esc(AREAS[e.area]||e.area)}<div class="small muted">${esc(e.ubicacion||"")}</div></td><td>${pill(ESTADOS_EQ,e.estado)}</td><td class="n">${S.ordenes.filter(o=>o.equipo===e.id&&o.estado!=="cerrada").length||""}</td></tr>`).join("")}
+    </tbody></table></div>` : S.equipos.length? `<p class="empty">Ningún equipo coincide con el filtro.</p>` : `<p class="empty">Todavía no hay equipos cargados. ${can("eq.new")?"Usá «Nuevo equipo» para cargar el primero; el código y el QR se generan solos.":""}</p>`}</section>`;
+}
+function vEquipo(code){
+  const e = eqBy(code);
+  if(!e) return `<div class="head"><h1>Equipo no encontrado</h1></div><p class="muted">No existe el equipo <span class="code">${esc(code)}</span>. <a href="#equipos">Volver a equipos</a></p>`;
+  const ots = S.ordenes.filter(o=>o.equipo===code);
+  const prevs = S.preventivos.filter(p=>p.equipo===code);
+  const reps = S.reportes.filter(r=>r.equipo===code);
+  const hist = [];
+  ots.forEach(o=>{ hist.push({ts:o.creada,c:"ot",h:`<b><a href="#ot-${esc(o.id)}">OT-${esc(o.numero)}</a></b> creada: ${esc(o.titulo)} ${pill(ESTADOS_OT,o.estado)}`});
+    (o.fichas||[]).forEach(f=>hist.push({ts:f.fecha,c:"ot",h:`Ficha de <b>${esc(f.tecnico)}</b> (OT-${esc(o.numero)}): ${esc(f.trabajo)} · ${nf1.format(f.horas||0)} h${f.parada?` · ${nf1.format(f.parada)} h de máquina parada`:""}${f.repuestos?` · Repuestos: ${esc(f.repuestos)}`:""}`})) });
+  prevs.forEach(p=>(p.ejecuciones||[]).forEach(x=>hist.push({ts:x.fecha,c:"prev",h:`Preventivo realizado por <b>${esc(x.tecnico)}</b>: ${esc(p.tarea)}${x.obs?` · ${esc(x.obs)}`:""}`})));
+  reps.forEach(r=>hist.push({ts:r.ts,c:"rep",h:`Reporte de operario (<b>${esc(r.operario)}</b>): ${esc(r.tipo)} — ${esc(r.descripcion)}`}));
+  (e.historial||[]).forEach(x=>hist.push({ts:x.fecha,c:"mov",h:esc(x.texto)}));
+  hist.sort((a,b)=>String(b.ts).localeCompare(String(a.ts)));
+  const tab = ui.eqTab;
+  const tabs = [["historial","Historial"],["preventivos",`Preventivos (${prevs.length})`],["manuales",`Manuales (${(e.manuales||[]).length})`],["reportes",`Reportes (${reps.length})`]];
+  let body="";
+  if(tab==="historial") body = hist.length? `<div class="timeline">${hist.map(x=>`<div class="tl ${x.c}"><div class="d">${fdt(x.ts)}</div><div>${x.h}</div></div>`).join("")}</div>` : `<p class="empty">Sin trabajos registrados todavía.</p>`;
+  if(tab==="preventivos") body = (prevs.length? `<div class="list">${prevs.map(p=>prevItem(p)+(can("prev.do")?`<div style="margin:-4px 0 8px"><button class="btn sm" data-act="do-prev" data-id="${esc(p.id)}">Registrar realización</button></div>`:"")).join("")}</div>`:`<p class="empty">Este equipo no tiene preventivos programados.</p>`) + (can("prev.manage")?`<div style="margin-top:10px"><button class="btn" data-act="new-prev" data-eq="${esc(code)}">Programar preventivo</button></div>`:"");
+  if(tab==="manuales") body = ((e.manuales||[]).length? `<div class="list">${e.manuales.map((m,i)=>`<div class="item"><div class="body"><a href="${m.id?"/_blob/"+esc(m.id):esc(m.url)}" target="_blank" rel="noopener" class="t">${esc(m.nombre)}</a><div class="meta">${m.id?"PDF":"Enlace"} · cargado ${fd(m.fecha)}</div></div>${can("eq.edit")?`<button class="btn sm" data-act="del-manual" data-eq="${esc(code)}" data-i="${i}">Quitar</button>`:""}</div>`).join("")}</div>`:`<p class="empty">No hay manuales cargados para este equipo.</p>`) + (can("eq.edit")?`<div style="margin-top:10px"><button class="btn" data-act="add-manual" data-eq="${esc(code)}">Agregar manual</button></div>`:"");
+  if(tab==="reportes") body = reps.length? `<div class="list">${reps.sort((a,b)=>b.ts.localeCompare(a.ts)).map(repItem).join("")}</div>`:`<p class="empty">Sin reportes de operarios.</p>`;
+  const openOts = ots.filter(o=>o.estado!=="cerrada");
+  return `<div class="head"><div><a href="#equipos" class="small">← Equipos</a><h1>${esc(e.nombre)}</h1></div><span class="sp"></span>
+    <div class="btns">
+      ${can("ot.create")&&e.estado!=="baja"?`<button class="btn pri" data-act="new-ot" data-eq="${esc(code)}">Nueva OT</button>`:""}
+      ${can("eq.edit")?`<button class="btn" data-act="edit-eq" data-eq="${esc(code)}">Editar</button><button class="btn" data-act="move-eq" data-eq="${esc(code)}">Reubicar</button>${e.estado==="baja"?`<button class="btn" data-act="unbaja-eq" data-eq="${esc(code)}">Reactivar</button>`:`<button class="btn danger" data-act="baja-eq" data-eq="${esc(code)}">Dar de baja</button>`}`:""}
+    </div></div>
+  <div class="plate"><div style="min-width:0">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="code" style="font-size:1rem">${esc(e.id)}</span>${pill(ESTADOS_EQ,e.estado)}</div>
+      <dl><dt>Tipo</dt><dd>${esc(TIPOS[e.tipo]||e.tipo)}</dd><dt>Marca / modelo</dt><dd>${esc([e.marca,e.modelo].filter(Boolean).join(" · ")||"—")}</dd>
+      <dt>Empresa</dt><dd>${empTag(e.empresa)}</dd><dt>Área</dt><dd>${esc(AREAS[e.area]||e.area)}</dd><dt>Ubicación</dt><dd>${esc(e.ubicacion||"—")}</dd>
+      <dt>Alta</dt><dd>${fd(e.alta)}${e.creadoPor?" · "+esc(e.creadoPor.n):""}</dd>${e.notas?`<dt>Notas</dt><dd>${esc(e.notas)}</dd>`:""}${e.modPor?`<dt>Último cambio</dt><dd>${esc(e.modPor.n)} · ${fdt(e.modTs)}</dd>`:""}</dl>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:6px;align-items:center"><div class="qr" id="qr-${esc(e.id)}" data-qr="${esc(e.id)}" aria-label="Código QR del equipo"></div>
+      <button class="btn sm" data-act="qr-dl" data-eq="${esc(code)}">Descargar etiqueta</button></div>
+  </div>
+  ${openOts.length?`<section class="panel"><h2>Órdenes abiertas</h2><div class="list">${openOts.map(otItem).join("")}</div></section>`:""}
+  <section class="panel"><div class="tabs" role="tablist">${tabs.map(([k,n])=>`<button role="tab" class="${tab===k?"on":""}" data-act="eqtab" data-tab="${k}">${n}</button>`).join("")}</div><div style="padding-top:14px">${body}</div></section>`;
+}
+
+/* --- Órdenes --- */
+function vOrdenes(){
+  let l = S.ordenes.filter(o=> ui.otEst==="activas"? o.estado!=="cerrada" : ui.otEst? o.estado===ui.otEst : true);
+  l = sortOT(l);
+  return `<div class="head"><div><h1>Órdenes de trabajo</h1><p>${role==="tec"?"Abrí una orden para ver el detalle y completar la ficha de trabajo.":"Generadas por mantenimiento, a partir de reportes, preventivos o inspecciones."}</p></div><span class="sp"></span>${can("ot.create")?`<button class="btn pri" data-act="new-ot">Nueva orden de trabajo</button>`:""}</div>
+  <div class="filters"><div class="seg">${[["activas","Activas"],["abierta","Abiertas"],["curso","En curso"],["revisar","Para revisar"],["cerrada","Cerradas"],["","Todas"]].map(([k,n])=>`<label><input type="radio" name="otf" data-act="otf" value="${k}" ${ui.otEst===k?"checked":""}><span>${n}</span></label>`).join("")}</div></div>
+  <section class="panel">${l.length?`<div class="tbl-wrap"><table><thead><tr><th>N°</th><th>Trabajo</th><th>Equipo</th><th>Prioridad</th><th>Asignado</th><th>Creada</th><th>Estado</th></tr></thead><tbody>
+  ${l.map(o=>`<tr class="click" data-go="ot-${esc(o.id)}"><td class="mono">OT-${esc(o.numero)}</td><td>${esc(o.titulo)}<div class="small muted">${o.tipo==="preventiva"?"Preventiva":"Correctiva"}${o.reporte?" · desde reporte de operario":""}</div></td><td><span class="code">${esc(o.equipo)}</span><div class="small muted">${esc(eqName(o.equipo))}</div></td><td>${pill(PRIOR,o.prioridad)}</td><td>${esc(o.asignado||"—")}</td><td class="num">${fd(o.creada)}</td><td>${pill(ESTADOS_OT,o.estado)}</td></tr>`).join("")}
+  </tbody></table></div>`:`<p class="empty">No hay órdenes en este estado.</p>`}</section>`;
+}
+function vOT(id){
+  const o = S.ordenes.find(x=>x.id===id);
+  if(!o) return `<h1>Orden no encontrada</h1><p><a href="#ordenes">Volver</a></p>`;
+  const r = o.reporte && S.reportes.find(x=>x.id===o.reporte);
+  const fichas = (o.fichas||[]);
+  const horas = fichas.reduce((a,f)=>a+(+f.horas||0),0), parada=fichas.reduce((a,f)=>a+(+f.parada||0),0);
+  return `<div class="head"><div><a href="#ordenes" class="small">← Órdenes</a><h1>OT-${esc(o.numero)} · ${esc(o.titulo)}</h1></div><span class="sp"></span>
+    <div class="btns">${can("ficha")&&o.estado!=="cerrada"?`<button class="btn pri" data-act="ficha" data-id="${esc(o.id)}">Completar ficha de trabajo</button>`:""}
+    ${can("ot.manage")?`<button class="btn" data-act="edit-ot" data-id="${esc(o.id)}">Editar</button>${o.estado!=="cerrada"?`<button class="btn" data-act="close-ot" data-id="${esc(o.id)}">Cerrar orden</button>`:`<button class="btn" data-act="reopen-ot" data-id="${esc(o.id)}">Reabrir</button>`}`:""}</div></div>
+  <div class="grid g2">
+    <section class="panel"><h2>Detalle</h2>
+      <div class="form"><div class="row">
+        <div><div class="label">Estado</div>${pill(ESTADOS_OT,o.estado)}</div><div><div class="label">Prioridad</div>${pill(PRIOR,o.prioridad)}</div>
+        <div><div class="label">Tipo</div>${o.tipo==="preventiva"?"Preventiva":"Correctiva"}</div><div><div class="label">Asignado a</div>${esc(o.asignado||"Sin asignar")}</div></div>
+        <div><div class="label">Equipo</div><a href="#eq-${esc(o.equipo)}" class="code">${esc(o.equipo)}</a> ${esc(eqName(o.equipo))}</div>
+        <div><div class="label">Diagnóstico y tareas indicadas</div><p style="white-space:pre-wrap">${esc(o.descripcion||"—")}</p></div>
+        <div class="row"><div><div class="label">Creada</div>${fdt(o.creada)}${o.creadoPor?`<div class="small muted">por ${esc(o.creadoPor.n)}</div>`:""}</div><div><div class="label">Fecha objetivo</div>${fd(o.vence)}</div>${o.cerrada?`<div><div class="label">Cerrada</div>${fdt(o.cerrada)}${o.cerradaPor?`<div class="small muted">por ${esc(o.cerradaPor)}</div>`:""}</div>`:""}</div>${o.modPor?`<p class="small muted">Último cambio: ${esc(o.modPor.n)} · ${fdt(o.modTs)}</p>`:""}
+      </div></section>
+    ${r?`<section class="panel"><h2>Reporte del operario</h2><p><b>${esc(r.tipo)}</b> · ${esc(r.operario)} · ${fdt(r.ts)}</p><p style="margin:8px 0">${esc(r.descripcion)}</p>${mediaHtml(r.media)}</section>`:""}
+  </div>
+  <section class="panel"><div class="panel-h"><h2>Fichas de trabajo</h2><span class="sp"></span><span class="muted small num">${nf1.format(horas)} h de trabajo · ${nf1.format(parada)} h de máquina parada</span></div>
+    ${fichas.length?`<div class="timeline">${[...fichas].reverse().map(f=>`<div class="tl ot"><div class="d">${fdt(f.fecha)} · ${esc(f.tecnico)} · ${f.resultado==="terminado"?"Trabajo terminado":"Queda pendiente"}</div><div>${esc(f.trabajo)}</div><div class="small muted">${nf1.format(f.horas||0)} h de trabajo${f.parada?` · ${nf1.format(f.parada)} h parada`:""}${f.repuestos?` · Repuestos: ${esc(f.repuestos)}`:""}</div></div>`).join("")}</div>`:`<p class="empty">Todavía nadie cargó trabajo en esta orden.</p>`}
+  </section>`;
+}
+function mediaHtml(m){
+  if(!m||!m.length) return `<p class="muted small">Sin fotos ni videos.</p>`;
+  return `<div class="media">${m.map(x=> x.tipo==="video"? `<video src="/_blob/${esc(x.id)}" controls preload="metadata"></video>` : `<img src="/_blob/${esc(x.id)}" alt="Foto del reporte" loading="lazy" data-act="zoom" data-id="${esc(x.id)}">`).join("")}</div>`;
+}
+
+/* --- Preventivos --- */
+function vPreventivos(){
+  const l = S.preventivos.filter(p=>!ui.prevEmp || (eqBy(p.equipo)||{}).empresa===ui.prevEmp).sort((a,b)=>prevNext(a).localeCompare(prevNext(b)));
+  return `<div class="head"><div><h1>Mantenimiento preventivo</h1><p>Tareas programadas por frecuencia. El próximo vencimiento se calcula desde la última realización.</p></div><span class="sp"></span>${can("prev.manage")?`<button class="btn pri" data-act="new-prev">Programar preventivo</button>`:""}</div>
+  <div class="filters"><select id="f-prevemp" data-ui="prevEmp"><option value="">Todas las empresas</option>${Object.keys(EMPRESAS).map(k=>`<option value="${k}" ${ui.prevEmp===k?"selected":""}>${EMPRESAS[k].n}</option>`).join("")}</select></div>
+  <section class="panel">${l.length?`<div class="tbl-wrap"><table><thead><tr><th>Tarea</th><th>Equipo</th><th class="n">Frecuencia</th><th>Última</th><th>Próxima</th><th>Estado</th><th></th></tr></thead><tbody>
+  ${l.map(p=>{const st=prevStatus(p);return `<tr><td>${esc(p.tarea)}<div class="small muted">${esc(p.responsable||"")}</div></td><td><a href="#eq-${esc(p.equipo)}" class="code">${esc(p.equipo)}</a><div class="small muted">${esc(eqName(p.equipo))}</div></td><td class="n">${p.frecuencia} días</td><td class="num">${fd(p.ultima)}</td><td class="num">${fd(prevNext(p))}</td><td><span class="pill ${st[1]}">${st[2]<0?`${-st[2]} d vencido`:st[1]==="warn"?`en ${st[2]} d`:st[0]}</span></td>
+  <td><div class="btns">${can("prev.do")?`<button class="btn sm" data-act="do-prev" data-id="${esc(p.id)}">Registrar</button>`:""}${can("prev.manage")?`<button class="btn sm" data-act="del-prev" data-id="${esc(p.id)}">Quitar</button>`:""}</div></td></tr>`}).join("")}
+  </tbody></table></div>`:`<p class="empty">No hay preventivos programados.</p>`}</section>`;
+}
+
+/* --- Reportes de operarios --- */
+function vReportes(){
+  let l = S.reportes.filter(r=> ui.repEst==="activos"? (r.estado==="nuevo"||r.estado==="analisis") : ui.repEst? r.estado===ui.repEst : true).sort((a,b)=>b.ts.localeCompare(a.ts));
+  return `<div class="head"><div><h1>Reportes de operarios</h1><p>${role==="gm"?"Revisá fotos y videos, diagnosticá y generá la orden de trabajo.":"Problemas reportados por los operarios en las máquinas."}</p></div></div>
+  <div class="filters"><div class="seg">${[["activos","Sin resolver"],["nuevo","Nuevos"],["analisis","En análisis"],["ot","Con OT"],["descartado","Descartados"],["","Todos"]].map(([k,n])=>`<label><input type="radio" name="repf" data-act="repf" value="${k}" ${ui.repEst===k?"checked":""}><span>${n}</span></label>`).join("")}</div></div>
+  ${l.length? l.map(r=>`<section class="panel"><div class="panel-h"><div style="min-width:0"><h3>${esc(r.tipo)} · ${esc(eqName(r.equipo))}</h3><div class="small muted" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><a href="#eq-${esc(r.equipo)}" class="code">${esc(r.equipo)}</a><span>${esc(r.operario)}</span><span>${fdt(r.ts)}</span>${r.detenida?`<span class="pill crit">Máquina detenida</span>`:`<span class="pill">Sigue funcionando</span>`}</div></div><span class="sp"></span>${pill(ESTADOS_REP,r.estado)}</div>
+    <p style="margin-bottom:10px">${esc(r.descripcion)}</p>${mediaHtml(r.media)}
+    ${r.nota?`<p class="small" style="margin-top:10px"><b>Nota de mantenimiento:</b> ${esc(r.nota)}</p>`:""}
+    ${r.ot?`<p class="small" style="margin-top:6px"><a href="#ot-${esc(r.ot)}">Ver orden de trabajo</a></p>`:""}
+    ${can("rep.manage")&&(r.estado==="nuevo"||r.estado==="analisis")?`<div class="btns" style="margin-top:12px"><button class="btn pri" data-act="rep-ot" data-id="${esc(r.id)}">Generar orden de trabajo</button>${r.estado==="nuevo"?`<button class="btn" data-act="rep-st" data-st="analisis" data-id="${esc(r.id)}">Marcar en análisis</button>`:""}<button class="btn" data-act="rep-st" data-st="descartado" data-id="${esc(r.id)}">Descartar</button></div>`:""}
+  </section>`).join("") : `<section class="panel"><p class="empty">No hay reportes en este estado.</p></section>`}`;
+}
+
+/* --- Producción --- */
+function movsWeek(off){ const ws=addDays(weekStart(new Date()),7*off), we=addDays(ws,7); return {ws,we,l:S.movimientos.filter(m=>{const d=parseD(m.fecha);return d>=ws&&d<we})} }
+function vProduccion(){
+  const {l} = movsWeek(0);
+  const pend = S.movimientos.filter(m=>m.estado==="pendiente").sort((a,b)=>b.ts.localeCompare(a.ts));
+  const prod = l.filter(m=>m.tipo==="produccion"), ven=l.filter(m=>m.tipo==="venta"), com=l.filter(m=>m.tipo==="compra");
+  const rep = S.reportes.filter(r=>r.estado==="nuevo"||r.estado==="analisis");
+  return `<div class="head"><div><h1>Tablero de producción</h1><p>Semana del ${fd(ymd(weekStart(new Date())))} · lo que cargaron los operarios</p></div></div>
+  <div class="kpis">
+    <div class="kpi"><span class="v">${nf.format(sum(prod,"cantidad"))}</span><span class="k">Unidades producidas esta semana</span></div>
+    <div class="kpi"><span class="v">${money(sum(ven,"monto"))}</span><span class="k">Ventas cargadas (${ven.length})</span></div>
+    <div class="kpi"><span class="v">${money(sum(com,"monto"))}</span><span class="k">Compras cargadas (${com.length})</span></div>
+    <a class="kpi ${pend.length?"warn":""}" href="#registros"><span class="v">${pend.length}</span><span class="k">Registros sin revisar</span></a>
+    <a class="kpi ${rep.length?"warn":""}" href="#reportes"><span class="v">${rep.length}</span><span class="k">Problemas en máquinas sin resolver</span></a>
+  </div>
+  <div class="grid g2">
+    <section class="panel"><h2>Unidades producidas por día</h2>${chartDaily(prod, weekStart(new Date()))}</section>
+    <section class="panel"><h2>Producción por empresa</h2>${hbars(Object.keys(EMPRESAS).map(k=>[EMPRESAS[k].n,sum(prod.filter(m=>m.empresa===k),"cantidad"),`var(--c-${k})`]), nf.format)}</section>
+  </div>
+  <section class="panel"><div class="panel-h"><h2>Últimos registros sin revisar</h2><span class="sp"></span><a href="#registros" class="small">Ver registros</a></div>${movTable(pend.slice(0,8))}</section>`;
+}
+const sum = (a,k) => a.reduce((s,x)=>s+(+x[k]||0),0);
+function movTable(l, actions=true){
+  if(!l.length) return `<p class="empty">No hay registros.</p>`;
+  return `<div class="tbl-wrap"><table><thead><tr><th>Fecha</th><th>Tipo</th><th>Empresa</th><th>Detalle</th><th class="n">Cantidad</th><th class="n">Monto</th><th>Cargó</th><th>Estado</th>${actions&&can("mov.review")?"<th></th>":""}</tr></thead><tbody>
+  ${l.map(m=>`<tr><td class="num">${fd(m.fecha)}</td><td>${{produccion:"Producción",venta:"Venta",compra:"Compra"}[m.tipo]}</td><td>${empTag(m.empresa)}</td><td>${esc(m.producto)}${m.contraparte?`<div class="small muted">${m.tipo==="venta"?"Cliente":"Proveedor"}: ${esc(m.contraparte)}</div>`:""}${m.turno?`<div class="small muted">Turno ${esc(m.turno)}${m.equipo?" · "+esc(m.equipo):""}</div>`:""}${m.obs?`<div class="small muted">${esc(m.obs)}</div>`:""}${m.nota?`<div class="small"><b>Nota:</b> ${esc(m.nota)}</div>`:""}</td><td class="n">${nf.format(m.cantidad||0)}</td><td class="n">${m.monto?money(m.monto):"—"}</td><td>${esc(m.operario)}</td><td>${pill(ESTADOS_MOV,m.estado)}</td>
+  ${actions&&can("mov.review")?`<td><div class="btns">${m.estado!=="revisado"?`<button class="btn sm" data-act="mov-ok" data-id="${esc(m.id)}">Revisado</button>`:""}<button class="btn sm" data-act="mov-obs" data-id="${esc(m.id)}">Observar</button></div></td>`:""}</tr>`).join("")}
+  </tbody></table></div>`;
+}
+function vRegistros(){
+  const l = S.movimientos.filter(m=>(!ui.movTipo||m.tipo===ui.movTipo)&&(!ui.movEmp||m.empresa===ui.movEmp)&&(!ui.movEst||m.estado===ui.movEst)).sort((a,b)=>(b.fecha+b.ts).localeCompare(a.fecha+a.ts));
+  return `<div class="head"><div><h1>Registros de operarios</h1><p>Producción, ventas y compras cargadas desde la app de operarios. Marcalos como revisados u observalos con una nota.</p></div></div>
+  <div class="filters">
+    <select id="f-movtipo" data-ui="movTipo"><option value="">Todos los tipos</option><option value="produccion" ${ui.movTipo==="produccion"?"selected":""}>Producción</option><option value="venta" ${ui.movTipo==="venta"?"selected":""}>Ventas</option><option value="compra" ${ui.movTipo==="compra"?"selected":""}>Compras</option></select>
+    <select id="f-movemp" data-ui="movEmp"><option value="">Todas las empresas</option>${Object.keys(EMPRESAS).map(k=>`<option value="${k}" ${ui.movEmp===k?"selected":""}>${EMPRESAS[k].n}</option>`).join("")}</select>
+    <select id="f-movest" data-ui="movEst"><option value="">Todos los estados</option>${Object.keys(ESTADOS_MOV).map(k=>`<option value="${k}" ${ui.movEst===k?"selected":""}>${ESTADOS_MOV[k][0]}</option>`).join("")}</select>
+  </div>
+  <section class="panel">${movTable(l.slice(0,200))}${l.length>200?`<p class="muted small">Se muestran los 200 más recientes de ${l.length}.</p>`:""}</section>`;
+}
+function listFiltered(){
+  return S.movimientos.filter(m=>m.tipo===ui.listTab&&(!ui.listEmp||m.empresa===ui.listEmp)&&(!ui.listDesde||m.fecha>=ui.listDesde)&&(!ui.listHasta||m.fecha<=ui.listHasta)).sort((a,b)=>b.fecha.localeCompare(a.fecha));
+}
+function vListados(){
+  const l = listFiltered();
+  const tabs=[["produccion","Unidades producidas"],["venta","Ventas"],["compra","Compras"]];
+  const byEmp = Object.keys(EMPRESAS).map(k=>{const x=l.filter(m=>m.empresa===k);return [EMPRESAS[k].n, ui.listTab==="produccion"?sum(x,"cantidad"):sum(x,"monto"), `var(--c-${k})`]});
+  return `<div class="head"><div><h1>Listados administrativos</h1><p>Todo lo cargado por los operarios, con filtros y totales.</p></div><span class="sp"></span>${downloads?`<button class="btn" data-act="csv">Exportar CSV</button>`:""}</div>
+  <div class="tabs">${tabs.map(([k,n])=>`<button class="${ui.listTab===k?"on":""}" data-act="listtab" data-tab="${k}">${n}</button>`).join("")}</div>
+  <div class="filters">
+    <select id="f-listemp" data-ui="listEmp"><option value="">Todas las empresas</option>${Object.keys(EMPRESAS).map(k=>`<option value="${k}" ${ui.listEmp===k?"selected":""}>${EMPRESAS[k].n}</option>`).join("")}</select>
+    <label class="small">Desde <input type="date" id="f-ld" data-ui="listDesde" value="${esc(ui.listDesde)}"></label>
+    <label class="small">Hasta <input type="date" id="f-lh" data-ui="listHasta" value="${esc(ui.listHasta)}"></label>
+  </div>
+  <div class="grid g2">
+    <section class="panel"><h3>Totales</h3><div class="kpis" style="margin-top:8px"><div class="kpi"><span class="v">${l.length}</span><span class="k">Registros</span></div>
+    ${ui.listTab==="produccion"?`<div class="kpi"><span class="v">${nf.format(sum(l,"cantidad"))}</span><span class="k">Unidades</span></div>`:`<div class="kpi"><span class="v">${money(sum(l,"monto"))}</span><span class="k">Monto total</span></div>`}</div></section>
+    <section class="panel"><h3>Por empresa</h3>${hbars(byEmp, ui.listTab==="produccion"?nf.format:money)}</section>
+  </div>
+  <section class="panel">${movTable(l.slice(0,300),false)}</section>`;
+}
+
+/* --- Gráficos --- */
+function hbars(rows, f){
+  const max = Math.max(1,...rows.map(r=>r[1]));
+  return `<div class="hbar" style="margin-top:8px">${rows.map(r=>`<span>${esc(r[0])}</span><div class="track"><div class="fill" style="width:${(r[1]/max*100).toFixed(1)}%;background:${r[2]}"></div></div><span class="val">${f(r[1])}</span>`).join("")}</div>`;
+}
+function chartDaily(prod, ws){
+  const days=[...Array(7)].map((_,i)=>addDays(ws,i));
+  const emps=Object.keys(EMPRESAS);
+  const data=days.map(d=>{const k=ymd(d);return emps.map(e=>sum(prod.filter(m=>m.fecha===k&&m.empresa===e),"cantidad"))});
+  const tot=data.map(r=>r.reduce((a,b)=>a+b,0));
+  const max=niceMax(Math.max(1,...tot));
+  const W=560,H=220,L=48,B=26,T=12,cw=(W-L-8)/7,bw=cw*0.56;
+  const y=v=>T+(H-T-B)*(1-v/max);
+  const ticks=[0,max/2,max];
+  const dn=["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"];
+  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Unidades producidas por día, apiladas por empresa">`;
+  ticks.forEach(t=>{s+=`<line x1="${L}" x2="${W-8}" y1="${y(t)}" y2="${y(t)}" style="stroke:var(--line)" stroke-width="1"/><text x="${L-6}" y="${y(t)+4}" text-anchor="end">${nf.format(t)}</text>`});
+  data.forEach((r,i)=>{ let acc=0; const x=L+i*cw+(cw-bw)/2;
+    r.forEach((v,j)=>{ if(!v) return; const y0=y(acc), y1=y(acc+v); s+=`<rect x="${x}" y="${y1}" width="${bw}" height="${Math.max(0,y0-y1)}" style="fill:var(--c-${emps[j]})"><title>${EMPRESAS[emps[j]].n}: ${nf.format(v)}</title></rect>`; acc+=v });
+    if(tot[i]) s+=`<text x="${x+bw/2}" y="${y(tot[i])-4}" text-anchor="middle">${nf.format(tot[i])}</text>`;
+    s+=`<text x="${x+bw/2}" y="${H-8}" text-anchor="middle">${dn[i]} ${days[i].getDate()}</text>`;
+  });
+  s+=`</svg>`;
+  return `<div class="chart">${s}</div><div class="legend">${emps.map(e=>`<span><i style="background:var(--c-${e})"></i>${EMPRESAS[e].n}</span>`).join("")}</div>`;
+}
+function niceMax(v){ const p=Math.pow(10,Math.floor(Math.log10(v))); const n=v/p; return (n<=1?1:n<=2?2:n<=5?5:10)*p }
+
+/* --- Informe semanal --- */
+function weekData(off){
+  const ws=addDays(weekStart(new Date()),7*off), we=addDays(ws,7);
+  const inR = s => { const d=parseD(s); return d && d>=ws && d<we };
+  const movs=S.movimientos.filter(m=>inR(m.fecha));
+  const otNew=S.ordenes.filter(o=>inR(o.creada)), otClosed=S.ordenes.filter(o=>o.cerrada&&inR(o.cerrada));
+  const fichas=[]; S.ordenes.forEach(o=>(o.fichas||[]).forEach(f=>{ if(inR(f.fecha)) fichas.push(Object.assign({ot:o},f)) }));
+  const prevDone=[]; S.preventivos.forEach(p=>(p.ejecuciones||[]).forEach(x=>{ if(inR(x.fecha)) prevDone.push(Object.assign({p},x)) }));
+  const reps=S.reportes.filter(r=>inR(r.ts));
+  const resp=[]; S.reportes.forEach(r=>{ if(r.ot){ const o=S.ordenes.find(x=>x.id===r.ot); if(o&&inR(o.creada)) resp.push((parseD(o.creada)-parseD(r.ts))/36e5) } });
+  const res=otClosed.map(o=>(parseD(o.cerrada)-parseD(o.creada))/36e5);
+  const avg=a=>a.length? a.reduce((x,y)=>x+y,0)/a.length : null;
+  return {ws,we,movs,prod:movs.filter(m=>m.tipo==="produccion"),ven:movs.filter(m=>m.tipo==="venta"),com:movs.filter(m=>m.tipo==="compra"),
+    otNew,otClosed,fichas,prevDone,reps,horas:sum(fichas,"horas"),parada:sum(fichas,"parada"),resp:avg(resp),res:avg(res)};
+}
+function pendientes(){
+  return {ots:sortOT(S.ordenes.filter(o=>o.estado!=="cerrada")), venc:S.preventivos.filter(p=>prevStatus(p)[1]==="crit"),
+    reps:S.reportes.filter(r=>r.estado==="nuevo"||r.estado==="analisis"), movs:S.movimientos.filter(m=>m.estado==="pendiente"),
+    det:S.equipos.filter(e=>e.estado==="detenido"||e.estado==="reparacion")};
+}
+const hrs = v => v==null? "—" : v<48? nf1.format(v)+" h" : nf1.format(v/24)+" días";
+function vInforme(){
+  const w=weekData(ui.weekOff), pv=weekData(ui.weekOff-1), P=pendientes();
+  const delta=(a,b)=> b? `<span class="small ${a>=b?"":"muted"}">${a>=b?"▲":"▼"} ${nf.format(Math.abs(Math.round((a-b)/b*100)))}% vs semana anterior</span>` : "";
+  const tareas=[...w.fichas.map(f=>({ts:f.fecha,t:`${f.ot.titulo} (OT-${f.ot.numero})`,eq:f.ot.equipo,q:f.tecnico,d:f.trabajo,k:"Correctivo"})),
+    ...w.prevDone.map(x=>({ts:x.fecha,t:x.p.tarea,eq:x.p.equipo,q:x.tecnico,d:x.obs||"",k:"Preventivo"}))].sort((a,b)=>a.ts.localeCompare(b.ts));
+  return `<div class="head"><div><h1>Informe semanal</h1><p>Del ${fd(ymd(w.ws))} al ${fd(ymd(addDays(w.we,-1)))} · mantenimiento y productividad</p></div><span class="sp"></span>
+    <div class="btns"><button class="btn" data-act="wk" data-d="-1" aria-label="Semana anterior">← Anterior</button><button class="btn" data-act="wk" data-d="1" ${ui.weekOff>=0?"disabled":""} aria-label="Semana siguiente">Siguiente →</button>${downloads?`<button class="btn pri" data-act="dl-report">Descargar informe</button>`:""}</div></div>
+  <h2>Productividad</h2>
+  <div class="kpis">
+    <div class="kpi"><span class="v">${nf.format(sum(w.prod,"cantidad"))}</span><span class="k">Unidades producidas</span>${delta(sum(w.prod,"cantidad"),sum(pv.prod,"cantidad"))}</div>
+    <div class="kpi"><span class="v">${money(sum(w.ven,"monto"))}</span><span class="k">Ventas (${w.ven.length})</span>${delta(sum(w.ven,"monto"),sum(pv.ven,"monto"))}</div>
+    <div class="kpi"><span class="v">${money(sum(w.com,"monto"))}</span><span class="k">Compras (${w.com.length})</span></div>
+    <div class="kpi"><span class="v">${w.movs.filter(m=>m.estado!=="pendiente").length}/${w.movs.length}</span><span class="k">Registros revisados por producción</span></div>
+  </div>
+  <div class="grid g2">
+    <section class="panel"><h3>Unidades por día</h3>${chartDaily(w.prod,w.ws)}</section>
+    <section class="panel"><h3>Ventas y compras por empresa</h3>
+      <p class="label" style="margin-top:8px">Ventas</p>${hbars(Object.keys(EMPRESAS).map(k=>[EMPRESAS[k].n,sum(w.ven.filter(m=>m.empresa===k),"monto"),`var(--c-${k})`]),money)}
+      <p class="label" style="margin-top:14px">Compras</p>${hbars(Object.keys(EMPRESAS).map(k=>[EMPRESAS[k].n,sum(w.com.filter(m=>m.empresa===k),"monto"),`var(--c-${k})`]),money)}</section>
+  </div>
+  <h2>Mantenimiento</h2>
+  <div class="kpis">
+    <div class="kpi"><span class="v">${w.otNew.length}</span><span class="k">OT generadas</span></div>
+    <div class="kpi ok"><span class="v">${w.otClosed.length}</span><span class="k">OT cerradas</span></div>
+    <div class="kpi"><span class="v">${w.prevDone.length}</span><span class="k">Preventivos realizados</span></div>
+    <div class="kpi"><span class="v">${nf1.format(w.horas)} h</span><span class="k">Horas de trabajo técnico</span></div>
+    <div class="kpi ${w.parada?"warn":""}"><span class="v">${nf1.format(w.parada)} h</span><span class="k">Máquina parada por intervenciones</span></div>
+    <div class="kpi"><span class="v">${w.reps.length}</span><span class="k">Reportes de operarios</span></div>
+    <div class="kpi"><span class="v">${hrs(w.resp)}</span><span class="k">Del reporte a la OT (promedio)</span></div>
+    <div class="kpi"><span class="v">${hrs(w.res)}</span><span class="k">De la OT al cierre (promedio)</span></div>
+  </div>
+  <section class="panel"><h3>Tareas realizadas en la semana</h3>${tareas.length?`<div class="tbl-wrap"><table><thead><tr><th>Fecha</th><th>Tipo</th><th>Tarea</th><th>Equipo</th><th>Técnico</th><th>Detalle</th></tr></thead><tbody>${tareas.map(t=>`<tr><td class="num">${fd(t.ts)}</td><td>${t.k}</td><td>${esc(t.t)}</td><td><span class="code">${esc(t.eq)}</span></td><td>${esc(t.q)}</td><td>${esc(t.d)}</td></tr>`).join("")}</tbody></table></div>`:`<p class="empty">No se registraron tareas esta semana.</p>`}</section>
+  ${pendHtml(P)}`;
+}
+function pendHtml(P){
+  return `<section class="panel"><h2>Tareas pendientes al día de hoy</h2><div class="grid g3" style="margin-top:6px">
+    <div><p class="label">Órdenes abiertas (${P.ots.length})</p><div class="list">${P.ots.slice(0,6).map(o=>`<div class="item"><div class="body"><div class="t">OT-${esc(o.numero)} · ${esc(o.titulo)}</div><div class="meta"><span class="code">${esc(o.equipo)}</span>${pill(PRIOR,o.prioridad)}</div></div></div>`).join("")||`<p class="empty">Ninguna</p>`}</div></div>
+    <div><p class="label">Preventivos vencidos (${P.venc.length})</p><div class="list">${P.venc.slice(0,6).map(p=>`<div class="item"><div class="body"><div class="t">${esc(p.tarea)}</div><div class="meta"><span class="code">${esc(p.equipo)}</span><span>${-prevStatus(p)[2]} días vencido</span></div></div></div>`).join("")||`<p class="empty">Ninguno</p>`}</div></div>
+    <div><p class="label">Problemas reportados sin resolver (${P.reps.length})</p><div class="list">${P.reps.slice(0,6).map(r=>`<div class="item"><div class="body"><div class="t">${esc(r.tipo)} · ${esc(eqName(r.equipo))}</div><div class="meta">${fd(r.ts)} · ${esc(r.operario)}</div></div></div>`).join("")||`<p class="empty">Ninguno</p>`}</div>
+      <p class="label" style="margin-top:12px">Registros sin revisar: ${P.movs.length} · Equipos fuera de servicio: ${P.det.length}</p></div>
+  </div></section>`;
+}
+function vDireccion(){
+  const w=weekData(0), pv=weekData(-1), P=pendientes();
+  const eqAct=S.equipos.filter(e=>e.estado!=="baja");
+  const disp = eqAct.length? Math.round(eqAct.filter(e=>e.estado==="operativo").length/eqAct.length*100):0;
+  const otsEst=Object.keys(ESTADOS_OT).filter(k=>k!=="cerrada").map(k=>[ESTADOS_OT[k][0],S.ordenes.filter(o=>o.estado===k).length,"var(--accent)"]);
+  const otsEmp=Object.keys(EMPRESAS).map(k=>[EMPRESAS[k].n,S.ordenes.filter(o=>o.estado!=="cerrada"&&(eqBy(o.equipo)||{}).empresa===k).length,`var(--c-${k})`]);
+  return `<div class="head"><div><h1>Resumen para dirección</h1><p>Semana en curso, desde el ${fd(ymd(w.ws))}. Para el detalle completo abrí el informe semanal.</p></div><span class="sp"></span><a class="btn" href="#informe">Informe semanal</a></div>
+  <div class="kpis">
+    <div class="kpi"><span class="v">${nf.format(sum(w.prod,"cantidad"))}</span><span class="k">Unidades producidas (semana anterior: ${nf.format(sum(pv.prod,"cantidad"))})</span></div>
+    <div class="kpi"><span class="v">${money(sum(w.ven,"monto"))}</span><span class="k">Ventas de la semana</span></div>
+    <div class="kpi"><span class="v">${money(sum(w.com,"monto"))}</span><span class="k">Compras de la semana</span></div>
+    <div class="kpi ${disp<90?"warn":"ok"}"><span class="v">${disp}%</span><span class="k">Equipos disponibles ahora</span></div>
+    <div class="kpi"><span class="v">${hrs(pv.resp)}</span><span class="k">Respuesta a reportes (semana anterior)</span></div>
+    <div class="kpi"><span class="v">${hrs(pv.res)}</span><span class="k">Resolución de OT (semana anterior)</span></div>
+  </div>
+  <div class="grid g2">
+    <section class="panel"><h3>Producción diaria · semana anterior</h3>${chartDaily(pv.prod,pv.ws)}</section>
+    <section class="panel"><h3>Producción diaria · esta semana</h3>${chartDaily(w.prod,w.ws)}</section>
+    <section class="panel"><h3>Órdenes de trabajo activas por estado</h3>${hbars(otsEst,nf.format)}</section>
+    <section class="panel"><h3>Órdenes activas por empresa</h3>${hbars(otsEmp,nf.format)}</section>
+  </div>
+  ${pendHtml(P)}`;
+}
+
+/* ============ App de operarios ============ */
+function viewOp(h){
+  if(loadErr==="nodb") return status();
+  const back = `<a href="#op" class="small">← Volver</a>`;
+  if(h==="op-reporte") return back+opReporte();
+  if(h==="op-prod") return back+opMov("produccion");
+  if(h==="op-venta") return back+opMov("venta");
+  if(h==="op-compra") return back+opMov("compra");
+  if(h==="op-mis") return back+opMis();
+  const mine = myEntries();
+  return `${status()}<div><h1>Hola, ${esc(me.nombre.split(" ")[0])}</h1><p class="muted">${esc(EMPRESAS[opEmp].n)}</p></div>
+  <div class="tiles">
+    <a class="tile big" href="#op-reporte"><span class="ti">!</span><div><b>Reportar un problema en una máquina</b><br><small>Ruidos, vibraciones, pérdidas, fallas. Con fotos y videos.</small></div></a>
+    <a class="tile" href="#op-prod"><span class="ti">▦</span><b>Producción</b><small>Unidades producidas en el turno</small></a>
+    <a class="tile" href="#op-venta"><span class="ti">$</span><b>Venta</b><small>Registrar una venta</small></a>
+    <a class="tile" href="#op-compra"><span class="ti">⇣</span><b>Compra</b><small>Registrar una compra</small></a>
+    <a class="tile" href="#op-mis"><span class="ti">☰</span><b>Mis cargas</b><small>${mine.length} registros</small></a>
+  </div>
+  <p class="muted small">¿Hay un QR en la máquina? Escanealo con la cámara del celular y se abre el reporte de ese equipo.</p>`;
+}
+function myEntries(){
+  const a=[...S.reportes.filter(r=>r.opId?r.opId===me.id:r.operario===me.nombre).map(r=>({ts:r.ts,k:"Reporte",t:`${r.tipo} · ${eqName(r.equipo)}`,st:pill(ESTADOS_REP,r.estado)})),
+    ...S.movimientos.filter(m=>m.opId?m.opId===me.id:m.operario===me.nombre).map(m=>({ts:m.ts,k:{produccion:"Producción",venta:"Venta",compra:"Compra"}[m.tipo],t:`${m.producto} · ${nf.format(m.cantidad)}`,st:pill(ESTADOS_MOV,m.estado)}))];
+  return a.sort((x,y)=>y.ts.localeCompare(x.ts));
+}
+function opMis(){
+  const l=myEntries();
+  return `<h1>Mis cargas</h1>${l.length?`<div class="panel"><div class="list">${l.slice(0,60).map(x=>`<div class="item"><div class="body"><div class="t">${esc(x.k)}: ${esc(x.t)}</div><div class="meta">${fdt(x.ts)}</div></div>${x.st}</div>`).join("")}</div></div>`:`<p class="empty">Todavía no cargaste nada.</p>`}`;
+}
+let repMedia=[], uploading=0;
+function eqOptions(sel, emp){
+  const l=S.equipos.filter(e=>e.estado!=="baja").sort((a,b)=>(a.empresa===emp?0:1)-(b.empresa===emp?0:1)||a.id.localeCompare(b.id));
+  return `<option value="">Elegí la máquina</option>`+Object.keys(EMPRESAS).sort((a,b)=>(a===emp?0:1)-(b===emp?0:1)).map(k=>`<optgroup label="${EMPRESAS[k].n}">${l.filter(e=>e.empresa===k).map(e=>`<option value="${esc(e.id)}" ${sel===e.id?"selected":""}>${esc(e.nombre)} (${esc(e.id)})</option>`).join("")}</optgroup>`).join("");
+}
+function opReporte(){
+  const eq=pendingEq;
+  repMedia=[];
+  return `<h1>Reportar un problema</h1><p class="muted">Contá qué notaste. Mantenimiento lo revisa con las fotos y videos y decide cómo resolverlo.</p>
+  ${!assets?`<div class="note">Desde este acceso no se pueden subir fotos ni videos. Igual podés enviar el reporte con la descripción.</div>`:""}
+  <form class="form" data-form="reporte">
+    <label class="field"><span>Máquina</span><select id="r-eq" name="equipo" required>${eqOptions(eq,opEmp)}</select></label>
+    <div class="field"><span>¿Qué pasa?</span><div class="seg">${TIPOS_REP.map((t,i)=>`<label><input type="radio" name="tipo" value="${esc(t)}" ${i===0?"checked":""}><span>${esc(t)}</span></label>`).join("")}</div></div>
+    <div class="field"><span>¿La máquina sigue funcionando?</span><div class="seg"><label><input type="radio" name="det" value="no" checked><span>Sí, sigue funcionando</span></label><label><input type="radio" name="det" value="si"><span>No, está detenida</span></label></div></div>
+    <label class="field"><span>Descripción</span><textarea id="r-desc" name="desc" required placeholder="Ej.: desde el arranque del turno hace un golpeteo del lado del motor, más fuerte cuando carga"></textarea></label>
+    ${assets?`<label class="upl" for="r-files"><input type="file" id="r-files" accept="image/*,video/mp4,video/webm,video/quicktime" multiple><b>Agregar fotos o videos</b><br><span class="small muted">Videos en MP4, hasta 20 MB (unos 20–30 segundos)</span></label><div class="media" id="r-media"></div>`:""}
+    <button class="btn pri" type="submit" id="r-send">Enviar reporte</button>
+  </form>`;
+}
+function opMov(tipo){
+  const T={produccion:"Cargar producción",venta:"Cargar venta",compra:"Cargar compra"}[tipo];
+  return `<h1>${T}</h1><form class="form" data-form="mov" data-tipo="${tipo}">
+    <div class="row"><label class="field"><span>Empresa</span><select id="m-emp" name="empresa" data-act="mov-emp">${Object.keys(EMPRESAS).map(k=>`<option value="${k}" ${opEmp===k?"selected":""}>${EMPRESAS[k].n}</option>`).join("")}</select></label>
+    <label class="field"><span>Fecha</span><input type="date" id="m-fecha" name="fecha" value="${today()}" required></label></div>
+    ${tipo==="produccion"?`<label class="field"><span>Producto</span><select id="m-prod" name="producto">${EMPRESAS[opEmp].prod.map(p=>`<option>${esc(p)}</option>`).join("")}</select></label>
+      <div class="row"><label class="field"><span>Unidades producidas</span><input type="number" id="m-cant" name="cantidad" min="1" step="1" inputmode="numeric" required></label>
+      <label class="field"><span>Turno</span><select id="m-turno" name="turno"><option>Mañana</option><option>Tarde</option><option>Noche</option></select></label></div>
+      <label class="field"><span>Máquina (opcional)</span><select id="m-eq" name="equipo">${eqOptions("",opEmp).replace("Elegí la máquina","Sin especificar")}</select></label>`:
+    `<label class="field"><span>${tipo==="venta"?"Cliente":"Proveedor"}</span><input type="text" id="m-cp" name="contraparte" required></label>
+      <label class="field"><span>${tipo==="venta"?"Producto":"Qué se compró"}</span>${tipo==="venta"?`<select id="m-prod" name="producto">${EMPRESAS[opEmp].prod.map(p=>`<option>${esc(p)}</option>`).join("")}</select>`:`<input type="text" id="m-prod" name="producto" required placeholder="Ej.: polietileno de alta densidad, rodamientos 6205">`}</label>
+      <div class="row"><label class="field"><span>Cantidad</span><input type="number" id="m-cant" name="cantidad" min="0" step="any" inputmode="decimal" required></label>
+      <label class="field"><span>Monto total ($)</span><input type="number" id="m-monto" name="monto" min="0" step="any" inputmode="decimal" required></label></div>
+      ${tipo==="compra"?`<label class="field"><span>Destino</span><select id="m-dest" name="destino"><option>Producción</option><option>Mantenimiento</option><option>Administración</option></select></label>`:""}`}
+    <label class="field"><span>Observaciones (opcional)</span><textarea id="m-obs" name="obs" style="min-height:70px"></textarea></label>
+    <button class="btn pri" type="submit">Guardar</button></form>`;
+}
+
+/* ============ Post-render: QR ============ */
+function afterRender(){
+  document.querySelectorAll("[data-qr]").forEach(el=>{ if(el.dataset.done) return; el.dataset.done="1"; makeQR(el, el.dataset.qr, 120) });
+}
+function makeQR(el, code, size){
+  if(typeof QRCode==="undefined"){ el.innerHTML=`<span class="small muted">QR no disponible</span>`; return null }
+  el.innerHTML=""; return new QRCode(el,{text:eqUrl(code)||code,width:size,height:size,correctLevel:QRCode.CorrectLevel.M,colorDark:"#000000",colorLight:"#ffffff"});
+}
+function qrCanvas(code,size){ const d=document.createElement("div"); makeQR(d,code,size); return d.querySelector("canvas") }
+async function saveFile(filename,data){
+  if(!downloads){ toast("Las descargas no están disponibles en este acceso."); return }
+  try{ await downloads.save({filename,data}) }catch(e){ if(e&&e.code!=="declined") toast("No se pudo descargar el archivo.") }
+}
+function labelCanvas(e){
+  const c=document.createElement("canvas"); c.width=900; c.height=420; const x=c.getContext("2d");
+  x.fillStyle="#fff"; x.fillRect(0,0,900,420); x.strokeStyle="#16202A"; x.lineWidth=4; x.strokeRect(6,6,888,408);
+  const q=qrCanvas(e.id,340); if(q) x.drawImage(q,40,40,340,340);
+  x.fillStyle="#16202A"; x.font="600 44px 'IBM Plex Mono',monospace"; x.fillText(e.id,410,110);
+  x.font="700 34px Archivo,Arial,sans-serif"; wrapText(x,e.nombre,410,170,450,40);
+  x.font="26px 'IBM Plex Sans',Arial,sans-serif"; x.fillStyle="#566472"; x.fillText(EMPRESAS[e.empresa]?.n||"",410,300); x.fillText(AREAS[e.area]||"",410,338);
+  x.font="22px 'IBM Plex Sans',Arial,sans-serif"; x.fillText("Escaneá para reportar un problema",410,384);
+  return c;
+}
+function wrapText(x,t,X,Y,w,lh){ const ws=String(t).split(" "); let line=""; for(const wd of ws){ const tt=line?line+" "+wd:wd; if(x.measureText(tt).width>w&&line){ x.fillText(line,X,Y); Y+=lh; line=wd } else line=tt } x.fillText(line,X,Y) }
+
+/* ============ Modales ============ */
+function modal(title, inner, onSubmit, opts={}){
+  const root=document.getElementById("modal-root");
+  root.innerHTML=`<div class="ov" data-act="ov"><div class="modal" role="dialog" aria-modal="true" aria-label="${esc(title)}"><div class="modal-h"><h2>${esc(title)}</h2><button class="x" data-act="close" aria-label="Cerrar">×</button></div>
+    ${onSubmit?`<form class="form" id="mform">${inner}<div class="btns"><button class="btn pri" type="submit">${esc(opts.ok||"Guardar")}</button><button class="btn" type="button" data-act="close">Cancelar</button></div></form>`:inner}</div></div>`;
+  const f=document.getElementById("mform");
+  if(f) f.addEventListener("submit",async ev=>{ ev.preventDefault(); const b=f.querySelector("[type=submit]"); b.disabled=true; try{ await onSubmit(Object.fromEntries(new FormData(f)), f); closeModal() }catch(e){ b.disabled=false; if(e&&e.msg) toast(e.msg) } });
+  const first=root.querySelector("input:not([type=hidden]),select,textarea"); if(first) first.focus();
+}
+function closeModal(){ document.getElementById("modal-root").innerHTML="" }
+const sel=(name,map,v,id)=>`<select name="${name}" id="${id||"m-"+name}">${Object.entries(map).map(([k,n])=>`<option value="${k}" ${v===k?"selected":""}>${esc(Array.isArray(n)?n[0]:(n.n||n))}</option>`).join("")}</select>`;
+const fld=(label,html)=>`<label class="field"><span>${label}</span>${html}</label>`;
+
+function nextCode(emp,area,tipo){ const p=`${emp}-${area}-${tipo}-`; const n=S.equipos.filter(e=>e.id.startsWith(p)).map(e=>+e.id.slice(p.length)||0); return p+String((n.length?Math.max(...n):0)+1).padStart(3,"0") }
+const codeField = (label,id) => fld(label,`<input type="password" name="codigo" id="${id||"m-cod"}" required inputmode="numeric" pattern="[0-9]{4,6}" autocomplete="off" style="max-width:180px">`);
+const hist = (e,texto) => { const h=(e.historial||[]).slice(-40); h.push({fecha:new Date().toISOString(),texto:texto+" · "+me.nombre}); return h };
+function mNewEq(){
+  modal("Nuevo equipo",`<div class="row">${fld("Empresa",sel("empresa",EMPRESAS,"INY"))}${fld("Área",sel("area",AREAS,"PRO"))}${fld("Tipo de máquina",sel("tipo",TIPOS,"INY"))}</div>
+    ${fld("Nombre",`<input type="text" name="nombre" id="m-nombre" required placeholder="Ej.: Inyectora 280 t línea bidones">`)}
+    <div class="row">${fld("Marca",`<input type="text" name="marca" id="m-marca">`)}${fld("Modelo",`<input type="text" name="modelo" id="m-modelo">`)}</div>
+    ${fld("Ubicación",`<input type="text" name="ubicacion" id="m-ubic" placeholder="Ej.: Nave 1, sector inyección">`)}
+    ${fld("Notas",`<textarea name="notas" id="m-notas" style="min-height:60px"></textarea>`)}
+    <p class="small muted">El código se genera solo con empresa, área, tipo y número correlativo, y no cambia aunque el equipo se reubique, así la etiqueta QR sigue sirviendo.</p>
+    ${codeField("Código de acceso del gerente de mantenimiento")}`,
+  async d=>{ const g=await findManagerByCode(d.codigo,"gm"); if(!g) throw {msg:"El código no corresponde a ningún gerente de mantenimiento."};
+    const id=nextCode(d.empresa,d.area,d.tipo);
+    await put("equipos",id,{codigo:id,nombre:d.nombre,empresa:d.empresa,area:d.area,tipo:d.tipo,marca:d.marca,modelo:d.modelo,ubicacion:d.ubicacion,notas:d.notas,estado:"operativo",alta:today(),manuales:[],autorizo:g.nombre,historial:[{fecha:new Date().toISOString(),texto:`Alta del equipo · ${me.nombre} (autorizó ${g.nombre})`}]},`Dio de alta el equipo ${id} «${d.nombre}»`,{autorizo:g.nombre});
+    toast("Equipo "+id+" creado"); go("eq-"+id) },{ok:"Crear equipo"});
+}
+function mEditEq(code){
+  const e=eqBy(code);
+  modal("Editar "+code,`${fld("Nombre",`<input type="text" name="nombre" id="m-nombre" required value="${esc(e.nombre)}">`)}
+    <div class="row">${fld("Marca",`<input type="text" name="marca" id="m-marca" value="${esc(e.marca||"")}">`)}${fld("Modelo",`<input type="text" name="modelo" id="m-modelo" value="${esc(e.modelo||"")}">`)}${fld("Estado",sel("estado",{operativo:"Operativo",detenido:"Detenido",reparacion:"En reparación"},e.estado==="baja"?"operativo":e.estado))}</div>
+    ${fld("Notas",`<textarea name="notas" id="m-notas" style="min-height:60px">${esc(e.notas||"")}</textarea>`)}`,
+  async d=>{ const est=e.estado==="baja"?"baja":d.estado; const h=est!==e.estado? hist(e,`Estado cambiado a ${ESTADOS_EQ[est][0]}`) : (e.historial||[]);
+    await patch("equipos",code,{nombre:d.nombre,marca:d.marca,modelo:d.modelo,notas:d.notas,estado:est,historial:h},`Editó el equipo ${code}${est!==e.estado?` (estado: ${ESTADOS_EQ[est][0]})`:""}`); toast("Cambios guardados") });
+}
+function mMoveEq(code){
+  const e=eqBy(code);
+  modal("Reubicar "+code,`<div class="row">${fld("Empresa",sel("empresa",EMPRESAS,e.empresa))}${fld("Área",sel("area",AREAS,e.area))}</div>
+    ${fld("Ubicación",`<input type="text" name="ubicacion" id="m-ubic" value="${esc(e.ubicacion||"")}" required>`)}${fld("Motivo",`<input type="text" name="motivo" id="m-motivo" placeholder="Ej.: préstamo por pico de producción">`)}`,
+  async d=>{ const t=`Reubicado de ${EMPRESAS[e.empresa].n} / ${e.ubicacion||"—"} a ${EMPRESAS[d.empresa].n} / ${d.ubicacion}${d.motivo?" ("+d.motivo+")":""}`;
+    await patch("equipos",code,{empresa:d.empresa,area:d.area,ubicacion:d.ubicacion,historial:hist(e,t)},`Reubicó el equipo ${code}: ${t}`); toast("Equipo reubicado") },{ok:"Reubicar"});
+}
+function mBajaEq(code){
+  const e=eqBy(code);
+  modal("Dar de baja "+code,`<p>El equipo <b>${esc(e.nombre)}</b> deja de aparecer en los listados activos. Su historial se conserva y se puede reactivar.</p>${fld("Motivo de la baja",`<input type="text" name="motivo" id="m-motivo" required placeholder="Ej.: fin de vida útil, venta, desguace">`)}`,
+  async d=>{ await patch("equipos",code,{estado:"baja",historial:hist(e,"Baja: "+d.motivo)},`Dio de baja el equipo ${code}: ${d.motivo}`); toast("Equipo dado de baja") },{ok:"Dar de baja"});
+}
+function mManual(code){
+  modal("Agregar manual",`${fld("Nombre del documento",`<input type="text" name="nombre" id="m-mn" required placeholder="Ej.: Manual de operación y mantenimiento">`)}
+    ${assets?fld("Archivo PDF",`<input type="file" name="file" id="m-mf" accept="application/pdf">`):""}
+    ${fld(assets?"…o un enlace":"Enlace",`<input type="url" name="url" id="m-mu" placeholder="https://">`)}`,
+  async (d,f)=>{ const file=f.querySelector("#m-mf")?.files?.[0]; let m={nombre:d.nombre,fecha:today(),por:me.nombre};
+    if(file&&file.size){ if(file.size>20*1048576) throw {msg:"El PDF supera los 20 MB."}; try{ const r=await assets.upload(file,{type:"application/pdf"}); m.id=r.id }catch(e){ throw {msg:"No se pudo subir el PDF ("+(e.code||"error")+")."} } }
+    else if(d.url) m.url=d.url; else throw {msg:"Elegí un PDF o pegá un enlace."};
+    const e=eqBy(code); await patch("equipos",code,{manuales:[...(e.manuales||[]),m]},`Agregó el manual «${d.nombre}» al equipo ${code}`); toast("Manual agregado") });
+}
+const tecnicos = () => S.usuarios.filter(u=>u.rol==="tec"&&u.activo!==false).map(u=>u.nombre);
+function mOT(eq, rep){
+  const r = rep && S.reportes.find(x=>x.id===rep);
+  modal(r?"Orden desde reporte":"Nueva orden de trabajo",`
+    ${r?`<div class="note info"><span><b>${esc(r.tipo)}</b> reportado por ${esc(r.operario)}: ${esc(r.descripcion)}</span></div>${mediaHtml(r.media)}`:""}
+    ${fld("Equipo",`<select name="equipo" id="m-eq" required>${eqOptions(eq||(r&&r.equipo)||"","")}</select>`)}
+    ${fld("Título",`<input type="text" name="titulo" id="m-tit" required value="${r?esc(r.tipo+" — revisar y corregir"):""}">`)}
+    ${fld("Diagnóstico y tareas a realizar",`<textarea name="descripcion" id="m-desc" placeholder="Qué se sospecha, qué revisar, repuestos a preparar, cuidados de seguridad"></textarea>`)}
+    <div class="row">${fld("Tipo",sel("tipo",{correctiva:"Correctiva",preventiva:"Preventiva"},"correctiva"))}${fld("Prioridad",sel("prioridad",PRIOR,r&&r.detenida?"alta":"media"))}${fld("Fecha objetivo",`<input type="date" name="vence" id="m-vence" value="${ymd(addDays(new Date(),r&&r.detenida?1:5))}">`)}</div>
+    ${fld("Asignar a",`<input type="text" name="asignado" id="m-asig" placeholder="Técnico o contratista" list="tecs"><datalist id="tecs">${[...new Set([...tecnicos(),...S.ordenes.map(o=>o.asignado).filter(Boolean)])].map(t=>`<option value="${esc(t)}">`).join("")}</datalist>`)}
+    ${fld("",`<label class="small" style="display:flex;gap:8px;align-items:center"><input type="checkbox" name="parar" id="m-parar"> Marcar el equipo como «En reparación»</label>`)}`,
+  async d=>{ const id=uid("ot"); const numero=String(Math.max(0,...S.ordenes.map(o=>+o.numero||0))+1).padStart(4,"0");
+    await put("ordenes",id,{numero,equipo:d.equipo,titulo:d.titulo,descripcion:d.descripcion,tipo:d.tipo,prioridad:d.prioridad,vence:d.vence,asignado:d.asignado,estado:"abierta",creada:new Date().toISOString(),reporte:r?r.id:null,fichas:[]},`Creó la OT-${numero} «${d.titulo}» en ${d.equipo}${r?" a partir de un reporte de "+r.operario:""}`);
+    if(r) await patch("reportes",r.id,{estado:"ot",ot:id});
+    if(d.parar){ const e=eqBy(d.equipo); if(e) await patch("equipos",e.id,{estado:"reparacion",historial:hist(e,`En reparación por OT-${numero}`)},`Puso el equipo ${e.id} en reparación (OT-${numero})`) }
+    toast("OT-"+numero+" creada"); go("ot-"+id) },{ok:"Crear orden"});
+}
+function mEditOT(id){
+  const o=S.ordenes.find(x=>x.id===id);
+  modal("Editar OT-"+o.numero,`${fld("Título",`<input type="text" name="titulo" id="m-tit" required value="${esc(o.titulo)}">`)}
+    ${fld("Diagnóstico y tareas",`<textarea name="descripcion" id="m-desc">${esc(o.descripcion||"")}</textarea>`)}
+    <div class="row">${fld("Prioridad",sel("prioridad",PRIOR,o.prioridad))}${fld("Estado",sel("estado",ESTADOS_OT,o.estado))}${fld("Fecha objetivo",`<input type="date" name="vence" id="m-vence" value="${esc(o.vence||"")}">`)}</div>
+    ${fld("Asignado a",`<input type="text" name="asignado" id="m-asig" value="${esc(o.asignado||"")}" list="tecs"><datalist id="tecs">${tecnicos().map(t=>`<option value="${esc(t)}">`).join("")}</datalist>`)}`,
+  async d=>{ const u={titulo:d.titulo,descripcion:d.descripcion,prioridad:d.prioridad,estado:d.estado,vence:d.vence,asignado:d.asignado};
+    if(d.estado==="cerrada"&&!o.cerrada){ u.cerrada=new Date().toISOString(); u.cerradaPor=me.nombre } if(d.estado!=="cerrada"){ u.cerrada=null; u.cerradaPor=null }
+    await patch("ordenes",id,u,`Editó la OT-${o.numero}${d.estado!==o.estado?` (estado: ${ESTADOS_OT[d.estado][0]})`:""}${d.asignado!==o.asignado?` (asignada a ${d.asignado||"nadie"})`:""}`); toast("Orden actualizada") });
+}
+function mCloseOT(id){
+  const o=S.ordenes.find(x=>x.id===id); const e=eqBy(o.equipo);
+  modal("Cerrar OT-"+o.numero,`<p>Se registra el cierre a tu nombre, con fecha y hora actual.</p>${e&&e.estado!=="operativo"&&e.estado!=="baja"?fld("",`<label class="small" style="display:flex;gap:8px;align-items:center"><input type="checkbox" name="op" id="m-op" checked> Volver a poner el equipo como «Operativo»</label>`):""}`,
+  async d=>{ await patch("ordenes",id,{estado:"cerrada",cerrada:new Date().toISOString(),cerradaPor:me.nombre},`Cerró la OT-${o.numero}`);
+    if(d.op&&e) await patch("equipos",e.id,{estado:"operativo",historial:hist(e,`Operativo al cerrar OT-${o.numero}`)},`Puso el equipo ${e.id} operativo`); toast("Orden cerrada") },{ok:"Cerrar orden"});
+}
+function mFicha(id){
+  const o=S.ordenes.find(x=>x.id===id);
+  modal("Ficha de trabajo · OT-"+o.numero,`<p class="small muted">${esc(o.titulo)} · <span class="code">${esc(o.equipo)}</span> · la ficha queda a nombre de <b>${esc(me.nombre)}</b></p>
+    ${fld("Trabajo realizado",`<textarea name="trabajo" id="f-trab" required placeholder="Qué se encontró y qué se hizo"></textarea>`)}
+    <div class="row">${fld("Horas de trabajo",`<input type="number" name="horas" id="f-h" min="0" step="0.25" required inputmode="decimal">`)}${fld("Horas de máquina parada",`<input type="number" name="parada" id="f-p" min="0" step="0.25" value="0" inputmode="decimal">`)}</div>
+    ${fld("Repuestos y materiales usados",`<input type="text" name="repuestos" id="f-rep" placeholder="Ej.: 2 rodamientos 6205-2RS, correa B-52">`)}
+    <div class="field"><span>Resultado</span><div class="seg"><label><input type="radio" name="resultado" value="pendiente" checked><span>Queda trabajo pendiente</span></label><label><input type="radio" name="resultado" value="terminado"><span>Trabajo terminado</span></label></div></div>`,
+  async d=>{ const f={fecha:new Date().toISOString(),tecnico:me.nombre,tecId:me.id,trabajo:d.trabajo,horas:+d.horas||0,parada:+d.parada||0,repuestos:d.repuestos,resultado:d.resultado};
+    await patch("ordenes",id,{fichas:[...(o.fichas||[]),f],estado:d.resultado==="terminado"?"revisar":"curso"},`Cargó una ficha de trabajo en la OT-${o.numero} (${nf1.format(f.horas)} h${d.resultado==="terminado"?", terminado":""})`);
+    toast(d.resultado==="terminado"?"Ficha guardada. La orden pasa a revisión del gerente.":"Ficha guardada") },{ok:"Guardar ficha"});
+}
+function mNewPrev(eq){
+  modal("Programar preventivo",`${fld("Equipo",`<select name="equipo" id="m-eq" required>${eqOptions(eq||"","")}</select>`)}
+    ${fld("Tarea",`<input type="text" name="tarea" id="m-tarea" required placeholder="Ej.: Cambio de aceite hidráulico y filtro">`)}
+    <div class="row">${fld("Frecuencia (días)",`<input type="number" name="frecuencia" id="m-frec" min="1" required value="30">`)}${fld("Última realización",`<input type="date" name="ultima" id="m-ult" value="${today()}">`)}</div>
+    ${fld("Responsable",`<input type="text" name="responsable" id="m-resp" placeholder="Técnico o contratista" list="tecs2"><datalist id="tecs2">${tecnicos().map(t=>`<option value="${esc(t)}">`).join("")}</datalist>`)}`,
+  async d=>{ await put("preventivos",uid("pv"),{equipo:d.equipo,tarea:d.tarea,frecuencia:+d.frecuencia,ultima:d.ultima,responsable:d.responsable,ejecuciones:[]},`Programó el preventivo «${d.tarea}» en ${d.equipo} cada ${d.frecuencia} días`); toast("Preventivo programado") });
+}
+function mDoPrev(id){
+  const p=S.preventivos.find(x=>x.id===id);
+  modal("Registrar preventivo",`<p><b>${esc(p.tarea)}</b><br><span class="small muted">${esc(eqName(p.equipo))} · <span class="code">${esc(p.equipo)}</span> · queda a nombre de <b>${esc(me.nombre)}</b></span></p>
+    <div class="row">${fld("Fecha",`<input type="date" name="fecha" id="p-f" value="${today()}" required>`)}${fld("Horas",`<input type="number" name="horas" id="p-h" min="0" step="0.25" value="1">`)}</div>
+    ${fld("Observaciones",`<textarea name="obs" id="p-obs" style="min-height:70px" placeholder="Valores medidos, desgaste observado, próximos cambios"></textarea>`)}`,
+  async d=>{ const ej=[...(p.ejecuciones||[]).slice(-30),{fecha:d.fecha+"T"+pad(new Date().getHours())+":"+pad(new Date().getMinutes())+":00",tecnico:me.nombre,tecId:me.id,horas:+d.horas||0,obs:d.obs}];
+    await patch("preventivos",id,{ejecuciones:ej,ultima:d.fecha>(p.ultima||"")?d.fecha:p.ultima},`Registró el preventivo «${p.tarea}» en ${p.equipo}`); toast("Preventivo registrado. Próximo: "+fd(ymd(addDays(parseD(d.fecha),p.frecuencia)))) },{ok:"Registrar"});
+}
+function mObs(id){
+  const m=S.movimientos.find(x=>x.id===id);
+  modal("Observar registro",`<p class="small muted">${esc(m.producto)} · ${nf.format(m.cantidad)} · cargado por ${esc(m.operario)}</p>${fld("Nota para el operario o administración",`<textarea name="nota" id="m-nota" required>${esc(m.nota||"")}</textarea>`)}`,
+  async d=>{ await patch("movimientos",id,{estado:"observado",nota:d.nota,revisor:me.nombre},`Observó el registro de ${m.operario} (${m.producto}): ${d.nota}`); toast("Registro observado") });
+}
+function mRenameEmp(k){
+  modal("Cambiar nombre de "+k,`${fld("Nombre actual",`<input type="text" id="m-old" value="${esc(EMPRESAS[k].n)}" disabled>`)}
+    ${fld("Nombre nuevo",`<input type="text" name="nombre" id="m-new" required maxlength="60" value="${esc(EMPRESAS[k].n)}">`)}
+    ${codeField("Tu código de acceso")}`,
+  async d=>{ if(!await checkCode(me,d.codigo)) throw {msg:"El código de acceso no es correcto."};
+    const nuevo=d.nombre.trim(); if(!nuevo) throw {msg:"Escribí el nombre."};
+    const prev=EMPRESAS[k].n; const nombres=Object.fromEntries(Object.keys(EMPRESAS).map(x=>[x,EMPRESAS[x].n])); nombres[k]=nuevo;
+    await put("config","empresas",{nombres},`Cambió el nombre de la empresa ${k}: «${prev}» → «${nuevo}»`); toast("Nombre actualizado") },{ok:"Guardar"});
+}
+function mNewUser(){
+  const roles=CREA[role]||[];
+  modal("Nueva cuenta",`${fld("Nombre y apellido",`<input type="text" name="nombre" id="u-n" required>`)}
+    <div class="row">${fld("Usuario",`<input type="text" name="usuario" id="u-u" required autocapitalize="none" spellcheck="false" pattern="[a-z0-9._\\-]{3,30}" title="Minúsculas, números, punto o guion" placeholder="ej.: jperez">`)}
+    ${fld("Perfil",`<select name="rol" id="u-r" data-act="u-rol">${roles.map(r=>`<option value="${r}">${ROLES[r].n}</option>`).join("")}</select>`)}</div>
+    <div class="row" id="u-emp-row" ${roles[0]==="op"?"":"hidden"}>${fld("Empresa (operarios)",sel("empresa",EMPRESAS,"INY","u-e"))}</div>
+    <div class="row">${fld("Contraseña inicial (mín. 8)",`<input type="password" name="pass" id="u-p" required minlength="8" autocomplete="new-password">`)}
+    <span id="u-code-row" ${CON_CODIGO.includes(roles[0])?"":"hidden"}>${fld("Código de acceso (4 a 6 números)",`<input type="password" name="code" id="u-c" inputmode="numeric" pattern="[0-9]{4,6}" autocomplete="off">`)}</span></div>
+    <p class="small muted">Pasale el usuario y la contraseña a la persona; puede cambiarla desde «Mi cuenta». Los gerentes y dirección tienen además un código de acceso para autorizar cambios sensibles.</p>`,
+  async d=>{ const usuario=d.usuario.trim().toLowerCase();
+    if(S.usuarios.some(u=>u.usuario===usuario)) throw {msg:"Ese usuario ya existe."};
+    if(!roles.includes(d.rol)) throw {msg:"No podés crear cuentas con ese perfil."};
+    if(CON_CODIGO.includes(d.rol)&&!/^[0-9]{4,6}$/.test(d.code||"")) throw {msg:"Los gerentes y dirección necesitan un código de 4 a 6 números."};
+    const salt=newSalt(); const u={nombre:d.nombre.trim(),usuario,rol:d.rol,activo:true,salt,passHash:await hashSecret(d.pass,salt)};
+    if(d.rol==="op") u.empresa=d.empresa; if(CON_CODIGO.includes(d.rol)) u.codeHash=await hashSecret("code:"+d.code,salt);
+    await put("usuarios",uid("u"),u,`Creó la cuenta de ${u.nombre} (${ROLES[d.rol].n})`); toast("Cuenta creada") },{ok:"Crear cuenta"});
+}
+function mResetUser(id){
+  const u=S.usuarios.find(x=>x.id===id);
+  modal("Nueva contraseña para "+u.nombre,`${fld("Contraseña nueva (mín. 8)",`<input type="password" name="pass" id="u-p" required minlength="8" autocomplete="new-password">`)}
+    ${CON_CODIGO.includes(u.rol)?fld("Código de acceso nuevo (opcional)",`<input type="password" name="code" id="u-c" inputmode="numeric" pattern="[0-9]{4,6}" autocomplete="off">`):""}`,
+  async d=>{ const salt=newSalt(); const upd={salt,passHash:await hashSecret(d.pass,salt)};
+    if(CON_CODIGO.includes(u.rol)){ if(d.code) upd.codeHash=await hashSecret("code:"+d.code,salt); else throw {msg:"Al cambiar la contraseña de un gerente hay que darle también un código nuevo."} }
+    await patch("usuarios",id,upd,`Restableció la contraseña de ${u.nombre}`); toast("Contraseña cambiada") });
+}
+function mAccount(){
+  const cod=CON_CODIGO.includes(me.rol);
+  modal("Mi cuenta",`<p><b>${esc(me.nombre)}</b> · <span class="mono">${esc(me.usuario)}</span> · ${esc(ROLES[me.rol].n)}</p>
+    ${fld("Contraseña actual",`<input type="password" name="cur" id="a-cur" required autocomplete="current-password">`)}
+    <div class="row">${fld("Contraseña nueva (opcional)",`<input type="password" name="pass" id="a-p" minlength="8" autocomplete="new-password">`)}
+    ${cod?fld("Código de acceso nuevo (opcional)",`<input type="password" name="code" id="a-c" inputmode="numeric" pattern="[0-9]{4,6}" autocomplete="off">`):""}</div>`,
+  async d=>{ if(!await checkPass(me,d.cur)) throw {msg:"La contraseña actual no es correcta."};
+    if(!d.pass&&!d.code) throw {msg:"No cambiaste nada."};
+    const salt=newSalt(); const upd={salt,passHash:await hashSecret(d.pass||d.cur,salt)};
+    if(cod){ if(d.code) upd.codeHash=await hashSecret("code:"+d.code,salt); else if(me.codeHash) throw {msg:"Por seguridad, al cambiar la contraseña volvé a escribir tu código (puede ser el mismo)."} }
+    await patch("usuarios",me.id,upd,`Cambió su ${d.pass&&d.code?"contraseña y código":d.pass?"contraseña":"código de acceso"}`); toast("Datos actualizados") });
+}
+function confirmBox(title,text,ok,fn){ modal(title,`<p>${text}</p>`,async()=>{ await fn() },{ok}) }
+
+/* ============ Eventos ============ */
+function logout(){ const k=role==="op"?SESS_O:SESS_G; lsSet(k,null); me=null; role=null; closeModal(); document.getElementById("app").dataset.view=""; go(k===SESS_O?"operarios":"inicio") }
+document.addEventListener("click", async ev=>{
+  const tr=ev.target.closest("tr[data-go]"); if(tr&&!ev.target.closest("a,button")){ go(tr.dataset.go); return }
+  const a=ev.target.closest("[data-act]"); if(!a) return;
+  const act=a.dataset.act, id=a.dataset.id, eq=a.dataset.eq;
+  if(act==="ov"&&ev.target!==a) return;
+  if(["otf","repf","mov-emp","u-rol"].includes(act)) return;
+  if(a.tagName==="A") ev.preventDefault();
+  try{ switch(act){
+    case "logout": logout(); break;
+    case "account": mAccount(); break;
+    case "close": case "ov": closeModal(); break;
+    case "new-eq": mNewEq(); break;
+    case "edit-eq": mEditEq(eq); break;
+    case "move-eq": mMoveEq(eq); break;
+    case "baja-eq": mBajaEq(eq); break;
+    case "unbaja-eq": { const e=eqBy(eq); await patch("equipos",eq,{estado:"operativo",historial:hist(e,"Equipo reactivado")},`Reactivó el equipo ${eq}`); toast("Equipo reactivado") } break;
+    case "add-manual": mManual(eq); break;
+    case "del-manual": { const e=eqBy(eq); const i=+a.dataset.i; const m=e.manuales[i]; confirmBox("Quitar manual",`¿Quitar «${esc(m.nombre)}» de este equipo?`,"Quitar",async()=>{ await patch("equipos",eq,{manuales:e.manuales.filter((_,j)=>j!==i)},`Quitó el manual «${m.nombre}» del equipo ${eq}`); if(m.id&&assets){ try{await assets.delete(m.id)}catch(e){} } }) } break;
+    case "eqtab": ui.eqTab=a.dataset.tab; render(); break;
+    case "new-ot": mOT(eq); break;
+    case "rep-ot": mOT(null,id); break;
+    case "edit-ot": mEditOT(id); break;
+    case "close-ot": mCloseOT(id); break;
+    case "reopen-ot": { const o=S.ordenes.find(x=>x.id===id); await patch("ordenes",id,{estado:"curso",cerrada:null,cerradaPor:null},`Reabrió la OT-${o.numero}`); toast("Orden reabierta") } break;
+    case "ficha": mFicha(id); break;
+    case "new-prev": mNewPrev(eq); break;
+    case "do-prev": mDoPrev(id); break;
+    case "del-prev": { const p=S.preventivos.find(x=>x.id===id); confirmBox("Quitar preventivo","Se elimina la tarea programada y su registro de realizaciones.","Quitar",async()=>{ await del("preventivos",id,`Quitó el preventivo «${p.tarea}» de ${p.equipo}`) }) } break;
+    case "rep-st": { const r=S.reportes.find(x=>x.id===id); await patch("reportes",id,{estado:a.dataset.st},`Marcó el reporte de ${r.operario} (${r.tipo}, ${r.equipo}) como ${ESTADOS_REP[a.dataset.st][0].toLowerCase()}`); toast(a.dataset.st==="descartado"?"Reporte descartado":"Reporte en análisis") } break;
+    case "open-rep": location.hash="reportes"; break;
+    case "mov-ok": { const m=S.movimientos.find(x=>x.id===id); await patch("movimientos",id,{estado:"revisado",revisor:me.nombre},`Marcó como revisado el registro de ${m.operario} (${m.producto})`) } break;
+    case "mov-obs": mObs(id); break;
+    case "emp-ren": mRenameEmp(a.dataset.k); break;
+    case "user-new": mNewUser(); break;
+    case "user-reset": mResetUser(id); break;
+    case "user-tog": { const u=S.usuarios.find(x=>x.id===id); const act2=u.activo===false; confirmBox(act2?"Activar cuenta":"Desactivar cuenta",act2?`${esc(u.nombre)} va a poder volver a ingresar.`:`${esc(u.nombre)} no va a poder ingresar más. Su historial se conserva.`,act2?"Activar":"Desactivar",async()=>{ await patch("usuarios",id,{activo:act2},`${act2?"Activó":"Desactivó"} la cuenta de ${u.nombre}`) }) } break;
+    case "listtab": ui.listTab=a.dataset.tab; render(); break;
+    case "wk": ui.weekOff=Math.min(0,ui.weekOff+(+a.dataset.d)); render(); break;
+    case "zoom": modal("Foto",`<img class="lightbox" src="/_blob/${esc(id)}" alt="Foto del reporte">`); break;
+    case "qr-dl": { const e=eqBy(eq); const c=labelCanvas(e); c.toBlob(b=>saveFile(`etiqueta-${e.id}.png`,b),"image/png") } break;
+    case "qr-sheet": saveFile("etiquetas-qr-equipos.html", qrSheetHtml()); break;
+    case "csv": saveFile(`${ui.listTab}-${today()}.csv`, csv(listFiltered())); break;
+    case "dl-report": { const w=weekData(ui.weekOff); saveFile(`informe-semanal-${ymd(w.ws)}.html`, reportHtml(w)) } break;
+    case "clear-seed":
+      if(me.ejemplo){ modal("Primero creá tu cuenta",`<p>Estás usando una cuenta de ejemplo. Creá tu propia cuenta en «Usuarios», entrá con ella y después borrá los datos de ejemplo.</p>`); break }
+      confirmBox("Borrar datos de ejemplo","Se eliminan los equipos, órdenes, preventivos, reportes y registros de ejemplo, y se desactivan las cuentas de ejemplo. Lo que cargaron ustedes queda.","Borrar",async()=>{
+        for(const c of DATA_COLS) for(const x of S[c].filter(y=>y.ejemplo)) await db.collection(c).doc(x.id).delete();
+        for(const u of S.usuarios.filter(y=>y.ejemplo&&y.activo!==false)) await db.collection("usuarios").doc(u.id).update({activo:false});
+        await audit("Borró los datos de ejemplo y desactivó las cuentas de ejemplo","config",""); toast("Datos de ejemplo borrados") }); break;
+  } }catch(e){}
+});
+document.addEventListener("change", ev=>{
+  const t=ev.target;
+  if(t.dataset.ui && t.tagName==="SELECT" || t.type==="date"&&t.dataset.ui){ ui[t.dataset.ui]=t.value; render(); return }
+  if(t.dataset.act==="otf"){ ui.otEst=t.value; render(); return }
+  if(t.dataset.act==="repf"){ ui.repEst=t.value; render(); return }
+  if(t.dataset.act==="u-rol"){ document.getElementById("u-emp-row").hidden = t.value!=="op"; document.getElementById("u-code-row").hidden = !CON_CODIGO.includes(t.value); return }
+  if(t.dataset.act==="mov-emp"){ const s=document.getElementById("m-prod"); if(s&&s.tagName==="SELECT") s.innerHTML=EMPRESAS[t.value].prod.map(p=>`<option>${esc(p)}</option>`).join(""); const q=document.getElementById("m-eq"); if(q) q.innerHTML=eqOptions("",t.value).replace("Elegí la máquina","Sin especificar"); return }
+  if(t.id==="r-files") handleFiles(t);
+});
+let qT; document.addEventListener("input", ev=>{ const t=ev.target; if(t.dataset.ui&&t.type==="search"){ ui[t.dataset.ui]=t.value; clearTimeout(qT); qT=setTimeout(render,150) } });
+document.addEventListener("keydown", ev=>{ if(ev.key==="Escape") closeModal() });
+document.addEventListener("submit", async ev=>{
+  const f=ev.target; if(!f.dataset.form) return; ev.preventDefault();
+  const d=Object.fromEntries(new FormData(f));
+  const btn=f.querySelector("[type=submit]");
+  if(f.dataset.form==="login"){
+    const err=document.getElementById("l-err"); const fail=m=>{ err.textContent=m; err.hidden=false; btn.disabled=false };
+    btn.disabled=true; err.hidden=true;
+    const u=S.usuarios.find(x=>x.usuario===d.u.trim().toLowerCase());
+    if(!u||!(await checkPass(u,d.p))) return fail("Usuario o contraseña incorrectos.");
+    if(u.activo===false) return fail("Esta cuenta está desactivada. Hablá con tu gerente.");
+    const opM=f.dataset.mode==="o";
+    if(opM&&u.rol!=="op") return fail("Esta cuenta es de gestión. Entrá por la app de Gestión.");
+    if(!opM&&u.rol==="op") return fail("Esta cuenta es de operario. Entrá por la app de operarios.");
+    lsSet(opM?SESS_O:SESS_G,u.id); me=u; role=u.rol;
+    await audit(`Ingresó a la app de ${opM?"operarios":"gestión"}`,"sesion",u.id);
+    document.getElementById("app").dataset.view="";
+    const h=route(); if(h.startsWith("g-eq-")||h.startsWith("eq-")) render(); else go(opM?"op":ROLES[u.rol].nav[0]);
+    return;
+  }
+  if(f.dataset.form==="setup"){
+    if(S.usuarios.length){ render(); return }
+    btn.disabled=true;
+    const salt=newSalt(); const id=uid("u");
+    const u={nombre:d.nombre.trim(),usuario:d.usuario.trim().toLowerCase(),rol:d.rol,activo:true,salt,passHash:await hashSecret(d.pass,salt),codeHash:await hashSecret("code:"+d.code,salt)};
+    me=Object.assign({id},u); role=u.rol;
+    try{ await put("usuarios",id,u,"Creó la primera cuenta del sistema"); lsSet(SESS_G,id); document.getElementById("app").dataset.view=""; go(ROLES[u.rol].nav[0]) }catch(e){ btn.disabled=false; me=null }
+    return;
+  }
+  if(!canWrite){ toast("Tu acceso es de solo lectura."); return }
+  if(f.dataset.form==="reporte"){
+    if(uploading){ toast("Esperá a que terminen de subir los archivos."); return }
+    btn.disabled=true;
+    try{ await put("reportes",uid("rp"),{equipo:d.equipo,tipo:d.tipo,detenida:d.det==="si",descripcion:d.desc,operario:me.nombre,opId:me.id,empresaOperario:opEmp,ts:new Date().toISOString(),estado:"nuevo",media:repMedia.filter(m=>m.id)},`Reportó «${d.tipo}» en ${d.equipo}`);
+      pendingEq=null; repMedia=[]; toast("Reporte enviado a mantenimiento"); document.getElementById("app").dataset.view=""; go("op") }catch(e){ btn.disabled=false }
+    return;
+  }
+  if(f.dataset.form==="mov"){
+    btn.disabled=true;
+    const m={tipo:f.dataset.tipo,empresa:d.empresa,fecha:d.fecha,producto:d.producto,cantidad:+d.cantidad||0,operario:me.nombre,opId:me.id,ts:new Date().toISOString(),estado:"pendiente",obs:d.obs||""};
+    if(d.monto) m.monto=+d.monto; if(d.contraparte) m.contraparte=d.contraparte; if(d.turno) m.turno=d.turno; if(d.equipo) m.equipo=d.equipo; if(d.destino) m.destino=d.destino;
+    try{ await put("movimientos",uid("mv"),m,`Cargó ${{produccion:"producción",venta:"venta",compra:"compra"}[m.tipo]}: ${m.producto} × ${nf.format(m.cantidad)} (${EMPRESAS[m.empresa].n})`); toast("Guardado"); document.getElementById("app").dataset.view=""; go("op") }catch(e){ btn.disabled=false }
+  }
+});
+
+/* ============ Fotos y videos ============ */
+async function handleFiles(input){
+  const box=document.getElementById("r-media"); const files=[...input.files]; input.value="";
+  for(const file of files){
+    const slot={id:null,tipo:file.type.startsWith("video")?"video":"foto"}; repMedia.push(slot);
+    const el=document.createElement("div"); el.className="ph"; el.textContent="Subiendo…"; box.appendChild(el);
+    uploading++; updSend();
+    try{
+      let blob=file, type=file.type;
+      if(slot.tipo==="foto"){ blob=await shrink(file); type="image/jpeg" }
+      else{
+        if(!["video/mp4","video/webm"].includes(type)) throw {code:"fmt"};
+        if(file.size>20*1048576) throw {code:"too_large"};
+      }
+      const r=await assets.upload(blob,{type});
+      slot.id=r.id;
+      const m=document.createElement(slot.tipo==="video"?"video":"img"); m.src=r.url; if(slot.tipo==="video"){m.controls=true;m.preload="metadata"} else m.alt="Foto adjunta";
+      el.replaceWith(m);
+    }catch(e){
+      repMedia.splice(repMedia.indexOf(slot),1);
+      el.textContent = e.code==="fmt"? "Video en formato MOV: en el iPhone activá Ajustes › Cámara › Formatos › Más compatible" : e.code==="too_large"? "Archivo de más de 20 MB: grabá un video más corto" : "No se pudo subir";
+      el.style.color="var(--crit)";
+    }
+    uploading--; updSend();
+  }
+}
+function updSend(){ const b=document.getElementById("r-send"); if(b){ b.disabled=uploading>0; b.textContent=uploading?`Subiendo ${uploading} archivo${uploading>1?"s":""}…`:"Enviar reporte" } }
+async function shrink(file){
+  try{
+    const bmp=await createImageBitmap(file); const s=Math.min(1,1600/Math.max(bmp.width,bmp.height));
+    const c=document.createElement("canvas"); c.width=Math.round(bmp.width*s); c.height=Math.round(bmp.height*s);
+    c.getContext("2d").drawImage(bmp,0,0,c.width,c.height);
+    return await new Promise(r=>c.toBlob(r,"image/jpeg",0.82));
+  }catch(e){ return file }
+}
+
+/* ============ Exportaciones ============ */
+function csv(l){
+  const head=["Fecha","Tipo","Empresa","Producto/Ítem","Cantidad","Monto","Cliente/Proveedor","Turno","Equipo","Cargó","Estado","Observaciones"];
+  const q=v=>{ v=String(v??""); return /[;"\n]/.test(v)?`"${v.replace(/"/g,'""')}"`:v };
+  const rows=l.map(m=>[m.fecha,m.tipo,EMPRESAS[m.empresa]?.n,m.producto,String(m.cantidad).replace(".",","),m.monto?String(m.monto).replace(".",","):"",m.contraparte,m.turno,m.equipo,m.operario,ESTADOS_MOV[m.estado]?.[0],[m.obs,m.nota].filter(Boolean).join(" / ")].map(q).join(";"));
+  return "﻿"+[head.join(";"),...rows].join("\r\n");
+}
+function qrSheetHtml(){
+  const l=S.equipos.filter(e=>e.estado!=="baja").sort((a,b)=>a.id.localeCompare(b.id));
+  const cards=l.map(e=>{ const c=qrCanvas(e.id,220); return `<div class="l"><img src="${c?c.toDataURL():""}"><div><b>${esc(e.id)}</b><span>${esc(e.nombre)}</span><small>${esc(EMPRESAS[e.empresa]?.n)} · ${esc(AREAS[e.area]||"")}</small></div></div>` }).join("");
+  return `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Etiquetas QR de equipos</title><style>body{font-family:Arial,sans-serif;margin:10mm}h1{font-size:14pt}.g{display:grid;grid-template-columns:1fr 1fr;gap:6mm}.l{border:1.5px solid #000;border-radius:3mm;padding:3mm;display:flex;gap:4mm;align-items:center;break-inside:avoid}.l img{width:32mm;height:32mm}.l b{font-family:monospace;font-size:12pt;display:block}.l span{display:block;font-size:11pt;margin:1mm 0}.l small{color:#444}</style></head><body><h1>Etiquetas QR · ${l.length} equipos · ${fd(today())}</h1><p style="font-size:9pt">Imprimir en papel autoadhesivo o plastificar. Cada QR abre la ficha del equipo en la app.</p><div class="g">${cards}</div></body></html>`;
+}
+function reportHtml(w){
+  const P=pendientes(); const e=s=>esc(s);
+  const empRows=Object.keys(EMPRESAS).map(k=>`<tr><td>${EMPRESAS[k].n}</td><td class=n>${nf.format(sum(w.prod.filter(m=>m.empresa===k),"cantidad"))}</td><td class=n>${money(sum(w.ven.filter(m=>m.empresa===k),"monto"))}</td><td class=n>${money(sum(w.com.filter(m=>m.empresa===k),"monto"))}</td><td class=n>${S.ordenes.filter(o=>o.estado!=="cerrada"&&(eqBy(o.equipo)||{}).empresa===k).length}</td></tr>`).join("");
+  const tareas=[...w.fichas.map(f=>[f.fecha,"Correctivo",`${f.ot.titulo} (OT-${f.ot.numero})`,f.ot.equipo,f.tecnico,f.trabajo]),...w.prevDone.map(x=>[x.fecha,"Preventivo",x.p.tarea,x.p.equipo,x.tecnico,x.obs||""])].sort((a,b)=>a[0].localeCompare(b[0]));
+  return `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Informe semanal ${fd(ymd(w.ws))}</title><style>body{font-family:Arial,sans-serif;max-width:900px;margin:20px auto;padding:0 16px;color:#16202A}h1{font-size:20pt;margin-bottom:0}h2{font-size:14pt;border-bottom:2px solid #0A5AA8;padding-bottom:4px;margin-top:28px}table{width:100%;border-collapse:collapse;font-size:10pt;margin-top:8px}th,td{border-bottom:1px solid #ccc;padding:5px;text-align:left;vertical-align:top}th{background:#EEF1F4}.n{text-align:right}.k{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.k div{border:1px solid #ccc;border-radius:4px;padding:8px}.k b{display:block;font-size:16pt}</style></head><body>
+  <h1>Informe semanal del grupo</h1><p>Semana del ${fd(ymd(w.ws))} al ${fd(ymd(addDays(w.we,-1)))} · generado el ${fdt(new Date().toISOString())}</p>
+  <h2>Productividad</h2><div class="k"><div><b>${nf.format(sum(w.prod,"cantidad"))}</b>Unidades producidas</div><div><b>${money(sum(w.ven,"monto"))}</b>Ventas</div><div><b>${money(sum(w.com,"monto"))}</b>Compras</div><div><b>${w.movs.filter(m=>m.estado!=="pendiente").length}/${w.movs.length}</b>Registros revisados</div></div>
+  <table><tr><th>Empresa</th><th class=n>Unidades</th><th class=n>Ventas</th><th class=n>Compras</th><th class=n>OT abiertas</th></tr>${empRows}</table>
+  <h2>Mantenimiento</h2><div class="k"><div><b>${w.otNew.length}</b>OT generadas</div><div><b>${w.otClosed.length}</b>OT cerradas</div><div><b>${w.prevDone.length}</b>Preventivos realizados</div><div><b>${nf1.format(w.horas)} h</b>Trabajo técnico</div><div><b>${nf1.format(w.parada)} h</b>Máquina parada</div><div><b>${w.reps.length}</b>Reportes de operarios</div><div><b>${hrs(w.resp)}</b>Reporte → OT</div><div><b>${hrs(w.res)}</b>OT → cierre</div></div>
+  <h2>Tareas realizadas</h2>${tareas.length?`<table><tr><th>Fecha</th><th>Tipo</th><th>Tarea</th><th>Equipo</th><th>Técnico</th><th>Detalle</th></tr>${tareas.map(t=>`<tr><td>${fd(t[0])}</td><td>${t[1]}</td><td>${e(t[2])}</td><td>${e(t[3])}</td><td>${e(t[4])}</td><td>${e(t[5])}</td></tr>`).join("")}</table>`:"<p>Sin tareas registradas.</p>"}
+  <h2>Pendientes</h2><table><tr><th>Orden</th><th>Equipo</th><th>Prioridad</th><th>Estado</th></tr>${P.ots.map(o=>`<tr><td>OT-${e(o.numero)} ${e(o.titulo)}</td><td>${e(o.equipo)}</td><td>${PRIOR[o.prioridad][0]}</td><td>${ESTADOS_OT[o.estado][0]}</td></tr>`).join("")}</table>
+  <p>Preventivos vencidos: ${P.venc.length} · Reportes sin resolver: ${P.reps.length} · Registros sin revisar: ${P.movs.length} · Equipos fuera de servicio: ${P.det.length}</p>
+  </body></html>`;
+}
+
+boot();
+</script>
+</html>
