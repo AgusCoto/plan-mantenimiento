@@ -157,6 +157,11 @@ r = await jefe.rpc("mover_equipo", { p_mov: mov, p_accion: "salida" }); prueba("
 r = await tec.from("equipos").select("codigo,empresa_ubicacion_id").eq("id", apl.id); prueba("el técnico de INY ya ve el apilador prestado (el código no cambia)", r.data?.[0]?.codigo === "LIM-APL-001" && r.data[0].empresa_ubicacion_id === emp.INY, r);
 r = await jefe.rpc("mover_equipo", { p_mov: mov, p_accion: "vuelta" }); prueba("vuelve a LIM", !r.error, r.error);
 r = await tec.from("equipos").select("id").eq("id", apl.id); prueba("y el técnico de INY deja de verlo", no(r), r);
+r = await jefe.rpc("pedir_prestamo", { p_equipo: apl.id, p_empresa_destino: emp.PIN, p_area: null, p_ubicacion: null, p_vuelta: null, p_motivo: "Prueba" }); const mov2 = r.data;
+r = await jefe.rpc("pedir_prestamo", { p_equipo: apl.id, p_empresa_destino: emp.SAL, p_area: null, p_ubicacion: null, p_vuelta: null, p_motivo: "Otro" }); prueba("no se piden dos préstamos a la vez del mismo equipo", !!r.error);
+r = await dir.rpc("cancelar_prestamo", { p_mov: mov2, p_motivo: "x" }); prueba("dirección no cancela préstamos (los aprueba o rechaza)", !!r.error);
+r = await jefe.rpc("cancelar_prestamo", { p_mov: mov2, p_motivo: "Ya no hace falta" }); prueba("el jefe cancela un préstamo que no salió", !r.error, r.error);
+r = await jefe.rpc("cancelar_prestamo", { p_mov: mov, p_motivo: "x" }); prueba("pero no uno que ya salió y volvió", !!r.error);
 r = await jefe.rpc("reparacion_externa", { p_equipo: comp2.id, p_proveedor: prov.id, p_salida: "2026-11-14", p_vuelta: "2026-11-30", p_presupuesto: 250000, p_remito: "R-1", p_motivo: "Rebobinado" }); prueba("el jefe manda a reparar afuera", !r.error, r.error);
 r = await jefe.from("equipos").select("estado").eq("id", comp2.id).single(); prueba("el equipo queda en «reparación externa»", r.data?.estado === "reparacion_externa", r);
 r = await enc.rpc("baja_equipo", { p_equipo: comp.id, p_motivo: "x", p_destino: "chatarra" }); prueba("el encargado no da de baja", !!r.error);

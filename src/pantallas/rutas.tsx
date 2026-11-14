@@ -14,13 +14,15 @@ import { Ordenes, NuevaOrden } from "./ordenes/Ordenes";
 import { Orden } from "./ordenes/Orden";
 import { FichaTrabajo } from "./ordenes/FichaTrabajo";
 import { Compras } from "./compras/Compras";
+import { Movimientos } from "./movimientos/Movimientos";
 
 const MANT: Perfil[] = ["jefe", "encargado", "tecnico"];
-export function menuExtra(t: (k: Termino) => string, c: { nuevos: number; compras: number }): ItemMenu[] {
+export function menuExtra(t: (k: Termino) => string, c: { nuevos: number; compras: number; prestamos: number }): ItemMenu[] {
   return [
     { a: "/ordenes", texto: t("ordenes"), ico: "ordenes", perfiles: [...MANT, "direccion"] },
     { a: "/reportes", texto: t("reportes"), ico: "reportes", insignia: c.nuevos, perfiles: [...MANT, "direccion"] },
     { a: "/equipos", texto: t("equipos"), ico: "equipos", perfiles: [...MANT, "direccion"] },
+    { a: "/movimientos", texto: t("movimientos"), ico: "movimientos", insignia: c.prestamos, perfiles: [...MANT, "direccion"] },
     { a: "/compras", texto: t("pedidos"), ico: "compras", insignia: c.compras, perfiles: ["jefe", "encargado", "direccion"] },
   ];
 }
@@ -36,6 +38,7 @@ export function rutasExtra(perfil: Perfil): ReactNode[] {
     <Route key="ot-f" path="/ordenes/:id/ficha" element={solo(MANT, perfil, <FichaTrabajo />)} />,
     <Route key="ot" path="/ordenes/:id" element={solo([...MANT, "direccion"], perfil, <Orden />)} />,
     <Route key="cp" path="/compras" element={solo(["jefe", "encargado", "direccion"], perfil, <Compras />)} />,
+    <Route key="mov" path="/movimientos" element={solo([...MANT, "direccion"], perfil, <Movimientos />)} />,
     <Route key="eq" path="/equipos" element={solo([...MANT, "direccion"], perfil, <Equipos />)} />,
     <Route key="eq-n" path="/equipos/nuevo" element={solo(["jefe"], perfil, <FormEquipo />)} />,
     <Route key="eq-et" path="/equipos/etiquetas" element={solo(["jefe"], perfil, <Etiquetas />)} />,

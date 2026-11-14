@@ -391,6 +391,17 @@ begin
   end if;
 end $$;
 
+-- El jefe cancela un préstamo que todavía no salió (pedido o aprobado): queda como rechazado, con el motivo
+create or replace function public.cancelar_prestamo(p_mov uuid, p_motivo text) returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if not public.es('jefe') then perform public._error('Los préstamos los cancela el jefe de mantenimiento.'); end if;
+  if coalesce(btrim(p_motivo), '') = '' then perform public._error('Indicá el motivo.'); end if;
+  update public.movimientos_equipo set estado = 'rechazado', respuesta = 'Cancelado: ' || p_motivo, resuelto_por = auth.uid(), resuelto_en = now()
+    where id = p_mov and tipo = 'prestamo' and estado in ('solicitado','aprobado');
+  if not found then perform public._error('Solo se cancela un préstamo que todavía no salió.'); end if;
+end $$;
+
 -- Mandar a reparar afuera (el jefe; queda en curso desde la salida)
 create or replace function public.reparacion_externa(p_equipo uuid, p_proveedor uuid, p_salida date, p_vuelta date, p_presupuesto numeric, p_remito text, p_motivo text)
 returns uuid language plpgsql security definer set search_path = public as $$

@@ -6,7 +6,7 @@
 do $$
 declare f record;
   publicas text[] := array['mi_perfil','es','es_mantenimiento','mi_empresa','activo','veo_equipo','veo_orden','trabajo_en','puedo_adjuntar',
-    'orden_estado','orden_prioridad','descartar_reporte','pedir_repuesto','resolver_pedido','recibir_pedido','pedir_prestamo',
+    'orden_estado','orden_prioridad','descartar_reporte','pedir_repuesto','resolver_pedido','recibir_pedido','pedir_prestamo','cancelar_prestamo',
     'resolver_prestamo','mover_equipo','reparacion_externa','reubicar_equipo','baja_equipo','estado_equipo','cargar_horometro',
     'crear_usuario','editar_usuario','restablecer_clave','estado_usuario','cambiar_mi_clave','registrar_conflicto','prioridad_de',
     'guardar_tema','volver_a_tema','problemas_contraste','contraste'];

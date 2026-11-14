@@ -15,6 +15,7 @@ import { insertar, actualizar, llamar } from "../../datos/cola";
 import { BotonNFC, datosEtiqueta } from "./Recien";
 import { Ico } from "../../sistema/iconos";
 import { AccionesEquipo } from "../movimientos/AccionesEquipo";
+import { ESTADOS_MOV } from "../movimientos/Movimientos";
 import type { Documento, Equipo } from "../../datos/tipos";
 
 const CATEGORIAS: Record<string, string> = { chapa: "Foto de la chapa", foto: "Foto", manual: "Manual del fabricante", plano: "Plano eléctrico", plc: "Programa de PLC", bloqueo: "Bloqueo y etiquetado", configuracion: "Foto de configuración", otro: "Otro" };
@@ -138,7 +139,7 @@ export function Ficha() {
             {perfil === "jefe" && <button className="boton" style={{ marginTop: "var(--e3)" }} onClick={() => abrir(<NuevoDocumento e={e} />)}>Agregar documento</button>}
           </>}
           {tab === "movimientos" && (movs.length ? <div className="tabla"><table><thead><tr><th>Fecha</th><th>Tipo</th><th>Estado</th><th>Detalle</th></tr></thead><tbody>
-            {movs.map((m) => <tr key={m.id}><td className="num">{fd(m.creado_en)}</td><td>{m.tipo.replace("_", " ")}</td><td>{m.estado}</td>
+            {movs.map((m) => <tr key={m.id}><td className="num">{fd(m.creado_en)}</td><td>{({ prestamo: tema.t("prestamo"), reparacion_externa: tema.t("reparacion_externa"), baja: "Baja", reubicacion: "Reubicación" } as Record<string, string>)[m.tipo]}</td><td><Pastilla c={ESTADOS_MOV[m.estado][1]}>{ESTADOS_MOV[m.estado][0]}</Pastilla></td>
               <td className="chico">{[m.empresa_destino_id && d.empresa(m.empresa_destino_id)?.sigla, m.motivo, m.presupuesto ? pesos(m.presupuesto) : null, m.remito && "Remito " + m.remito, m.destino_baja].filter(Boolean).join(" · ")}</td></tr>)}
           </tbody></table></div> : <p className="vacio">Sin movimientos.</p>)}
           {tab === "datos" && <dl className="placa" style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: "var(--e1) var(--e3)", margin: 0 }}>

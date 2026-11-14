@@ -198,6 +198,65 @@ await foto(op, "28-operario-mis-reportes");
 await op.goto(APP + "ordenes"); await op.waitForSelector(".op h1");
 prueba("el operario no entra a las órdenes", !/\/ordenes/.test(op.url()), op.url());
 
+console.log("Movimientos de equipos");
+const ubic = (c) => sql(`select e.sigla || '|' || coalesce(q.ubicacion, '') from equipos q join empresas e on e.id = q.empresa_ubicacion_id where q.codigo = '${c}'`);
+const menuMov = async (p, id, opcion) => {
+  await p.goto(APP + "equipos/" + id); await p.click(".encabezado button:has-text('Movimientos')");
+  await p.click(`.ventana button.item:has-text('${opcion}')`); await p.waitForSelector(".ventana form");
+};
+await menuMov(jefe, idApl, "Préstamo");
+await jefe.selectOption(".ventana select[name=destino]", emp.PIN); await jefe.fill(".ventana input[name=ubicacion]", "Sector envasado");
+await jefe.fill(".ventana input[name=motivo]", "Pico de producción en PIN"); await jefe.click(".ventana button[type=submit]");
+prueba("el jefe pide el préstamo desde la ficha", await aviso(jefe, /lo tiene que aprobar dirección/));
+await dir.goto(APP); await dir.waitForSelector("nav a[href='/movimientos'] .insignia");
+prueba("dirección ve el préstamo por aprobar en el menú", (await dir.textContent("nav a[href='/movimientos'] .insignia")) === "1");
+await dir.click("nav a[href='/movimientos']"); await dir.click("td button:has-text('Aprobar')"); await dir.click(".ventana button[type=submit]");
+prueba("dirección aprueba el préstamo", await aviso(dir, /Préstamo aprobado/));
+await jefe.goto(APP + "movimientos"); await jefe.click("td button:has-text('Salió')"); await jefe.click(".ventana button[type=submit]");
+prueba("el jefe registra la salida: el equipo figura en PIN y conserva su código", await aviso(jefe, /Salida registrada/) && ubic("LIM-APL-001") === "PIN|Sector envasado", ubic("LIM-APL-001"));
+await foto(jefe, "30-movimientos");
+await jefe.click("td button:has-text('Volvió')"); await jefe.click(".ventana button[type=submit]");
+prueba("al volver, regresa a INY y al lugar donde estaba", await aviso(jefe, /Vuelta registrada/) && ubic("LIM-APL-001") === "INY|Depósito de producto terminado", ubic("LIM-APL-001"));
+
+sql("insert into proveedores (nombre, rubro) values ('Bobinados Sur', 'Motores eléctricos')");
+await jefe.goto(APP); await jefe.reload(); await jefe.waitForSelector("main h1");
+const idCom = sql("select id from equipos where codigo = 'INY-COM-001'");
+await menuMov(jefe, idCom, "Reparación externa");
+await jefe.selectOption(".ventana select[name=proveedor]", { label: "Bobinados Sur" }); await jefe.fill(".ventana input[name=presupuesto]", "250.000");
+await jefe.fill(".ventana input[name=remito]", "R-0001-123"); await jefe.fill(".ventana input[name=motivo]", "Rebobinado del motor");
+await jefe.setInputFiles(".ventana input[accept='image/*'][multiple]", { name: "remito.png", mimeType: "image/png", buffer: png });
+await jefe.waitForSelector(".ventana .captura .medios img");
+await jefe.click(".ventana button[type=submit]");
+prueba("el jefe manda a reparar afuera con foto del remito", await aviso(jefe, /Salida a reparación/) && estadoEq("INY-COM-001") === "reparacion_externa" && sql("select count(*) from adjuntos where tabla = 'movimientos_equipo'") === "1");
+prueba("presupuesto con formato argentino (250.000 → 250000)", sql("select presupuesto::int from movimientos_equipo where tipo = 'reparacion_externa'") === "250000");
+await jefe.goto(APP + "movimientos"); await jefe.click("td button:has-text('Volvió')");
+await jefe.fill(".ventana input[name=costo]", "231.500"); await jefe.fill(".ventana input[name=garantia]", "2027-05-14"); await jefe.click(".ventana button[type=submit]");
+prueba("vuelve de la reparación: operativo, con costo y garantía", await aviso(jefe, /Vuelta registrada/) && estadoEq("INY-COM-001") === "operativo"
+  && sql("select presupuesto::int || '|' || garantia_hasta from movimientos_equipo where tipo = 'reparacion_externa'") === "231500|2027-05-14");
+
+const idIny = sql("select id from equipos where codigo = 'INY-INY-001'");
+await menuMov(jefe, idIny, "Reubicar"); await jefe.fill(".ventana input[name=ubicacion]", "Nave 2, línea 3"); await jefe.click(".ventana button[type=submit]");
+prueba("el jefe reubica dentro de la empresa", await aviso(jefe, /Equipo reubicado/) && ubic("INY-INY-001") === "INY|Nave 2, línea 3");
+
+await menuMov(jefe, idApl, "Dar de baja");
+await jefe.selectOption(".ventana select[name=destino]", "venta"); await jefe.fill(".ventana input[name=motivo]", "Reemplazado por uno nuevo"); await jefe.click(".ventana button[type=submit]");
+prueba("baja con motivo y destino", await aviso(jefe, /dado de baja/) && estadoEq("LIM-APL-001") === "baja");
+await jefe.goto(APP + "equipos/" + idApl); await jefe.waitForSelector(".placa .pastilla:has-text('De baja')", { timeout: 8000 }).catch(() => {});
+prueba("el equipo dado de baja conserva su historial y ya no ofrece movimientos", /De baja/.test(await jefe.textContent(".placa")) && !(await jefe.$(".encabezado button:has-text('Movimientos')")));
+await jefe.click("button[role=tab]:has-text('Movimientos')");
+prueba("la ficha lista sus movimientos (préstamo y baja)", (await jefe.$$("table tbody tr")).length === 2);
+await foto(jefe, "31-ficha-baja");
+await op.goto(APP + "e/LIM-APL-001"); await op.waitForSelector(".op h1");
+prueba("el operario no puede reportar un equipo dado de baja", /dado de baja/.test(await op.textContent(".op")));
+
+await enc.goto(APP + "equipos/" + idIny); await enc.click(".encabezado button:has-text('Movimientos')"); await enc.waitForSelector(".ventana");
+const opsEnc = await enc.textContent(".ventana");
+prueba("el encargado solo marca detenido u operativo (no presta, no manda a reparar, no da de baja)", /Marcar detenido/.test(opsEnc) && !/Préstamo|Reparación externa|Dar de baja|Reubicar/.test(opsEnc), opsEnc);
+await enc.click(".ventana button.item:has-text('Marcar detenido')"); await enc.fill(".ventana input[name=motivo]", "Guarda de seguridad rota"); await enc.click(".ventana button[type=submit]");
+prueba("el encargado detiene el equipo", await aviso(enc, /Equipo detenido/) && estadoEq("INY-INY-001") === "detenido");
+await tec.goto(APP + "equipos/" + idIny); await tec.waitForSelector(".placa");
+prueba("el técnico no tiene el botón de movimientos", !(await tec.$(".encabezado button:has-text('Movimientos')")));
+
 console.log(`\n${ok} correctas, ${mal} con problemas, ${errores.length} errores de página`);
 await b.close();
 process.exit(mal || errores.length ? 1 : 0);
