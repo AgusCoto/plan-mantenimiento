@@ -30,7 +30,10 @@ export function tablasDe(p: Perfil): Tabla[] {
 
 async function traer(t: Tabla) {
   if (t === "registro_cambios" || t === "avisos") {
-    const { data, error } = await sb().from(t).select("*").order("id", { ascending: false }).range(0, t === "avisos" ? 199 : 999);
+    // Los ingresos (inicios de sesión) no se cargan: se consultan aparte en el registro, si se piden
+    let q = sb().from(t).select("*");
+    if (t === "registro_cambios") q = q.neq("operacion", "ingreso");
+    const { data, error } = await q.order("id", { ascending: false }).range(0, t === "avisos" ? 199 : 999);
     if (error) throw error;
     return data || [];
   }

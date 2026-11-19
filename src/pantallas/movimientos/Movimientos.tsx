@@ -1,4 +1,4 @@
-// Movimientos de equipos: préstamos entre empresas (dirección aprueba; el jefe registra salida y vuelta),
+// Movimientos de equipos: préstamos entre empresas (los decide el jefe, que registra salida y vuelta),
 // reparaciones externas (salida y vuelta con remito, costo y garantía), reubicaciones y bajas.
 import { useState } from "react";
 import { Link } from "react-router-dom";
@@ -119,7 +119,7 @@ export function Movimientos() {
                   {adj.length > 0 && <div style={{ marginTop: 4 }}><Medios adjuntos={adj} alt="Movimiento" /></div>}</td>
                 <td><Pastilla c={c}>{t}</Pastilla>{atrasado(m) && <div><Pastilla c="critico">Vuelta atrasada</Pastilla></div>}</td>
                 <td><div className="botones" style={{ flexWrap: "nowrap" }}>
-                  {p === "direccion" && m.estado === "solicitado" && <><button className="boton chico pri" onClick={() => abrir(<Resolver m={m} aprobar />)}>Aprobar</button><button className="boton chico" onClick={() => abrir(<Resolver m={m} aprobar={false} />)}>Rechazar</button></>}
+                  {p === "jefe" && m.estado === "solicitado" && <><button className="boton chico pri" onClick={() => abrir(<Resolver m={m} aprobar />)}>Aprobar</button><button className="boton chico" onClick={() => abrir(<Resolver m={m} aprobar={false} />)}>Rechazar</button></>}
                   {p === "jefe" && m.tipo === "prestamo" && m.estado === "aprobado" && <button className="boton chico pri" onClick={() => abrir(<Salida m={m} />)}>Salió</button>}
                   {p === "jefe" && m.estado === "en_curso" && <button className="boton chico pri" onClick={() => abrir(<Vuelta m={m} />)}>Volvió</button>}
                   {p === "jefe" && m.tipo === "prestamo" && ["solicitado", "aprobado"].includes(m.estado) && <button className="boton chico" onClick={() => abrir(<Cancelar m={m} />)}>Cancelar</button>}

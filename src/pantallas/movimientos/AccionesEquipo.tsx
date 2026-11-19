@@ -1,4 +1,4 @@
-// Movimientos desde la ficha del equipo: reubicar, préstamo a otra empresa (lo aprueba dirección),
+// Movimientos desde la ficha del equipo: reubicar, préstamo a otra empresa,
 // reparación externa, baja (motivo y destino) y marcar detenido u operativo.
 // La empresa dueña nunca cambia; cambia «dónde está» y queda el movimiento en el historial.
 import { useState } from "react";
@@ -52,11 +52,11 @@ function Reubicar({ e }: { e: Equipo }) {
 function Prestamo({ e }: { e: Equipo }) {
   const d = useDatos(), tema = useTema();
   return (
-    <Ventana titulo={tema.t("prestamo") + " de " + e.codigo} ok="Pedir aprobación" onSubmit={async (v) => {
+    <Ventana titulo={tema.t("prestamo") + " de " + e.codigo} ok="Aprobar el préstamo" onSubmit={async (v) => {
       await llamar("pedir_prestamo", { p_equipo: e.id, p_empresa_destino: v.destino, p_area: v.area || null, p_ubicacion: v.ubicacion || null, p_vuelta: v.vuelta || null, p_motivo: v.motivo });
-      await d.recargar("movimientos_equipo"); avisar("Préstamo pedido: lo tiene que aprobar dirección");
+      await d.recargar("movimientos_equipo"); avisar("Préstamo aprobado: registrá la salida en Movimientos cuando el equipo salga");
     }}>
-      <p className="chico suave">Lo aprueba dirección. Cuando el equipo salga, registrás la salida en Movimientos. Sigue siendo de {d.empresa(e.empresa_duena_id)?.nombre} y conserva su código.</p>
+      <p className="chico suave">Queda aprobado por vos. Cuando el equipo salga, registrás la salida en Movimientos. Sigue siendo de {d.empresa(e.empresa_duena_id)?.nombre} y conserva su código.</p>
       <Campo label="Empresa a la que va *"><select name="destino" required defaultValue="">{<option value="">Elegí…</option>}{d.empresas.filter((x) => x.activa && x.id !== e.empresa_ubicacion_id).map((x) => <option key={x.id} value={x.id}>{x.sigla} · {x.nombre}</option>)}</select></Campo>
       <div className="fila">
         <Campo label="Área"><select name="area" defaultValue=""><option value="">Sin indicar</option>{d.areas.filter((a) => a.activa).map((a) => <option key={a.id} value={a.id}>{a.nombre}</option>)}</select></Campo>
@@ -127,14 +127,16 @@ export function AccionesEquipo({ e }: { e: Equipo }) {
   const opciones: [string, string, () => void, boolean?][] = [
     ...(p === "jefe" ? [
       ["Reubicar", "Cambiar de área o de lugar dentro de la misma empresa", () => abrir(<Reubicar e={e} />)],
-      [tema.t("prestamo"), "Llevarlo a otra empresa del grupo (aprueba dirección)", () => abrir(<Prestamo e={e} />), !!tramite],
+      [tema.t("prestamo"), "Llevarlo a otra empresa del grupo", () => abrir(<Prestamo e={e} />), !!tramite],
       [tema.t("reparacion_externa"), "Mandarlo a reparar a un taller o proveedor", () => abrir(<ReparacionExterna e={e} />), !!tramite],
     ] as [string, string, () => void, boolean?][] : []),
     ...(e.estado === "operativo" ? [["Marcar detenido", "Por ejemplo, por seguridad", () => abrir(<Estado e={e} a="detenido" />)]] as [string, string, () => void][] : []),
     ...(["detenido", "en_reparacion"].includes(e.estado) ? [["Marcar operativo", "Revisado y funcionando", () => abrir(<Estado e={e} a="operativo" />)]] as [string, string, () => void][] : []),
     ...(p === "jefe" ? [["Dar de baja", "Venta, desguace o chatarra", () => abrir(<Baja e={e} />)]] as [string, string, () => void][] : []),
   ];
-  return (
+  return (<>
+    {p === "jefe" && <button className="boton" onClick={() => abrir(<Reubicar e={e} />)}>Reubicar</button>}
+    {p === "jefe" && <button className="boton peligro" onClick={() => abrir(<Baja e={e} />)}>Dar de baja</button>}
     <button className="boton" onClick={() => abrir(
       <Ventana titulo={"Movimientos de " + e.codigo}>
         {tramite && <p className="nota">Tiene un {tramite.tipo === "prestamo" ? "préstamo" : "envío a reparación"} en trámite: se sigue en Movimientos.</p>}
@@ -142,6 +144,6 @@ export function AccionesEquipo({ e }: { e: Equipo }) {
           <button key={t} className="item" style={{ textAlign: "left", cursor: deshab ? "not-allowed" : "pointer", opacity: deshab ? 0.5 : 1, background: "none", font: "inherit", color: "inherit", width: "100%" }}
             disabled={deshab} onClick={() => { cerrar(); setTimeout(fn, 0); }}>
             <div className="cuerpo-item"><div className="t">{t}</div><div className="meta">{ayuda}</div></div></button>))}</div>
-      </Ventana>)}><Ico n="movimientos" />{tema.t("movimientos")}</button>
-  );
+      </Ventana>)}><Ico n="movimientos" />{p === "jefe" ? "Préstamo, reparación externa…" : tema.t("movimientos")}</button>
+  </>);
 }

@@ -144,16 +144,19 @@ await tec.fill(".ventana input[name=descripcion]", "Juego de sellos del cilindro
 await tec.click(".ventana button[type=submit]");
 prueba("pide el repuesto y la orden queda esperando", await aviso(tec, /esperando el repuesto/) && sql(`select estado from ordenes where id = '${idOt}'`) === "esperando_repuesto");
 
-await jefe.goto(APP + "compras"); await jefe.waitForSelector("text=PC-0001");
-prueba("sin tope configurado, el jefe no aprueba compras", !(await jefe.$("td button:has-text('Aprobar')")));
 await dir.goto(APP + "compras"); await dir.waitForSelector("text=PC-0001");
-await dir.click("td button:has-text('Aprobar')"); await dir.click(".ventana button[type=submit]");
-prueba("dirección aprueba el pedido", await aviso(dir, /Pedido aprobado/));
+prueba("dirección ve las compras pero no las aprueba", !(await dir.$("td button:has-text('Aprobar')")));
+await jefe.goto(APP); await jefe.waitForSelector("nav a[href='/compras'] .insignia");
+prueba("el jefe ve en el menú la compra por aprobar", (await jefe.textContent("nav a[href='/compras'] .insignia")) === "1");
+await jefe.click("nav a[href='/compras']"); await jefe.waitForSelector("text=PC-0001");
+await jefe.click("td button:has-text('Aprobar')"); await jefe.click(".ventana button[type=submit]");
+prueba("el jefe aprueba el pedido", await aviso(jefe, /Pedido aprobado/));
 prueba("queda registrado quién aprobó", sql("select count(*) from registro_cambios where tabla = 'pedidos_compra' and aprobo_id is not null") !== "0");
-await dir.goto(APP + "ordenes/" + idOt); await dir.waitForSelector("text=Falta que dirección la confirme");
-await dir.click("button:has-text('Confirmar urgente')");
-prueba("dirección confirma la prioridad", await aviso(dir, /Prioridad confirmada/));
-await foto(dir, "25-direccion-orden");
+await dir.goto(APP + "ordenes/" + idOt); await dir.waitForSelector("text=El jefe la puede confirmar");
+prueba("dirección ve la orden pero no cambia la prioridad", !(await dir.$("select[aria-label=Prioridad]")) && !(await dir.$("button:has-text('Confirmar urgente')")));
+await jefe.goto(APP + "ordenes/" + idOt); await jefe.click("button:has-text('Confirmar urgente')");
+prueba("el jefe confirma la prioridad", await aviso(jefe, /Prioridad confirmada/));
+await foto(jefe, "25-jefe-orden");
 await enc.goto(APP + "compras"); await enc.click("button[role=tab]:has-text('Aprobados')"); await enc.click("button:has-text('Llegó')"); await enc.click(".ventana button[type=submit]");
 prueba("llega el repuesto y la orden vuelve a «en curso»", await aviso(enc, /Recepción registrada/) && sql(`select estado from ordenes where id = '${idOt}'`) === "en_curso");
 
@@ -179,8 +182,15 @@ prueba("la ficha muestra la firma", !!(await tec.waitForSelector("img[alt='Firma
 const total = await tec.textContent("main");
 prueba("costos: 3,5 h de mano de obra", /3,5 h/.test(total));
 await foto(tec, "27-orden-verificada");
-await enc.goto(APP + "ordenes/" + idOt); await enc.click("button:has-text('Cerrar la orden')"); await enc.click(".ventana button[type=submit]");
+await enc.goto(APP + "ordenes/" + idOt); await enc.click("button:has-text('Cerrar la orden')");
+const [remito] = await Promise.all([enc.waitForEvent("download", { timeout: 20000 }), enc.click(".ventana button[type=submit]")]);
 prueba("el encargado cierra la orden", await aviso(enc, /Orden cerrada/) && sql(`select estado from ordenes where id = '${idOt}'`) === "cerrada");
+const remitoPdf = (await fs.promises.readFile(await remito.path())).toString("latin1");
+prueba("al cerrar se descarga solo el remito interno de la orden", remito.suggestedFilename() === "remito-RI-0001.pdf" && remitoPdf.startsWith("%PDF"), remito.suggestedFilename());
+prueba("el remito trae el número, el equipo, los trabajos, la firma y los costos", ["RI-0001", "INY-INY-001", "Cambio de sellos", "Carla M", "Total", "no v"].every((t) => remitoPdf.includes(t)) && /\/Subtype \/Image/.test(remitoPdf),
+  ["RI-0001", "INY-INY-001", "Cambio de sellos", "Carla M", "Total"].filter((t) => !remitoPdf.includes(t)));
+await enc.waitForSelector("button:has-text('Remito interno (PDF)')");
+prueba("y se puede volver a bajar desde la orden", true);
 await tec2.goto(APP + "ordenes/" + idOt); await tec2.waitForSelector("h1");
 prueba("un técnico de otra empresa no ve la orden", /No existe o no tenés acceso/.test(await tec2.textContent("main")));
 await op.goto(APP); await op.waitForSelector("text=Mis reportes");
@@ -201,17 +211,17 @@ prueba("el operario no entra a las órdenes", !/\/ordenes/.test(op.url()), op.ur
 console.log("Movimientos de equipos");
 const ubic = (c) => sql(`select e.sigla || '|' || coalesce(q.ubicacion, '') from equipos q join empresas e on e.id = q.empresa_ubicacion_id where q.codigo = '${c}'`);
 const menuMov = async (p, id, opcion) => {
-  await p.goto(APP + "equipos/" + id); await p.click(".encabezado button:has-text('Movimientos')");
+  await p.goto(APP + "equipos/" + id); await p.click(".encabezado button:has-text('Préstamo, reparación externa')");
   await p.click(`.ventana button.item:has-text('${opcion}')`); await p.waitForSelector(".ventana form");
 };
 await menuMov(jefe, idApl, "Préstamo");
 await jefe.selectOption(".ventana select[name=destino]", emp.PIN); await jefe.fill(".ventana input[name=ubicacion]", "Sector envasado");
 await jefe.fill(".ventana input[name=motivo]", "Pico de producción en PIN"); await jefe.click(".ventana button[type=submit]");
-prueba("el jefe pide el préstamo desde la ficha", await aviso(jefe, /lo tiene que aprobar dirección/));
-await dir.goto(APP); await dir.waitForSelector("nav a[href='/movimientos'] .insignia");
-prueba("dirección ve el préstamo por aprobar en el menú", (await dir.textContent("nav a[href='/movimientos'] .insignia")) === "1");
-await dir.click("nav a[href='/movimientos']"); await dir.click("td button:has-text('Aprobar')"); await dir.click(".ventana button[type=submit]");
-prueba("dirección aprueba el préstamo", await aviso(dir, /Préstamo aprobado/));
+prueba("el préstamo que decide el jefe queda aprobado al pedirlo", await aviso(jefe, /Préstamo aprobado/));
+await jefe.goto(APP); await jefe.waitForSelector("nav a[href='/movimientos'] .insignia");
+prueba("el jefe ve en el menú el préstamo por despachar", (await jefe.textContent("nav a[href='/movimientos'] .insignia")) === "1");
+await dir.goto(APP + "movimientos"); await dir.waitForSelector("td:has-text('LIM-APL-001')");
+prueba("dirección ve los movimientos pero no aprueba ni registra nada", !(await dir.$("td button")));
 await jefe.goto(APP + "movimientos"); await jefe.click("td button:has-text('Salió')"); await jefe.click(".ventana button[type=submit]");
 prueba("el jefe registra la salida: el equipo figura en PIN y conserva su código", await aviso(jefe, /Salida registrada/) && ubic("LIM-APL-001") === "PIN|Sector envasado", ubic("LIM-APL-001"));
 await foto(jefe, "30-movimientos");
@@ -235,14 +245,14 @@ prueba("vuelve de la reparación: operativo, con costo y garantía", await aviso
   && sql("select presupuesto::int || '|' || garantia_hasta from movimientos_equipo where tipo = 'reparacion_externa'") === "231500|2027-05-14");
 
 const idIny = sql("select id from equipos where codigo = 'INY-INY-001'");
-await menuMov(jefe, idIny, "Reubicar"); await jefe.fill(".ventana input[name=ubicacion]", "Nave 2, línea 3"); await jefe.click(".ventana button[type=submit]");
+await jefe.goto(APP + "equipos/" + idIny); await jefe.click(".encabezado button:has-text('Reubicar')"); await jefe.waitForSelector(".ventana form"); await jefe.fill(".ventana input[name=ubicacion]", "Nave 2, línea 3"); await jefe.click(".ventana button[type=submit]");
 prueba("el jefe reubica dentro de la empresa", await aviso(jefe, /Equipo reubicado/) && ubic("INY-INY-001") === "INY|Nave 2, línea 3");
 
-await menuMov(jefe, idApl, "Dar de baja");
+await jefe.goto(APP + "equipos/" + idApl); await jefe.click(".encabezado button:has-text('Dar de baja')"); await jefe.waitForSelector(".ventana form");
 await jefe.selectOption(".ventana select[name=destino]", "venta"); await jefe.fill(".ventana input[name=motivo]", "Reemplazado por uno nuevo"); await jefe.click(".ventana button[type=submit]");
 prueba("baja con motivo y destino", await aviso(jefe, /dado de baja/) && estadoEq("LIM-APL-001") === "baja");
 await jefe.goto(APP + "equipos/" + idApl); await jefe.waitForSelector(".placa .pastilla:has-text('De baja')", { timeout: 8000 }).catch(() => {});
-prueba("el equipo dado de baja conserva su historial y ya no ofrece movimientos", /De baja/.test(await jefe.textContent(".placa")) && !(await jefe.$(".encabezado button:has-text('Movimientos')")));
+prueba("el equipo dado de baja conserva su historial y ya no ofrece movimientos", /De baja/.test(await jefe.textContent(".placa")) && !(await jefe.$(".encabezado button:has-text('Dar de baja')")) && !(await jefe.$(".encabezado button:has-text('Préstamo')")));
 await jefe.click("button[role=tab]:has-text('Movimientos')");
 prueba("la ficha lista sus movimientos (préstamo y baja)", (await jefe.$$("table tbody tr")).length === 2);
 await foto(jefe, "31-ficha-baja");
@@ -303,11 +313,12 @@ await tec.context().setOffline(false);
 prueba("al volver la señal se envía todo en orden", await esperarBarra(tec, /^Conectado$/));
 prueba("la ficha y el pedido llegaron y la orden espera el repuesto", sql(`select count(*) from fichas where orden_id = '${idOt2}'`) === "1" && sql(`select estado from ordenes where id = '${idOt2}'`) === "esperando_repuesto"
   && sql(`select count(*) from pedidos_compra where orden_id = '${idOt2}'`) === "1", sql(`select estado from ordenes where id = '${idOt2}'`));
-await dir.goto(APP + "compras"); await dir.waitForSelector("text=Junta del intercambiador");
-await dir.context().setOffline(true);
-await dir.click("td button:has-text('Aprobar')"); await dir.click(".ventana button[type=submit]");
-prueba("aprobar necesita señal (depende del estado del servidor) y lo avisa", await aviso(dir, /hace falta señal/));
-await dir.context().setOffline(false);
+await jefe.goto(APP + "compras"); await jefe.waitForSelector("text=Junta del intercambiador");
+await jefe.context().setOffline(true);
+await jefe.click("td button:has-text('Aprobar')"); await jefe.click(".ventana button[type=submit]");
+prueba("aprobar necesita señal (depende del estado del servidor) y lo avisa", await aviso(jefe, /hace falta señal/));
+await jefe.keyboard.press("Escape");
+await jefe.context().setOffline(false);
 
 // Conflicto: el encargado edita sin señal una orden que el jefe cambió mientras tanto → gana la última
 await enc.goto(APP + "ordenes/" + idOt2); await enc.waitForSelector("button:has-text('Editar / asignar')"); await enc.waitForTimeout(1500);
@@ -319,6 +330,33 @@ await enc.context().setOffline(false);
 prueba("se sincroniza la edición", await esperarBarra(enc, /^Conectado$/));
 prueba("gana la última modificación (la del encargado, hecha después)", sql(`select descripcion from ordenes where id = '${idOt2}'`) === "Cambio del encargado sin señal");
 prueba("y el conflicto queda en el registro de cambios", sql("select count(*) from registro_cambios where operacion = 'conflicto' and tabla = 'ordenes'") === "1");
+
+console.log("Registro, intervenciones externas y usuarios");
+await jefe.goto(APP + "registro"); await jefe.waitForSelector("main table tbody tr");
+const regTxt = await jefe.textContent("main table");
+prueba("el registro muestra por defecto los cambios de las órdenes, sin los ingresos", /orden OT-0001/.test(regTxt) && /cerrada/.test(regTxt) && !/Ingresó/.test(regTxt), regTxt.slice(0, 200));
+await jefe.selectOption("select[aria-label='Qué']", "ingresos"); await jefe.waitForSelector("main table tbody tr:has-text('Ingresó')", { timeout: 8000 }).catch(() => {});
+prueba("los ingresos siguen guardados y se ven si se piden", /Ingresó/.test(await jefe.textContent("main")));
+await foto(jefe, "35-registro");
+sql(`insert into fichas (orden_id, contratista_id, trabajo, horas, remito) select o.id, p.id, 'Medición de aislación del motor principal', 2, 'R-0003-0000777' from ordenes o, proveedores p where o.numero = 2 and p.nombre = 'Bobinados Sur' limit 1`);
+await jefe.goto(APP); await jefe.reload(); await jefe.waitForSelector("nav a[href='/externos']"); await jefe.click("nav a[href='/externos']");
+await jefe.waitForSelector("main table tbody tr");
+const extTxt = await jefe.textContent("main table");
+prueba("intervenciones externas: lista la reparación externa y el trabajo del contratista", /Bobinados Sur/.test(extTxt) && /Rebobinado del motor/.test(extTxt) && /Medición de aislación/.test(extTxt) && /Volvió/.test(extTxt), extTxt.slice(0, 300));
+await foto(jefe, "36-externos");
+const [inf] = await Promise.all([jefe.waitForEvent("download", { timeout: 20000 }), jefe.click("tr:has-text('Rebobinado del motor') button:has-text('Informe PDF')")]);
+const infPdf = (await fs.promises.readFile(await inf.path())).toString("latin1");
+prueba("cada caso tiene su informe PDF (taller, salida, vuelta, costo, garantía y foto del remito)", infPdf.startsWith("%PDF") && ["INY-COM-001", "Bobinados Sur", "231.500", "R-0001-123", "14/05/2027"].every((t) => infPdf.includes(t)) && /\/Subtype \/Image/.test(infPdf),
+  ["INY-COM-001", "Bobinados Sur", "231.500", "R-0001-123", "14/05/2027"].filter((t) => !infPdf.includes(t)));
+const [ext] = await Promise.all([jefe.waitForEvent("download", { timeout: 20000 }), jefe.click("button:has-text('Excel')")]);
+prueba("y el listado se exporta a Excel", ext.suggestedFilename().endsWith(".xlsx"));
+await enc.goto(APP + "externos"); await enc.waitForSelector("h1:has-text('Intervenciones externas')");
+prueba("el encargado también lo ve", /Bobinados Sur/.test(await enc.textContent("main")));
+await jefe.goto(APP + "usuarios"); await jefe.waitForSelector("tr:has-text('Lucas Paz')");
+await jefe.click("tr:has-text('Lucas Paz') button:has-text('Dar de baja')"); await jefe.click(".ventana button[type=submit]");
+prueba("el jefe da de baja a un usuario (no puede ingresar más; el historial queda)", await aviso(jefe, /dado de baja/) && sql("select activo from usuarios where usuario = 'tecnico2'") === "f");
+await jefe.click("tr:has-text('Lucas Paz') button:has-text('Reactivar')"); await jefe.click(".ventana button[type=submit]");
+prueba("y lo reactiva", await aviso(jefe, /reactivado/) && sql("select activo from usuarios where usuario = 'tecnico2'") === "t");
 
 console.log("Exportar datos");
 await jefe.goto(APP + "exportar"); await jefe.waitForSelector("h1:has-text('Exportar datos')");

@@ -4,8 +4,9 @@ App web instalable (PWA) para el mantenimiento de las cuatro empresas del grupo:
 
 - **Equipos** con código `EMPRESA DUEÑA-TIPO-NÚMERO` (ej.: `PIN-APL-001`), ficha, documentos, historial y etiqueta QR + chip NFC con el mismo enlace.
 - **Reporte de falla en 3 toques** para el operario (escanea la etiqueta → qué le pasa → ¿está parada? → enviar), con foto o video.
-- **Órdenes de trabajo**: asignación, prioridad (dirección la confirma), fichas, ficha de cierre con causa, fotos y firma del supervisor en equipos críticos, costos y pedidos de compra.
-- **Movimientos**: préstamos entre empresas (aprueba dirección), reparación externa, reubicación y baja.
+- **Órdenes de trabajo**: asignación, prioridad (el jefe la confirma), fichas, ficha de cierre con causa, fotos y firma del supervisor en equipos críticos, costos, pedidos de compra y **remito interno en PDF** al cerrar.
+- **Movimientos**: préstamos entre empresas, reparación externa, reubicación y baja (los decide el jefe).
+- **Intervenciones externas**: cada vez que un equipo sale a repararse afuera o trabaja un contratista, queda un informe PDF y un listado exportable.
 - **Funciona sin señal**: lo cargado queda en el celular y se envía solo al volver la señal.
 - **Avisos** push (máquina parada, orden asignada, compras y préstamos por aprobar, órdenes vencidas, resumen diario).
 - **Apariencia** editable por el jefe (colores, logo, textos, etiquetas, pantallas de inicio…), con versiones y vuelta atrás.
@@ -28,9 +29,11 @@ Tecnología: React + Vite + TypeScript · Supabase (Postgres, Auth, Storage, Edg
 9. [Imprimir etiquetas y grabar los chips NFC](#9-imprimir-etiquetas-y-grabar-los-chips-nfc)
 10. [Datos de ejemplo](#10-datos-de-ejemplo)
 11. [Pasar de W-Main a la app nueva](#11-pasar-de-w-main-a-la-app-nueva)
-12. [Exportar y respaldar](#12-exportar-y-respaldar)
-13. [Desarrollo y pruebas](#13-desarrollo-y-pruebas)
-14. [Estructura del repositorio](#14-estructura)
+12. [Remito interno e intervenciones externas](#12-remito-interno-e-intervenciones-externas)
+13. [Registro de cambios](#13-registro-de-cambios)
+14. [Exportar y respaldar](#14-exportar-y-respaldar)
+15. [Desarrollo y pruebas](#15-desarrollo-y-pruebas)
+16. [Estructura del repositorio](#16-estructura)
 
 ---
 
@@ -38,11 +41,11 @@ Tecnología: React + Vite + TypeScript · Supabase (Postgres, Auth, Storage, Edg
 
 | Perfil | Qué hace |
 |---|---|
-| **Jefe de mantenimiento** | Todo: equipos, usuarios, apariencia, movimientos, compras (si se le habilita un tope), datos. |
+| **Jefe de mantenimiento** | Todo: alta, baja y reubicación de equipos, alta y baja de usuarios, préstamos y reparaciones externas, **aprueba las compras**, confirma prioridades, reabre órdenes, apariencia, datos. |
 | **Encargado** | Crea y asigna órdenes, carga fichas, cierra órdenes, descarta reportes, registra la llegada de compras. Marca equipos detenidos u operativos. |
 | **Técnico** | Sus órdenes, historial y manuales de los equipos de sus empresas; fichas, lecturas de horómetro y pedidos de repuesto. |
 | **Operario** | Escanea la etiqueta, reporta la falla (foto/video/texto) y marca si la máquina está parada. Ve sus reportes. |
-| **Dirección** | Informes, pendientes y registro de cambios; **aprueba compras y préstamos**; confirma o cambia la prioridad de las órdenes. No edita la apariencia. |
+| **Dirección** | Ve informes, pendientes, órdenes, intervenciones externas y el registro de cambios. No aprueba ni modifica nada. |
 
 - Cada usuario accede a **una o varias empresas**; ve solo los equipos cuya empresa dueña o empresa donde está sea una de las suyas.
 - Los **manuales y documentos** los ve solo mantenimiento.
@@ -87,7 +90,7 @@ Esto crea las tablas, permisos, reglas, buckets de Storage (`adjuntos`, `documen
 
 **Con la CLI (opcional, para quien programa):** `npx supabase login`, `npx supabase link --project-ref <ref>` y `npx supabase db push`.
 
-> Cada vez que se agregue una migración nueva, se vuelve a correr `supabase/instalar.sql` (o `db push`). El archivo se regenera con `npm run sql`; la prueba automática avisa si quedó desactualizado.
+> Cada vez que se agregue una migración nueva, alcanza con correr **solo ese archivo nuevo** de `supabase/migrations/` en el SQL Editor (o `db push`). También se puede volver a correr `supabase/instalar.sql` entero: no borra datos. El archivo se regenera con `npm run sql`; la prueba automática avisa si quedó desactualizado.
 
 ## 5. Primera cuenta del jefe
 
@@ -152,8 +155,8 @@ Qué avisa y a quién (siempre solo a quien tiene acceso a la empresa del equipo
 | Máquina parada | Jefe, encargados y técnicos |
 | Reporte nuevo (sin parada) | Jefe y encargados |
 | Orden asignada | El técnico asignado |
-| Compra o préstamo por aprobar | Dirección |
-| Compra o préstamo aprobado/rechazado | Quien lo pidió |
+| Compra por aprobar | Jefe |
+| Compra aprobada/rechazada | Quien la pidió |
 | Orden vencida (todos los días) | El asignado y los encargados |
 | Resumen del día (8 h) | Jefe y dirección |
 
@@ -228,12 +231,21 @@ W-Main sigue funcionando hasta que decidas el cambio. La app nueva se instala **
    - Desde ese momento, una etiqueta vieja abre el equipo en la app nueva (por su código viejo). Las etiquetas nuevas se pueden ir reimprimiendo de a poco.
    - Esto reemplaza la versión web de W-Main en GitHub Pages; W-Main de escritorio deja de usarse.
 
-## 12. Exportar y respaldar
+## 12. Remito interno e intervenciones externas
+
+- **Remito interno de la orden**: al cerrar una orden se descarga solo un PDF «Remito interno RI-<número de la orden>» con el equipo, la empresa a la que se carga, los trabajos (quién, cuándo, horas), la causa, los repuestos y costos, las fotos, la firma del supervisor (equipos críticos) y lugar para las firmas de mantenimiento y producción. Se puede volver a bajar desde la orden (**Remito interno (PDF)**). Es un documento interno: no reemplaza al remito ni a la factura fiscal (ARCA).
+- **Intervenciones externas** (menú): todos los casos en que un equipo **salió de planta para repararlo** (Reparación externa) o en que **un contratista trabajó en él** (ficha cargada por el jefe a nombre del contratista). Cada caso tiene su **Informe PDF** (taller o contratista, fechas, días fuera, costo, remito, garantía, fotos y firmas) y el listado se filtra por empresa, tipo y fechas y se exporta a Excel.
+
+## 13. Registro de cambios
+
+Muestra por defecto los cambios de las **órdenes de trabajo** (altas, modificaciones, cambios de estado y cierres). Con el filtro se ven equipos y movimientos, compras, usuarios o configuración. Los **ingresos a la app** quedan guardados aparte (filtro «Ingresos a la app») y no se mezclan con el resto.
+
+## 14. Exportar y respaldar
 
 - **Exportar datos** (jefe y dirección): Excel (.xlsx, una hoja por tabla) o CSV (un archivo por tabla en un .zip). Equipos, órdenes, fichas, costos, compras, movimientos, reportes, usuarios y registro de cambios, con nombres y códigos en vez de identificadores. No incluye fotos ni documentos (quedan en Storage).
 - **Supabase** hace copias diarias en los planes pagos (**Database → Backups**). En el plan gratuito, exportá a Excel periódicamente.
 
-## 13. Desarrollo y pruebas
+## 15. Desarrollo y pruebas
 
 Requisitos: Node 22, Docker (para el Supabase local) y `psql`.
 
@@ -249,14 +261,14 @@ Supabase local: `npx supabase@2.58.5 init`, copiar `supabase/migrations/*` a la 
 
 | Prueba | Comando (con `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `DB_URL` definidos) |
 |---|---|
-| Permisos de cada perfil (155 casos) | `npm run test:permisos` (base recién reseteada) |
+| Permisos de cada perfil (156 casos) | `npm run test:permisos` (base recién reseteada) |
 | Función de avisos | `SERVICE_ROLE_KEY=… npm run test:avisos` (después de la de permisos) |
 | Datos de ejemplo | `npm run test:ejemplo` (base recién reseteada) |
 | Recorrido completo en el navegador | `APP_URL=http://localhost:5173/ npm run test:e2e [carpeta-capturas]` (base recién reseteada y `npm run dev` andando) |
 
 La de permisos, la de avisos y la de ejemplo corren solas en GitHub (tarea **Pruebas**).
 
-## 14. Estructura
+## 16. Estructura
 
 ```
 src/

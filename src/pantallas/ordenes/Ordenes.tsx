@@ -33,7 +33,7 @@ export function Ordenes() {
   const ot = (o: Orden) => `${tema.t("orden_abrev")}-${num4(o.numero)}`;
   return (
     <>
-      <div className="encabezado"><div><h1>{tema.t("ordenes")}</h1><p>Ordenadas por prioridad: la calcula la criticidad del equipo y si está parado; dirección la confirma o la cambia.</p></div><span className="sp" />
+      <div className="encabezado"><div><h1>{tema.t("ordenes")}</h1><p>Ordenadas por prioridad: la calcula la criticidad del equipo y si está parado; el jefe la confirma o la cambia.</p></div><span className="sp" />
         {gestiona && <Link className="boton pri" to="/ordenes/nueva"><Ico n="mas" />Nueva {tema.t("orden_abrev")}</Link>}</div>
       <div className="filtros">
         <input type="search" placeholder="Buscar por número, título o equipo" value={q} onChange={(e) => setQ(e.target.value)} style={{ flex: 1, minWidth: 200 }} aria-label="Buscar" />
@@ -112,7 +112,7 @@ export function NuevaOrden() {
           <Campo label="Asignar a" ayuda={e ? "Técnicos y encargados con acceso a la empresa del equipo" : undefined}><select name="asignado" defaultValue=""><option value="">Sin asignar todavía</option>{tecnicos.map((u) => <option key={u.id} value={u.id}>{u.nombre} · {tema.t(u.perfil)}</option>)}</select></Campo>
           <Campo label={"…o a un " + tema.t("contratista").toLowerCase()}><select name="contratista" defaultValue=""><option value="">Ninguno</option>{d.proveedores.filter((p) => p.activo).map((p) => <option key={p.id} value={p.id}>{p.nombre}</option>)}</select></Campo>
         </div>
-        {e && pri && <p className="chico">Prioridad calculada: <PrioridadOT p={pri} /> (criticidad {e.criticidad}{(r ? r.parada : parada) ? ", máquina parada" : ""}). Dirección la puede confirmar o cambiar.{e.criticidad === "alta" && " Equipo crítico: el cierre lo firma el supervisor de producción."}</p>}
+        {e && pri && <p className="chico">Prioridad calculada: <PrioridadOT p={pri} /> (criticidad {e.criticidad}{(r ? r.parada : parada) ? ", máquina parada" : ""}). El jefe la puede confirmar o cambiar.{e.criticidad === "alta" && " Equipo crítico: el cierre lo firma el supervisor de producción."}</p>}
         {error && <p className="nota critico" role="alert">{error}</p>}
         <div className="botones"><button className="boton pri grande" type="submit" disabled={ocupado || !equipoId}>{ocupado ? "Creando…" : "Crear " + tema.t("orden_abrev")}</button></div>
       </form>

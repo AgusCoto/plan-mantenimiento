@@ -1,4 +1,4 @@
-// Pedidos de compra: dirección aprueba o rechaza (el jefe, solo debajo del tope configurado);
+// Pedidos de compra: los aprueba o rechaza el jefe de mantenimiento (lo que pide él queda aprobado);
 // el jefe o el encargado registran cuando llega. Al llegar todo, la orden vuelve a «en curso».
 import { useState } from "react";
 import { Link } from "react-router-dom";
@@ -36,7 +36,7 @@ function NuevoPedido() {
   return (
     <Ventana titulo={"Nuevo " + tema.t("pedido").toLowerCase()} ok="Pedir" onSubmit={async (v) => {
       await insertar("pedidos_compra", { empresa_id: v.empresa, equipo_id: v.equipo || null, descripcion: v.descripcion, cantidad: Number(v.cantidad.replace(",", ".")) || 1, monto_estimado: monto(v.monto), proveedor_id: v.proveedor || null });
-      await d.recargar("pedidos_compra"); avisar("Pedido enviado a dirección");
+      await d.recargar("pedidos_compra"); avisar("Pedido cargado y aprobado");
     }}>
       <p className="chico suave">Para un repuesto de una orden, pedilo desde la orden: así queda esperando el repuesto.</p>
       <Campo label="Qué se pide *"><input type="text" name="descripcion" required minLength={2} /></Campo>
@@ -55,14 +55,13 @@ export function Compras() {
   const d = useDatos(), s = useSesion(), tema = useTema();
   const p = s.usuario!.perfil;
   const [ver, setVer] = useState<"pendiente" | "aprobado" | "">("pendiente");
-  const tope = d.conf<number | null>("compras_tope_jefe", null);
-  const puedeResolver = (x: Pedido) => x.estado === "pendiente" && (p === "direccion" || (p === "jefe" && tope != null && Number(x.monto_estimado || 0) <= Number(tope)));
+  const puedeResolver = (x: Pedido) => x.estado === "pendiente" && p === "jefe";
   const l = d.pedidos_compra.filter((x) => !ver || x.estado === ver);
   const cuenta = (e: string) => d.pedidos_compra.filter((x) => x.estado === e).length;
   return (
     <>
       <div className="encabezado"><div><h1>{tema.t("pedidos")}</h1>
-        <p>{tope == null ? "Todos los pedidos los aprueba dirección." : `El jefe aprueba pedidos de hasta ${pesos(Number(tope))}; los demás, dirección.`}</p></div><span className="sp" />
+        <p>Los pedidos los aprueba el jefe de mantenimiento. Los que carga el jefe quedan aprobados.</p></div><span className="sp" />
         {p === "jefe" && <button className="boton pri" onClick={() => abrir(<NuevoPedido />)}><Ico n="mas" />Nuevo pedido</button>}</div>
       <div className="pestanas" role="tablist">
         {([["pendiente", `Por aprobar (${cuenta("pendiente")})`], ["aprobado", `Aprobados, por llegar (${cuenta("aprobado")})`], ["", "Todos"]] as const).map(([k, n]) =>

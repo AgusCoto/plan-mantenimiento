@@ -64,7 +64,7 @@ export function Usuarios() {
   const empresasDe = (id: string) => d.usuario_empresas.filter((x) => x.usuario_id === id).map((x) => d.empresa(x.empresa_id)).filter(Boolean);
   return (
     <>
-      <div className="encabezado"><div><h1>Usuarios</h1><p>Cada persona entra con su usuario y queda registrado lo que hace. Los usuarios no se borran: se desactivan.</p></div><span className="sp" />
+      <div className="encabezado"><div><h1>Usuarios</h1><p>Cada persona entra con su usuario y queda registrado lo que hace. Alta con «Nuevo usuario». Con «Dar de baja» la persona deja de poder ingresar; su historial se conserva (los usuarios no se borran).</p></div><span className="sp" />
         <button className="boton pri" onClick={() => abrir(<FormUsuario />)}>Nuevo usuario</button></div>
       <section className="panel"><div className="tabla"><table><thead><tr><th>Nombre</th><th>Usuario</th><th>Perfil</th><th>Empresas</th><th>Estado</th><th></th></tr></thead><tbody>
         {l.map((u) => (
@@ -72,14 +72,14 @@ export function Usuarios() {
             <td>{u.nombre}{u.id === s.usuario?.id && <> <Pastilla c="info">Vos</Pastilla></>}{u.ejemplo && <> <Pastilla>Ejemplo</Pastilla></>}</td>
             <td className="mono">{u.usuario}</td><td>{tema.t(u.perfil)}</td>
             <td>{u.perfil === "jefe" ? "Todas" : <span style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>{empresasDe(u.id).map((e) => <Emp key={e!.id} sigla={e!.sigla} nombre={e!.sigla} />)}</span>}</td>
-            <td>{u.activo ? <Pastilla c="ok">Activo</Pastilla> : <Pastilla>Desactivado</Pastilla>}</td>
+            <td>{u.activo ? <Pastilla c="ok">Activo</Pastilla> : <Pastilla>De baja</Pastilla>}</td>
             <td>{u.id !== s.usuario?.id && <div className="botones">
               <button className="boton chico" onClick={() => abrir(<FormUsuario u={u} />)}>Editar</button>
               <button className="boton chico" onClick={() => abrir(<NuevaClave u={u} />)}>Contraseña</button>
-              <button className="boton chico" onClick={() => confirmar(u.activo ? "Desactivar usuario" : "Activar usuario",
-                u.activo ? `${u.nombre} no va a poder ingresar más. Su historial se conserva.` : `${u.nombre} va a poder volver a ingresar.`, u.activo ? "Desactivar" : "Activar",
-                async () => { await llamar("estado_usuario", { p_id: u.id, p_activo: !u.activo }); await d.recargar("usuarios", "registro_cambios"); avisar(u.activo ? "Usuario desactivado" : "Usuario activado"); }, u.activo)}>
-                {u.activo ? "Desactivar" : "Activar"}</button>
+              <button className={"boton chico" + (u.activo ? " peligro" : "")} onClick={() => confirmar(u.activo ? "Dar de baja a " + u.nombre : "Reactivar a " + u.nombre,
+                u.activo ? `${u.nombre} no va a poder ingresar más. Su historial se conserva.` : `${u.nombre} va a poder volver a ingresar.`, u.activo ? "Dar de baja" : "Reactivar",
+                async () => { await llamar("estado_usuario", { p_id: u.id, p_activo: !u.activo }); await d.recargar("usuarios", "registro_cambios"); avisar(u.activo ? "Usuario dado de baja" : "Usuario reactivado"); }, u.activo)}>
+                {u.activo ? "Dar de baja" : "Reactivar"}</button>
             </div>}</td>
           </tr>))}
       </tbody></table></div></section>

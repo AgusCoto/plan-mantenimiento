@@ -4,7 +4,8 @@ import { useDatos } from "../../datos/store";
 import { useSesion } from "../../datos/sesion";
 import { useTema } from "../../sistema/tema";
 import { actualizar, insertar, llamar } from "../../datos/cola";
-import { Campo, Codigo, Emp, Pastilla, Ventana, abrir, avisar, confirmar } from "../../comun/ui";
+import { Campo, Codigo, Emp, Pastilla, Ventana, abrir, avisar, confirmar, descargar } from "../../comun/ui";
+import { pdfRemito } from "../../comun/informes";
 import { Medios, useUrl } from "../../comun/archivos";
 import { fd, fdt, nf, pesos } from "../../comun/formato";
 import { Ico } from "../../sistema/iconos";
@@ -42,7 +43,7 @@ function PedirRepuesto({ o }: { o: TOrden }) {
         p_monto: v.monto ? Number(v.monto.replace(/\./g, "").replace(",", ".")) : null, p_proveedor: v.proveedor || null });
       await d.recargar("pedidos_compra", "ordenes"); avisar("Pedido enviado: la orden queda esperando el repuesto");
     }}>
-      <p className="chico suave">Se genera un {tema.t("pedido").toLowerCase()} para que lo apruebe dirección. La orden pasa a «esperando repuesto» hasta que llegue.</p>
+      <p className="chico suave">Se genera un {tema.t("pedido").toLowerCase()} para que lo apruebe el jefe de mantenimiento (si lo pedís vos como jefe, queda aprobado). La orden pasa a «esperando repuesto» hasta que llegue.</p>
       <Campo label="Repuesto *"><input type="text" name="descripcion" required minLength={2} placeholder="Ej.: Rodamiento 6205 2RS" /></Campo>
       <div className="fila">
         <Campo label="Cantidad"><input type="text" name="cantidad" inputMode="decimal" defaultValue="1" /></Campo>
@@ -119,6 +120,10 @@ export function Orden() {
   const r = d.reportes_falla.find((x) => x.id === o.reporte_id);
   const costo = costoOrden(d, o.id);
   const ot = `${tema.t("orden_abrev")}-${num4(o.numero)}`;
+  const bajarRemito = async (x: TOrden) => {
+    try { descargar(`remito-RI-${num4(x.numero)}.pdf`, await pdfRemito(d, tema.tokens, x, ot)); }
+    catch { avisar("No se pudo armar el remito. Probá de nuevo con señal."); }
+  };
   const estado = (est: string, msg: string) => llamar("orden_estado", { p_orden: o.id, p_estado: est }).then(() => d.recargar("ordenes", "equipos")).then(() => avisar(msg)).catch(err);
 
   return (
@@ -134,7 +139,12 @@ export function Orden() {
         {responsable && activa && <Link className="boton" to={`/ordenes/${o.id}/ficha`}><Ico n="ordenes" />Cargar {tema.t("ficha").toLowerCase()}</Link>}
         {responsable && activa && <Link className="boton pri" to={`/ordenes/${o.id}/ficha?cierre=1`}>{tema.t("ficha_cierre")}</Link>}
         {responsable && activa && <button className="boton" onClick={() => abrir(<PedirRepuesto o={o} />)}><Ico n="compras" />Pedir repuesto</button>}
-        {gestiona && terminada && <button className="boton pri" onClick={() => confirmar("Cerrar la orden", <>¿Cerrar {ot}? Después ya no se modifica.</>, "Cerrar", () => llamar("orden_estado", { p_orden: o.id, p_estado: "cerrada" }).then(() => d.recargar("ordenes")).then(() => avisar("Orden cerrada")))}>Cerrar la orden</button>}
+        {gestiona && terminada && <button className="boton pri" onClick={() => confirmar("Cerrar la orden", <>¿Cerrar {ot}? Después ya no se modifica. Se descarga el remito interno de la orden.</>, "Cerrar", async () => {
+          await llamar("orden_estado", { p_orden: o.id, p_estado: "cerrada" });
+          await d.recargar("ordenes"); avisar("Orden cerrada");
+          bajarRemito({ ...o, estado: "cerrada", cerrada_en: new Date().toISOString() });
+        })}>Cerrar la orden</button>}
+        {(terminada || o.estado === "cerrada") && <button className="boton" onClick={() => bajarRemito(o)}><Ico n="descargar" />Remito interno (PDF)</button>}
         {p === "jefe" && (terminada || o.estado === "cerrada") && <button className="boton" onClick={() => confirmar("Reabrir la orden", <>La orden vuelve a «en curso».</>, "Reabrir", () => llamar("orden_estado", { p_orden: o.id, p_estado: "en_curso" }).then(() => d.recargar("ordenes", "equipos")).then(() => avisar("Orden reabierta")))}>Reabrir</button>}
         {gestiona && !["cerrada", "anulada"].includes(o.estado) && <button className="boton" onClick={() => abrir(<Editar o={o} />)}>Editar / asignar</button>}
         {p === "jefe" && !["cerrada", "anulada"].includes(o.estado) && <button className="boton peligro" onClick={() => abrir(<Anular o={o} />)}>Anular</button>}
@@ -155,11 +165,11 @@ export function Orden() {
             {o.cerrada_en && <><dt className="suave">Cerrada</dt><dd style={{ margin: 0 }}>{fdt(o.cerrada_en)}</dd></>}
             {o.motivo_anulacion && <><dt className="suave">Anulada</dt><dd style={{ margin: 0 }}>{o.motivo_anulacion}</dd></>}
             <dt className="suave">Prioridad</dt><dd style={{ margin: 0 }}>
-              {p === "direccion" && !["cerrada", "anulada"].includes(o.estado) ? (
+              {p === "jefe" && !["cerrada", "anulada"].includes(o.estado) ? (
                 <select aria-label="Prioridad" value={o.prioridad} onChange={(x) => llamar("orden_prioridad", { p_orden: o.id, p_prioridad: x.target.value }).then(() => d.recargar("ordenes")).then(() => avisar("Prioridad confirmada")).catch(err)}>
                   {PRIORIDADES.map((k) => <option key={k} value={k}>{NOMBRE_PRIORIDAD[k]}</option>)}</select>) : <PrioridadOT p={o.prioridad} />}
-              <div className="chico suave">{o.prioridad_por ? `Confirmada por ${d.usuarioDe(o.prioridad_por)?.nombre || "dirección"} el ${fd(o.prioridad_en)}` : `Calculada: ${NOMBRE_PRIORIDAD[o.prioridad_calculada]}. Falta que dirección la confirme.`}</div>
-              {p === "direccion" && !o.prioridad_por && !["cerrada", "anulada"].includes(o.estado) && <button className="boton chico" style={{ marginTop: 4 }} onClick={() => llamar("orden_prioridad", { p_orden: o.id, p_prioridad: o.prioridad }).then(() => d.recargar("ordenes")).then(() => avisar("Prioridad confirmada")).catch(err)}>Confirmar {NOMBRE_PRIORIDAD[o.prioridad].toLowerCase()}</button>}
+              <div className="chico suave">{o.prioridad_por ? `Confirmada por ${d.usuarioDe(o.prioridad_por)?.nombre || "el jefe"} el ${fd(o.prioridad_en)}` : `Calculada: ${NOMBRE_PRIORIDAD[o.prioridad_calculada]}. El jefe la puede confirmar o cambiar.`}</div>
+              {p === "jefe" && !o.prioridad_por && !["cerrada", "anulada"].includes(o.estado) && <button className="boton chico" style={{ marginTop: 4 }} onClick={() => llamar("orden_prioridad", { p_orden: o.id, p_prioridad: o.prioridad }).then(() => d.recargar("ordenes")).then(() => avisar("Prioridad confirmada")).catch(err)}>Confirmar {NOMBRE_PRIORIDAD[o.prioridad].toLowerCase()}</button>}
             </dd>
           </dl>
           {o.descripcion && <p style={{ whiteSpace: "pre-wrap" }}>{o.descripcion}</p>}
