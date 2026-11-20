@@ -137,7 +137,7 @@ Los avisos siempre se ven en la **campanita** de la app. Para que además llegue
 1. **Claves VAPID** — en una computadora con Node instalado: `npx web-push generate-vapid-keys`. Da una **clave pública** y una **privada**.
 2. **Publicar la función** — Supabase → **Edge Functions** → **Deploy a new function → Via Editor**. Nombre: `avisos`. Pegá el contenido de `supabase/functions/avisos/index.ts` y **Deploy**. En los ajustes de la función, desactivá **Verify JWT (Enforce JWT verification)**: la llama la propia base; solo envía lo que esté pendiente.
    (Con la CLI: `npx supabase functions deploy avisos --no-verify-jwt`.)
-3. **Secretos de la función** — **Edge Functions → Secrets** (o **Manage secrets**): `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` y `VAPID_SUBJECT` = la dirección de la app (ej.: `https://mantenimiento-grupo.netlify.app`).
+3. **Secretos de la función** — **Edge Functions → Secrets** (o **Manage secrets**): `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` y `VAPID_SUBJECT` = la dirección de la app (`https://aguscoto.github.io/plan-mantenimiento/`).
 4. **Conectar la base con la función** — SQL Editor: pegá `supabase/avisos-activar.sql`, reemplazá la URL del proyecto y la clave pública, y **Run**. Al final muestra lo configurado y las dos tareas programadas (avisos diarios a las 8 y reintentos cada 5 minutos).
 5. **GitHub** — cargá la variable `VAPID_PUBLIC_KEY` (la clave pública, punto 6) y volvé a publicar (**Actions → Publicar la app → Run workflow**).
 6. **En cada celular** — **Mi cuenta** (o la campanita) → **Activar avisos en este celular**.
