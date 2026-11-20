@@ -1,6 +1,14 @@
 // Íconos de la interfaz (trazo con el color del texto: currentColor). Incluye uno por tipo de falla.
 const P: Record<string, string> = {
   inicio: "M3 11 12 3l9 8M5 9.5V21h5v-6h4v6h5V9.5",
+  calendario: "M4 5h16v16H4zM4 10h16M8 3v4M16 3v4M8.5 15.5l2 2 4-4",
+  libro: "M5 4h11a3 3 0 0 1 3 3v14H8a3 3 0 0 1-3-3zM5 18a3 3 0 0 1 3-3h11",
+  grafico: "M4 20h16M7 16v-5M11 16V7M15 16v-8M19 16v-3",
+  tablero: "M3 4h18v12H3zM8 20h8M12 16v4M7 12l3-3 2 2 4-4",
+  reloj: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 7v5l3 2",
+  menu: "M4 7h16M4 12h16M4 17h16",
+  persona: "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1",
+  lapiz: "M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4",
   equipos: "M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7zM12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1",
   ordenes: "M9 3h6v3H9zM7 4.5H5v17h14v-17h-2M8.5 11h7M8.5 15h7",
   reportes: "M12 3 2.5 20h19zM12 10v4.5M12 17.2v.1",

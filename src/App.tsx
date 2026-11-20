@@ -1,5 +1,5 @@
 // Estructura general: tema, sesión, datos, barra superior, menú por perfil y pantallas.
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Navigate, NavLink, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { TemaProvider, useTema } from "./sistema/tema";
 import { SesionProvider, useSesion } from "./datos/sesion";
@@ -18,7 +18,8 @@ import { Apariencia } from "./pantallas/apariencia/Apariencia";
 import { Usuarios } from "./pantallas/Usuarios";
 import { Registro } from "./pantallas/Registro";
 import { Exportar } from "./pantallas/Exportar";
-import { rutasExtra, menuExtra } from "./pantallas/rutas";
+import { rutasExtra, secciones, seccionesDe } from "./pantallas/rutas";
+import { useResumenPrev } from "./pantallas/preventivos/Preventivos";
 import type { Perfil } from "./sistema/tokens";
 
 export function App() {
@@ -66,24 +67,35 @@ function SincronizarEmpresas() {
   return null;
 }
 
-export interface ItemMenu { a: string; texto: string; ico: string; insignia?: number; perfiles: Perfil[] }
+export type { ItemMenu } from "./pantallas/rutas";
 
 function Marco({ perfil }: { perfil: Perfil }) {
-  const s = useSesion(), tema = useTema(), d = useDatos(), nav = useNavigate();
+  const s = useSesion(), tema = useTema(), d = useDatos(), nav = useNavigate(), loc = useLocation();
   const u = s.usuario!;
   const tk = tema.tokens;
-  const nuevos = d.reportes_falla.filter((r) => r.estado === "nuevo").length;
-  const todos: ItemMenu[] = [
-    { a: "/", texto: "Inicio", ico: "inicio", perfiles: ["jefe", "encargado", "tecnico", "direccion", "operario"] },
-    ...menuExtra(tema.t, { nuevos, compras: perfil === "jefe" ? d.pedidos_compra.filter((x) => x.estado === "pendiente").length : 0,
-      prestamos: perfil === "jefe" ? d.movimientos_equipo.filter((x) => x.estado === "aprobado").length : 0 }),
-    { a: "/usuarios", texto: "Usuarios", ico: "usuarios", perfiles: ["jefe"] },
-    { a: "/apariencia", texto: "Apariencia", ico: "apariencia", perfiles: ["jefe"] },
-    { a: "/registro", texto: "Registro de cambios", ico: "registro", perfiles: ["jefe", "direccion"] },
-    { a: "/exportar", texto: "Exportar datos", ico: "descargar", perfiles: ["jefe", "direccion"] },
-  ];
-  const menu = todos.filter((m) => m.perfiles.includes(perfil));
+  const [cajon, setCajon] = useState(false);
+  useEffect(() => setCajon(false), [loc.pathname]);
+  const { cuenta } = useResumenPrev();
+  const secs = seccionesDe(secciones(tema.t, {
+    nuevos: d.reportes_falla.filter((r) => r.estado === "nuevo").length,
+    compras: perfil === "jefe" ? d.pedidos_compra.filter((x) => x.estado === "pendiente").length : 0,
+    prestamos: perfil === "jefe" ? d.movimientos_equipo.filter((x) => x.estado === "aprobado").length : 0,
+    preventivos: ["jefe", "encargado"].includes(perfil) ? cuenta.vencida : 0,
+  }), perfil);
   const operario = perfil === "operario";
+  const salir = () => {
+    const n = estadoCola().ops.length;
+    if (!n) { nav("/"); s.salir(); return; }
+    confirmar("Hay cargas sin enviar", <>Tenés {n} {n === 1 ? "carga guardada" : "cargas guardadas"} en este celular que todavía no llegaron al servidor. Si salís, se envían cuando vuelvas a ingresar con tu usuario en este celular.</>, "Salir igual", async () => { nav("/"); await s.salir(); });
+  };
+  const Enlaces = () => <>{secs.map((x) => (
+    <div key={x.titulo} className="seccion-menu"><h3>{x.titulo}</h3>
+      {x.items.map((m) => m.accion
+        ? <button key={m.a} type="button" className="enlace-menu" onClick={() => { setCajon(false); if (m.accion === "cuenta") abrir(<MiCuenta />); else salir(); }}><Ico n={m.ico} />{m.texto}</button>
+        : <NavLink key={m.a} to={m.a} end={m.a === "/" || m.a === "/equipos"} className={({ isActive }) => (isActive ? "activo" : "")}>
+            <Ico n={m.ico} />{m.texto}{m.insignia ? <span className="insignia">{m.insignia}</span> : null}</NavLink>)}
+    </div>))}</>;
+  const nuevos = d.reportes_falla.filter((r) => r.estado === "nuevo").length;
   return (
     <>
       <header className="barra">
@@ -97,11 +109,7 @@ function Marco({ perfil }: { perfil: Perfil }) {
         <div className="quien">
           <span><b>{u.nombre}</b> <span className="suave">· {tema.t(perfil)}</span></span>
           <button className="boton chico" onClick={() => abrir(<MiCuenta />)}>Mi cuenta</button>
-          <button className="boton chico" onClick={() => {
-            const n = estadoCola().ops.length;
-            if (!n) { nav("/"); s.salir(); return; }
-            confirmar("Hay cargas sin enviar", <>Tenés {n} {n === 1 ? "carga guardada" : "cargas guardadas"} en este celular que todavía no llegaron al servidor. Si salís, se envían cuando vuelvas a ingresar con tu usuario en este celular.</>, "Salir igual", async () => { nav("/"); await s.salir(); });
-          }}>Salir</button>
+          <button className="boton chico" onClick={salir}>Salir</button>
         </div>
       </header>
       {d.error && !d.desdeCopia && <div className="nota" style={{ margin: "var(--e3) var(--lado) 0" }}>No se pudieron leer los datos ({d.error}). Recargá la página.</div>}
@@ -109,16 +117,29 @@ function Marco({ perfil }: { perfil: Perfil }) {
         <div className="op"><Pantallas perfil={perfil} /></div>
       ) : (
         <div className="cuerpo">
-          <nav className="menu" aria-label="Secciones">
-            {menu.map((m) => (
-              <NavLink key={m.a} to={m.a} end={m.a === "/"} className={({ isActive }) => (isActive ? "activo" : "")}>
-                <Ico n={m.ico} />{m.texto}{m.insignia ? <span className="insignia">{m.insignia}</span> : null}
-              </NavLink>
-            ))}
-          </nav>
+          <nav className="menu" aria-label="Secciones"><Enlaces /></nav>
           <main><div className="contenido"><Pantallas perfil={perfil} /></div></main>
         </div>
       )}
+      {/* Barra de abajo, como en W-Main (en el celular; el operario la tiene siempre) */}
+      <nav className={"nav-abajo" + (operario ? " siempre cuatro" : "")} aria-label="Accesos rápidos">
+        <NavLink to="/" end className={({ isActive }) => (isActive ? "activo" : "")}><Ico n="inicio" />Inicio</NavLink>
+        {!operario && <NavLink to="/ordenes" className={({ isActive }) => (isActive ? "activo" : "")}><Ico n="ordenes" />Órdenes</NavLink>}
+        <NavLink to="/escanear" className={({ isActive }) => "centro" + (isActive ? " activo" : "")}><span className="bola"><Ico n="escanear" /></span>Escanear</NavLink>
+        <NavLink to="/reportar" className={({ isActive }) => "falla-abajo" + (isActive ? " activo" : "")}><Ico n="reportes" />Falla
+          {!operario && nuevos > 0 && <span className="insignia">{nuevos}</span>}</NavLink>
+        <button type="button" onClick={() => setCajon(true)} aria-expanded={cajon}><Ico n="menu" />Menú</button>
+      </nav>
+      {cajon && <div className="cajon-velo" onClick={(e) => { if (e.target === e.currentTarget) setCajon(false); }}>
+        <aside className="cajon" role="dialog" aria-label="Menú">
+          <div className="marca-app" style={{ marginBottom: "var(--e2)" }}>
+            {tk.marca.logo_url ? <img src={tk.marca.logo_url} alt={tk.marca.nombre} /> : <Logo tema={tk} area={tema.area} tam={44} />}
+            <span>{tk.marca.nombre}<small>Plan de mantenimiento</small></span>
+          </div>
+          <Enlaces />
+          <div className="yo"><span className="avatar">{u.nombre.trim().charAt(0).toUpperCase()}</span><span><b>{u.nombre}</b><small>{tema.t(perfil)}</small></span></div>
+        </aside>
+      </div>}
     </>
   );
 }
