@@ -1,0 +1,53 @@
+# Publica la app en GitHub Pages (la misma dirección que tenía W-Main) cada vez que cambia main.
+# Usa los secretos del repositorio SUPABASE_URL y SUPABASE_ANON_KEY (la clave pública) y, si está,
+# la variable VAPID_PUBLIC_KEY (clave pública de las notificaciones). Ver README → Publicar.
+name: Publicar la app
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["src/**", "public/**", "index.html", "package*.json", "vite.config.ts", ".github/workflows/publicar.yml"]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Armar la app
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          VITE_VAPID_PUBLIC_KEY: ${{ vars.VAPID_PUBLIC_KEY }}
+          VITE_BASE: /${{ github.event.repository.name }}/
+        run: |
+          if [ -z "$VITE_SUPABASE_URL" ] || [ -z "$VITE_SUPABASE_ANON_KEY" ]; then
+            echo "::error::Faltan los secretos SUPABASE_URL y SUPABASE_ANON_KEY (Settings → Secrets and variables → Actions)."; exit 1
+          fi
+          npm run build
+          # Las direcciones de la app (por ejemplo /e/<código> de las etiquetas) abren la app
+          cp dist/index.html dist/404.html
+          touch dist/.nojekyll
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+      - id: deployment
+        uses: actions/deploy-pages@v4

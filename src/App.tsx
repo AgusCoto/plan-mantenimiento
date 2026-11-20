@@ -36,8 +36,8 @@ function SinConfiguracion() {
   return (
     <div className="inicio" style={{ maxWidth: 560 }}>
       <h1>Falta conectar la base de datos</h1>
-      <p className="suave">Esta publicación no tiene los datos de Supabase. En Netlify, cargá las variables <span className="codigo">VITE_SUPABASE_URL</span> y{" "}
-        <span className="codigo">VITE_SUPABASE_ANON_KEY</span> y volvé a publicar. Los pasos están en el README.</p>
+      <p className="suave">Esta publicación no tiene los datos de Supabase. En GitHub, cargá los secretos <span className="codigo">SUPABASE_URL</span> y{" "}
+        <span className="codigo">SUPABASE_ANON_KEY</span> (Settings → Secrets and variables → Actions) y volvé a correr «Publicar la app». Los pasos están en el README.</p>
     </div>
   );
 }

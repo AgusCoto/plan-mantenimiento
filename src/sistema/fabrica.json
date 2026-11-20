@@ -1,6 +1,6 @@
 {
   "marca": {
-    "nombre": "Mantenimiento",
+    "nombre": "W-Main",
     "logo_url": null,
     "icono_192": null,
     "icono_512": null,
@@ -109,7 +109,9 @@
     "borde": 1,
     "franja": "rayada"
   },
-  "vocabulario": {},
+  "vocabulario": {
+    "jefe": "Gerente de mantenimiento"
+  },
   "etiqueta": {
     "tamano": "70x40",
     "campos": [

@@ -104,7 +104,7 @@ end $$;
 -- ---------- Tema de fábrica ----------
 insert into public.temas (version, nombre, tokens, activo, de_fabrica, nota)
 select 1, 'De fábrica', $json${
-  "marca": { "nombre": "Mantenimiento", "logo_url": null, "icono_192": null, "icono_512": null, "fondo_carga": "#0B2A4A" },
+  "marca": { "nombre": "W-Main", "logo_url": null, "icono_192": null, "icono_512": null, "fondo_carga": "#0B2A4A" },
   "modo": "sistema",
   "colores": {
     "claro":  { "fondo": "#EEF1F4", "superficie": "#FFFFFF", "superficie_2": "#E4E9EE", "tinta": "#16202A", "tinta_suave": "#566472",
@@ -126,7 +126,7 @@ select 1, 'De fábrica', $json${
   "perfil_area": { "jefe": "mant", "encargado": "mant", "tecnico": "mant", "operario": "op", "direccion": "dir" },
   "fuentes": { "titulos": "Archivo", "texto": "IBM Plex Sans", "codigos": "IBM Plex Mono", "tamano": "normal" },
   "forma": { "radio": "suave", "densidad": "auto", "borde": 1, "franja": "rayada" },
-  "vocabulario": {},
+  "vocabulario": { "jefe": "Gerente de mantenimiento" },
   "etiqueta": { "tamano": "70x40", "campos": ["codigo", "nombre", "empresa", "area", "telefono"], "logo": true, "hoja": "a4" },
   "informes": { "secciones": ["realizados", "parada", "externas", "gasto", "preventivos", "mtbf"], "destinatarios": [], "dia": "lunes", "hora": "08:00" },
   "oficina": { "tarjetas": ["parados", "ordenes", "reportes"], "empresas": [], "rotacion_seg": 20, "tamano_texto": "grande" }

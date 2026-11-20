@@ -1,8 +1,11 @@
 // Service worker: permite instalar la app y abrirla sin señal (la app guarda los datos en IndexedDB).
 // La página y los archivos se buscan primero en la red; si no hay señal, se usa la copia guardada.
-const CACHE = "mantenimiento-v2";
-self.addEventListener("install", (e) => { self.skipWaiting(); e.waitUntil(caches.open(CACHE).then((c) => c.addAll(["/", "/index.html", "/icono-192.png", "/icono.svg"]).catch(() => {}))); });
-self.addEventListener("activate", (e) => e.waitUntil(self.clients.claim()));
+const CACHE = "mantenimiento-v3";
+// Funciona en la raíz o en una subcarpeta (GitHub Pages: /plan-mantenimiento/)
+const BASE = new URL(self.registration.scope).pathname;
+self.addEventListener("install", (e) => { self.skipWaiting(); e.waitUntil(caches.open(CACHE).then((c) => c.addAll([BASE, BASE + "index.html", BASE + "icono-192.png", BASE + "icono.svg"]).catch(() => {}))); });
+// Al activarse borra las copias viejas (incluida la de W-Main) y toma el control
+self.addEventListener("activate", (e) => e.waitUntil(caches.keys().then((ks) => Promise.all(ks.filter((k) => k !== CACHE).map((k) => caches.delete(k)))).then(() => self.clients.claim())));
 self.addEventListener("fetch", (e) => {
   const req = e.request;
   if (req.method !== "GET") return;
@@ -17,7 +20,7 @@ self.addEventListener("fetch", (e) => {
   e.respondWith(fetch(req).then((r) => {
     if (r.ok) { const k = r.clone(); caches.open(CACHE).then((x) => x.put(req, k)); }
     return r;
-  }).catch(() => caches.match(req, { ignoreSearch: true }).then((c) => c || (req.mode === "navigate" ? caches.match("/index.html") : undefined))));
+  }).catch(() => caches.match(req, { ignoreSearch: true }).then((c) => c || (req.mode === "navigate" ? caches.match(BASE + "index.html") : undefined))));
 });
 
 // Notificaciones push: las manda la función «avisos» de Supabase
@@ -31,7 +34,8 @@ self.addEventListener("push", (e) => {
 });
 self.addEventListener("notificationclick", (e) => {
   e.notification.close();
-  const url = new URL((e.notification.data && e.notification.data.url) || "/", self.location.origin).href;
+  const u = (e.notification.data && e.notification.data.url) || "/";
+  const url = new URL(BASE + u.replace(/^\//, ""), self.location.origin).href;
   e.waitUntil(self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((ventanas) => {
     for (const v of ventanas) if (v.url.startsWith(self.location.origin) && "focus" in v) { v.navigate(url); return v.focus(); }
     return self.clients.openWindow(url);

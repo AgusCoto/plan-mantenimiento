@@ -2,7 +2,7 @@
 import QRCode from "qrcode";
 
 /** https://<dominio>/e/<código> */
-export const enlaceEquipo = (codigo: string) => location.origin + "/e/" + encodeURIComponent(codigo);
+export const enlaceEquipo = (codigo: string) => location.origin + import.meta.env.BASE_URL + "e/" + encodeURIComponent(codigo);
 export const qrDataUrl = (texto: string, px = 480) =>
   QRCode.toDataURL(texto, { width: px, margin: 1, errorCorrectionLevel: "M", color: { dark: "#000000", light: "#FFFFFF" } });
 
