@@ -26,7 +26,7 @@ export interface Movimiento extends Control {
   empresa_origen_id: string | null; area_origen_id: string | null; ubicacion_origen: string | null; empresa_destino_id: string | null; area_destino_id: string | null;
   ubicacion_destino: string | null; motivo: string | null; destino_baja: string | null; proveedor_id: string | null; fecha_salida: string | null;
   fecha_vuelta_prevista: string | null; fecha_vuelta: string | null; presupuesto: number | null; remito: string | null; garantia_hasta: string | null;
-  resuelto_por: string | null; resuelto_en: string | null; respuesta: string | null;
+  resuelto_por: string | null; resuelto_en: string | null; respuesta: string | null; receptor: string | null; valor_recupero: number | null;
 }
 export interface Reporte extends Control {
   id: string; equipo_id: string; tipo_falla: string; parada: boolean; texto: string | null; operario_id: string | null;

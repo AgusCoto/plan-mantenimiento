@@ -217,3 +217,61 @@ export async function pdfIntervencion(d: D, tk: Tokens, x: Intervencion, otAbrev
   doc.firmas(["Jefe de mantenimiento (firma y aclaración)", "Externo (firma y aclaración)"]);
   return doc.terminar();
 }
+
+/* ---------- Informe de baja de un equipo ---------- */
+/** `recien`: la baja recién cargada (todavía no está en la copia de datos de la pantalla). */
+export async function pdfBaja(d: D, tk: Tokens, equipoId: string, otAbrev: string, recien?: { mov: Movimiento; adjuntos: Adjunto[] }): Promise<Blob> {
+  const e = d.equipo(equipoId);
+  const m = recien?.mov || d.movimientos_equipo.filter((x) => x.equipo_id === equipoId && x.tipo === "baja").sort((a, b) => b.creado_en.localeCompare(a.creado_en))[0];
+  if (!e || !m) throw new Error("sin baja");
+  const due = d.empresa(e.empresa_duena_id), ubi = d.empresa(m.empresa_origen_id || e.empresa_ubicacion_id);
+  const ordenes = d.ordenes.filter((o) => o.equipo_id === e.id).sort((a, b) => b.numero - a.numero);
+  const ids = new Set(ordenes.map((o) => o.id));
+  const fichas = d.fichas.filter((f) => ids.has(f.orden_id));
+  const vh = Number(d.conf("valor_hora_tecnico", 0)) || 0;
+  const horas = fichas.filter((f) => f.tecnico_id).reduce((a, f) => a + Number(f.horas), 0);
+  const parada = fichas.reduce((a, f) => a + Number(f.horas_parada), 0);
+  const materiales = d.costos_orden.filter((c) => ids.has(c.orden_id)).reduce((a, c) => a + Number(c.cantidad) * Number(c.costo_unitario), 0);
+  const externos = d.movimientos_equipo.filter((x) => x.equipo_id === e.id && x.tipo === "reparacion_externa").reduce((a, x) => a + Number(x.presupuesto || 0), 0);
+  const reportes = d.reportes_falla.filter((r) => r.equipo_id === e.id);
+  const fallas = new Map<string, number>();
+  reportes.forEach((r) => fallas.set(r.tipo_falla, (fallas.get(r.tipo_falla) || 0) + 1));
+  const causas = new Map<string, number>();
+  fichas.filter((f) => f.causa).forEach((f) => causas.set(f.causa!, (causas.get(f.causa!) || 0) + 1));
+  const alta = new Date(e.creado_en), baja = new Date((m.fecha_salida || m.creado_en.slice(0, 10)) + "T12:00:00");
+  const anios = (baja.getTime() - alta.getTime()) / (365.25 * 864e5);
+  const doc = new Doc(`Informe de baja · ${e.codigo} · ${generado()}`);
+  await doc.encabezado(tk, "Informe de baja de equipo", e.codigo, "baja del " + fd(m.fecha_salida || m.creado_en));
+  doc.seccion("Equipo");
+  doc.datos([["Equipo", `${e.codigo} · ${e.nombre}`], ["Tipo", d.tipos_equipo.find((t) => t.sigla === e.tipo)?.nombre || e.tipo], ["Marca / modelo", [e.marca, e.modelo].filter(Boolean).join(" · ")],
+    ["N.º de serie", e.serie], ["Empresa dueña", due ? `${due.sigla} · ${due.nombre}` : ""], ["Último lugar", [ubi?.nombre, d.areas.find((a) => a.id === (m.area_origen_id || e.area_id))?.nombre, m.ubicacion_origen || e.ubicacion].filter(Boolean).join(" · ")],
+    ["Criticidad", e.criticidad], ["Alta en el sistema", fd(e.creado_en)], ["Tiempo en servicio", anios >= 1 ? nf.format(anios) + " años" : Math.max(0, Math.round(anios * 12)) + " meses"],
+    [tk.vocabulario?.horometro || "Horómetro", e.horometro != null ? nf.format(e.horometro) + " h" : null]]);
+  doc.seccion("Baja");
+  doc.datos([["Fecha de baja", fd(m.fecha_salida || m.creado_en)], ["Destino", d.item("destino_baja", m.destino_baja)?.nombre || m.destino_baja],
+    ["Retira / recibe", m.receptor], ["Valor de venta o recupero", m.valor_recupero != null ? pesos(Number(m.valor_recupero)) : null],
+    ["Decidió", d.usuarioDe(m.resuelto_por || m.creado_por)?.nombre], ["Registrado", fdt(m.creado_en)]]);
+  doc.seccion("Motivo de la baja");
+  doc.parrafo(m.motivo || "—");
+  doc.seccion("Historial de mantenimiento");
+  doc.datos([["Órdenes de trabajo", String(ordenes.length) + (ordenes.length ? ` (${ordenes.filter((o) => o.tipo === "correctiva").length} correctivas, ${ordenes.filter((o) => o.tipo === "preventiva").length} preventivas)` : "")],
+    ["Reportes de falla", String(reportes.length) + (fallas.size ? " · " + [...fallas].sort((a, b) => b[1] - a[1]).map(([k, n]) => `${d.item("tipo_falla", k)?.nombre || k}: ${n}`).join(", ") : "")],
+    ["Causas más frecuentes", [...causas].sort((a, b) => b[1] - a[1]).map(([k, n]) => `${d.item("causa", k)?.nombre || k}: ${n}`).join(", ") || null],
+    ["Horas de trabajo", nf.format(horas) + " h"], ["Horas de máquina parada", nf.format(parada) + " h"],
+    ["Costo de mantenimiento", `${pesos(horas * vh + materiales + externos)} (mano de obra ${pesos(horas * vh)} · repuestos y servicios ${pesos(materiales)} · reparaciones externas ${pesos(externos)})`]]);
+  if (ordenes.length) {
+    doc.seccion("Últimas órdenes de trabajo");
+    doc.tabla([{ t: "Orden", w: 22 }, { t: "Fecha", w: 22 }, { t: "Trabajo", w: 104 }, { t: "Estado", w: 32 }],
+      ordenes.slice(0, 15).map((o) => [otAbrev + "-" + num4(o.numero), fd(o.creado_en), o.titulo, d.item("estado_orden", o.estado)?.nombre || o.estado]));
+  }
+  const movs = d.movimientos_equipo.filter((x) => x.equipo_id === e.id && x.id !== m.id);
+  if (movs.length) {
+    doc.seccion("Movimientos anteriores");
+    doc.tabla([{ t: "Fecha", w: 22 }, { t: "Tipo", w: 36 }, { t: "Detalle", w: 122 }],
+      movs.map((x) => [fd(x.fecha_salida || x.creado_en), ({ prestamo: "Préstamo", reparacion_externa: "Reparación externa", reubicacion: "Reubicación", baja: "Baja" } as Record<string, string>)[x.tipo],
+        [x.empresa_destino_id && d.empresa(x.empresa_destino_id)?.sigla, d.proveedores.find((p) => p.id === x.proveedor_id)?.nombre, x.motivo].filter(Boolean).join(" · ")]));
+  }
+  await doc.fotos((recien?.adjuntos || d.adjuntos).filter((a) => a.tabla === "movimientos_equipo" && a.registro_id === m.id), "Fotos de la baja");
+  doc.firmas(["Jefe de mantenimiento (firma y aclaración)", "Retira / recibe (firma y aclaración)"]);
+  return doc.terminar();
+}

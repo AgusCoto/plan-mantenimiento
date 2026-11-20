@@ -13,25 +13,32 @@ import type { Perfil } from "../sistema/tokens";
 const PERFILES: Perfil[] = ["jefe", "encargado", "tecnico", "operario", "direccion"];
 
 function FormUsuario({ u }: { u?: Usuario }) {
-  const d = useDatos(), tema = useTema();
+  const d = useDatos(), tema = useTema(), s = useSesion();
+  const yo = !!u && u.id === s.usuario?.id;
   const [perfil, setPerfil] = useState<Perfil>(u?.perfil || "operario");
   const actuales = new Set(d.usuario_empresas.filter((x) => x.usuario_id === u?.id).map((x) => x.empresa_id));
   return (
     <Ventana titulo={u ? "Editar " + u.nombre : "Nuevo usuario"} ok={u ? "Guardar" : "Crear usuario"} onSubmit={async (v) => {
       const empresas = d.empresas.filter((e) => v["emp-" + e.id] === "on").map((e) => e.id);
       if (perfil !== "jefe" && !empresas.length) throw falla("Elegí al menos una empresa.");
-      if (u) await llamar("editar_usuario", { p_id: u.id, p_nombre: v.nombre, p_perfil: perfil, p_telefono: v.telefono || null, p_empresas: empresas });
-      else {
+      if (u) {
+        await llamar("editar_usuario", { p_id: u.id, p_nombre: v.nombre, p_perfil: perfil, p_telefono: v.telefono || null, p_empresas: empresas });
+        const nuevo = (v.usuario || "").trim().toLowerCase();
+        if (nuevo && nuevo !== u.usuario) await llamar("cambiar_usuario", { p_id: u.id, p_usuario: nuevo });
+        if (yo) s.recargarUsuario();
+      } else {
         if ((v.clave || "").length < 8) throw falla("La contraseña inicial tiene que tener al menos 8 caracteres.");
         await llamar("crear_usuario", { p_usuario: v.usuario, p_nombre: v.nombre, p_perfil: perfil, p_clave: v.clave, p_telefono: v.telefono || null, p_empresas: empresas });
       }
       await d.recargar("usuarios", "usuario_empresas", "registro_cambios");
-      avisar(u ? "Usuario actualizado" : "Usuario creado");
+      avisar(u ? (yo ? "Tus datos se guardaron" : "Usuario actualizado") : "Usuario creado");
     }}>
       <Campo label="Nombre y apellido"><input type="text" name="nombre" id="u-nombre" required defaultValue={u?.nombre} /></Campo>
       <div className="fila">
-        {!u && <Campo label="Usuario" ayuda="Minúsculas, números, punto o guion"><input type="text" name="usuario" id="u-usuario" required autoCapitalize="none" spellCheck={false} pattern="[a-z0-9._\-]{3,30}" placeholder="ej.: jperez" /></Campo>}
-        <Campo label="Perfil"><Elegir name="perfil" id="u-perfil" opciones={PERFILES.map((p) => [p, tema.t(p)])} valor={perfil} onChange={(x) => setPerfil(x as Perfil)} /></Campo>
+        <Campo label="Usuario (para ingresar)" ayuda={u ? (yo ? "Si lo cambiás, la próxima vez ingresás con el nuevo; la contraseña no cambia" : "Si lo cambiás, avisale: la contraseña no cambia") : "Minúsculas, números, punto o guion"}>
+          <input type="text" name="usuario" id="u-usuario" required autoCapitalize="none" spellCheck={false} pattern="[a-z0-9._\-]{3,30}" placeholder="ej.: jperez" defaultValue={u?.usuario} /></Campo>
+        {yo ? <Campo label="Perfil" ayuda="Tu perfil de jefe no se puede cambiar"><input type="text" value={tema.t("jefe")} disabled /></Campo>
+          : <Campo label="Perfil"><Elegir name="perfil" id="u-perfil" opciones={PERFILES.map((p) => [p, tema.t(p)])} valor={perfil} onChange={(x) => setPerfil(x as Perfil)} /></Campo>}
         <Campo label="Teléfono (opcional)"><input type="tel" name="telefono" defaultValue={u?.telefono || ""} /></Campo>
       </div>
       {perfil === "jefe" ? <p className="suave chico">El jefe de mantenimiento accede a todas las empresas.</p> : (
@@ -73,7 +80,7 @@ export function Usuarios() {
             <td className="mono">{u.usuario}</td><td>{tema.t(u.perfil)}</td>
             <td>{u.perfil === "jefe" ? "Todas" : <span style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>{empresasDe(u.id).map((e) => <Emp key={e!.id} sigla={e!.sigla} nombre={e!.sigla} />)}</span>}</td>
             <td>{u.activo ? <Pastilla c="ok">Activo</Pastilla> : <Pastilla>De baja</Pastilla>}</td>
-            <td>{u.id !== s.usuario?.id && <div className="botones">
+            <td>{u.id === s.usuario?.id ? <div className="botones"><button className="boton chico" onClick={() => abrir(<FormUsuario u={u} />)}>Editar mis datos</button></div> : <div className="botones">
               <button className="boton chico" onClick={() => abrir(<FormUsuario u={u} />)}>Editar</button>
               <button className="boton chico" onClick={() => abrir(<NuevaClave u={u} />)}>Contraseña</button>
               <button className={"boton chico" + (u.activo ? " peligro" : "")} onClick={() => confirmar(u.activo ? "Dar de baja a " + u.nombre : "Reactivar a " + u.nombre,

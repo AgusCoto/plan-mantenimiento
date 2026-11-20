@@ -166,10 +166,25 @@ r = await jefe.rpc("cancelar_prestamo", { p_mov: mov, p_motivo: "x" }); prueba("
 r = await jefe.rpc("reparacion_externa", { p_equipo: comp2.id, p_proveedor: prov.id, p_salida: "2026-11-14", p_vuelta: "2026-11-30", p_presupuesto: 250000, p_remito: "R-1", p_motivo: "Rebobinado" }); prueba("el jefe manda a reparar afuera", !r.error, r.error);
 r = await jefe.from("equipos").select("estado").eq("id", comp2.id).single(); prueba("el equipo queda en «reparación externa»", r.data?.estado === "reparacion_externa", r);
 r = await enc.rpc("baja_equipo", { p_equipo: comp.id, p_motivo: "x", p_destino: "chatarra" }); prueba("el encargado no da de baja", !!r.error);
-r = await jefe.rpc("baja_equipo", { p_equipo: comp.id, p_motivo: "Fin de vida útil", p_destino: "chatarra" }); prueba("baja con motivo y destino", !r.error, r.error);
+r = await jefe.rpc("baja_equipo", { p_equipo: comp.id, p_motivo: "viejo", p_destino: "chatarra" }); prueba("la baja exige explicar el motivo", !!r.error);
+r = await jefe.rpc("baja_equipo", { p_equipo: comp.id, p_motivo: "Fin de vida útil: cilindro fisurado", p_destino: "venta", p_fecha: "2099-01-01" }); prueba("la fecha de baja no puede ser futura", !!r.error);
+r = await jefe.rpc("baja_equipo", { p_equipo: comp.id, p_motivo: "Fin de vida útil: cilindro fisurado", p_destino: "venta", p_receptor: "Chatarrería Sur", p_valor: 350000 });
+prueba("baja con motivo, destino, quién lo retira y valor de recupero", !r.error && sql(`select receptor || '|' || valor_recupero::int || '|' || (resuelto_por = '${jefe.uid}') from movimientos_equipo where id = '${r.data}'`) === "Chatarrería Sur|350000|true", r.error);
 r = await enc.from("ordenes").insert({ equipo_id: comp.id, titulo: "x" }).select(); prueba("no se crean órdenes de un equipo dado de baja", !!r.error, r);
 r = await tec.from("movimientos_equipo").insert({ equipo_id: apl.id, tipo: "baja", estado: "cerrado" }).select(); prueba("los movimientos no se cargan salteando las funciones", no(r) || !!r.error, r);
 
+console.log("Cambiar el usuario de ingreso");
+r = await enc.rpc("cambiar_usuario", { p_id: enc.uid, p_usuario: "marta.gil" }); prueba("solo el jefe cambia usuarios (ni el propio)", !!r.error);
+r = await jefe.rpc("cambiar_usuario", { p_id: enc.uid, p_usuario: "tecnico" }); prueba("no se repite un usuario existente", !!r.error);
+r = await jefe.rpc("cambiar_usuario", { p_id: enc.uid, p_usuario: "Con Espacios" }); prueba("ni se aceptan espacios o mayúsculas raras", !!r.error);
+r = await jefe.rpc("cambiar_usuario", { p_id: enc.uid, p_usuario: "marta.gil" }); prueba("el jefe cambia el usuario del encargado", !r.error, r.error);
+try { const m = await entrar("marta.gil", "clave-encargado"); prueba("ingresa con el usuario nuevo y la misma contraseña", m.uid === enc.uid); }
+catch (e) { prueba("ingresa con el usuario nuevo y la misma contraseña", false, e.message); }
+await entrar("encargado").then(() => prueba("y el usuario viejo ya no sirve", false), () => prueba("y el usuario viejo ya no sirve", true));
+r = await jefe.rpc("cambiar_usuario", { p_id: jefe.uid, p_usuario: "jefe.mant" }); prueba("el jefe cambia su propio usuario", !r.error, r.error);
+r = await jefe.rpc("editar_usuario", { p_id: jefe.uid, p_nombre: "Jefe de Mantenimiento", p_perfil: "jefe", p_telefono: "11 4444-0000", p_empresas: [] }); prueba("y edita sus datos", !r.error, r.error);
+r = await jefe.rpc("editar_usuario", { p_id: jefe.uid, p_nombre: "Jefe de Mantenimiento", p_perfil: "encargado", p_telefono: null, p_empresas: [emp.INY] }); prueba("pero no se puede sacar el perfil de jefe", !!r.error);
+r = await jefe.rpc("cambiar_usuario", { p_id: jefe.uid, p_usuario: "jefe" }); r = await jefe.rpc("cambiar_usuario", { p_id: enc.uid, p_usuario: "encargado" });
 console.log("Desactivar usuarios");
 r = await jefe.rpc("estado_usuario", { p_id: op2.uid, p_activo: false }); prueba("el jefe desactiva al operario", !r.error, r.error);
 r = await op2.from("equipos").select("id"); prueba("el desactivado ya no ve nada aunque tenga sesión", no(r), r);

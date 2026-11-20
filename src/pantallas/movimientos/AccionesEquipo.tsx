@@ -7,11 +7,12 @@ import { useSesion } from "../../datos/sesion";
 import { useTema } from "../../sistema/tema";
 import { llamar } from "../../datos/cola";
 import { sb } from "../../datos/supabase";
-import { Campo, Ventana, abrir, avisar, cerrar } from "../../comun/ui";
+import { Campo, Ventana, abrir, avisar, cerrar, descargar } from "../../comun/ui";
+import { pdfBaja } from "../../comun/informes";
 import { Captura, subirAdjuntos, type Medio } from "../../comun/archivos";
 import { hoy } from "../../comun/formato";
 import { Ico } from "../../sistema/iconos";
-import type { Equipo } from "../../datos/tipos";
+import type { Adjunto, Equipo, Movimiento } from "../../datos/tipos";
 
 export const numero = (s: string | undefined) => (s ? Number(s.replace(/\./g, "").replace(",", ".")) : null);
 const ocupado = (d: ReturnType<typeof useDatos>, e: Equipo) =>
@@ -91,18 +92,32 @@ function ReparacionExterna({ e }: { e: Equipo }) {
   );
 }
 function Baja({ e }: { e: Equipo }) {
-  const d = useDatos(), f = useFotos();
+  const d = useDatos(), f = useFotos(), tema = useTema();
   const abiertas = d.ordenes.filter((o) => o.equipo_id === e.id && !["cerrada", "anulada"].includes(o.estado)).length;
   return (
     <Ventana titulo={"Dar de baja " + e.codigo} ok="Dar de baja" peligro onSubmit={async (v) => {
-      await llamar("baja_equipo", { p_equipo: e.id, p_motivo: v.motivo, p_destino: v.destino });
-      await f.subirA(await ultimo(d, e, "baja"));
-      await d.recargar("equipos", "movimientos_equipo", "adjuntos"); avisar("Equipo dado de baja");
+      const id = await llamar<string>("baja_equipo", { p_equipo: e.id, p_motivo: v.motivo, p_destino: v.destino, p_fecha: v.fecha || null,
+        p_receptor: v.receptor || null, p_valor: numero(v.valor) });
+      await f.subirA(id || await ultimo(d, e, "baja"));
+      await d.recargar("equipos", "movimientos_equipo", "adjuntos"); avisar("Equipo dado de baja: se descarga el informe de baja");
+      // Informe de baja con lo recién cargado
+      try {
+        const [m, a] = await Promise.all([sb().from("movimientos_equipo").select("*").eq("id", id).single(), sb().from("adjuntos").select("*").eq("tabla", "movimientos_equipo").eq("registro_id", id)]);
+        if (m.data) descargar(`informe-baja-${e.codigo}.pdf`, await pdfBaja(d, tema.tokens, e.id, tema.t("orden_abrev"), { mov: m.data as Movimiento, adjuntos: (a.data || []) as Adjunto[] }));
+      } catch { avisar("El equipo quedó dado de baja. El informe se puede bajar desde su ficha."); }
     }}>
       <p>El equipo queda con su código y todo su historial, pero ya no se le cargan órdenes ni reportes.</p>
       {abiertas > 0 && <p className="nota">Tiene {abiertas} {abiertas === 1 ? "orden abierta" : "órdenes abiertas"}: hay que cerrarlas o anularlas antes.</p>}
-      <Campo label="Destino *"><select name="destino" required defaultValue="">{<option value="">Elegí…</option>}{d.listas.filter((x) => x.lista === "destino_baja" && x.activo).map((x) => <option key={x.clave} value={x.clave}>{x.nombre}</option>)}</select></Campo>
-      <Campo label="Motivo *"><input type="text" name="motivo" required placeholder="Ej.: reparación más cara que uno nuevo" /></Campo>
+      <div className="fila">
+        <Campo label="Fecha de baja"><input type="date" name="fecha" defaultValue={hoy()} max={hoy()} /></Campo>
+        <Campo label="Destino *"><select name="destino" required defaultValue="">{<option value="">Elegí…</option>}{d.listas.filter((x) => x.lista === "destino_baja" && x.activo).map((x) => <option key={x.clave} value={x.clave}>{x.nombre}</option>)}</select></Campo>
+      </div>
+      <Campo label="Motivo de la baja *" ayuda="Queda en el historial y en el informe de baja: estado del equipo, fallas, costo de repararlo, reemplazo…">
+        <textarea name="motivo" required minLength={10} placeholder="Ej.: el reductor está fisurado; repararlo cuesta más que un equipo nuevo. Se reemplaza por…" style={{ minHeight: 90 }} /></Campo>
+      <div className="fila">
+        <Campo label="Quién lo retira o recibe"><input type="text" name="receptor" placeholder="Ej.: comprador, chatarrería, desguace" /></Campo>
+        <Campo label="Valor de venta o recupero ($)"><input type="text" name="valor" inputMode="decimal" /></Campo>
+      </div>
       {f.ui}
     </Ventana>
   );

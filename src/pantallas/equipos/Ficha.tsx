@@ -15,6 +15,7 @@ import { insertar, actualizar, llamar } from "../../datos/cola";
 import { BotonNFC, datosEtiqueta } from "./Recien";
 import { Ico } from "../../sistema/iconos";
 import { AccionesEquipo } from "../movimientos/AccionesEquipo";
+import { pdfBaja } from "../../comun/informes";
 import { ESTADOS_MOV } from "../movimientos/Movimientos";
 import type { Documento, Equipo } from "../../datos/tipos";
 
@@ -80,6 +81,7 @@ export function Ficha() {
   const fichas = d.fichas.filter((f) => ids.has(f.orden_id));
   const reportes = d.reportes_falla.filter((r) => r.equipo_id === e.id);
   const movs = d.movimientos_equipo.filter((m) => m.equipo_id === e.id);
+  const bajaMov = e.estado === "baja" ? movs.filter((m) => m.tipo === "baja").sort((a, b) => b.creado_en.localeCompare(a.creado_en))[0] : undefined;
   const docs = d.documentos.filter((x) => x.equipo_id === e.id && x.activo);
   const chapa = docs.find((x) => x.categoria === "chapa");
   const ot = (n: number) => `${tema.t("orden_abrev")}-${String(n).padStart(4, "0")}`;
@@ -102,6 +104,9 @@ export function Ficha() {
           {["jefe", "encargado"].includes(perfil) && e.estado !== "baja" && <Link className="boton pri" to={"/ordenes/nueva?equipo=" + e.id}><Ico n="mas" />Nueva {tema.t("orden_abrev")}</Link>}
           {perfil === "jefe" && <Link className="boton" to={`/equipos/${e.id}/editar`}>Editar ficha</Link>}
           <AccionesEquipo e={e} />
+          {e.estado === "baja" && ["jefe", "encargado", "direccion"].includes(perfil) && <button className="boton" onClick={async () => {
+            try { descargar(`informe-baja-${e.codigo}.pdf`, await pdfBaja(d, tema.tokens, e.id, tema.t("orden_abrev"))); } catch { avisar("No se pudo armar el informe de baja."); }
+          }}><Ico n="descargar" />Informe de baja (PDF)</button>}
         </div></div>
       <div className="placa">
         <div style={{ minWidth: 0 }}>
@@ -124,6 +129,12 @@ export function Ficha() {
           {perfil === "jefe" && <BotonNFC codigo={e.codigo} />}
         </div>
       </div>
+      {bajaMov && <div className="nota" role="note">
+        <b>Dado de baja el {fd(bajaMov.fecha_salida || bajaMov.creado_en)}</b> · destino: {d.item("destino_baja", bajaMov.destino_baja)?.nombre || bajaMov.destino_baja}
+        {bajaMov.receptor ? ` · retira: ${bajaMov.receptor}` : ""}{bajaMov.valor_recupero != null ? ` · valor de recupero: ${pesos(Number(bajaMov.valor_recupero))}` : ""}
+        {" · "}decidió {d.usuarioDe(bajaMov.resuelto_por || bajaMov.creado_por)?.nombre || "—"}
+        <div style={{ whiteSpace: "pre-wrap", marginTop: 4 }}>Motivo: {bajaMov.motivo}</div>
+      </div>}
       <section className="panel">
         <div className="pestanas" role="tablist">{tabs.map(([k, n]) => <button key={k} role="tab" aria-selected={tab === k} className={tab === k ? "activa" : ""} onClick={() => setTab(k)}>{n}</button>)}</div>
         <div style={{ paddingTop: "var(--e3)" }}>

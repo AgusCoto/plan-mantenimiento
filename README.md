@@ -98,7 +98,7 @@ Esto crea las tablas, permisos, reglas, buckets de Storage (`adjuntos`, `documen
 2. Reemplazá `<usuario>`, `<Nombre y apellido>`, `<clave>` (mínimo 8 caracteres) y el teléfono (o dejalo vacío: `''`).
 3. **Run**. Con ese usuario y clave ingresás a la app.
 4. Ya en la app: **Mi cuenta → Cambiar la contraseña** (el SQL Editor guarda el historial de lo que corrés).
-5. Los demás usuarios se crean desde **Usuarios** (perfil, empresas a las que accede, clave inicial).
+5. Los demás usuarios se crean desde **Usuarios** (perfil, empresas a las que accede, clave inicial). Ahí también se dan de baja y se reactivan, y con **Editar mis datos** cambiás tu nombre, teléfono o el usuario con el que ingresás.
 
 Se ingresa con **usuario** (no con email). Si migrás desde W-Main, tu administrador ya queda como jefe (ver punto 11).
 
@@ -234,6 +234,7 @@ W-Main sigue funcionando hasta que decidas el cambio. La app nueva se instala **
 ## 12. Remito interno e intervenciones externas
 
 - **Remito interno de la orden**: al cerrar una orden se descarga solo un PDF «Remito interno RI-<número de la orden>» con el equipo, la empresa a la que se carga, los trabajos (quién, cuándo, horas), la causa, los repuestos y costos, las fotos, la firma del supervisor (equipos críticos) y lugar para las firmas de mantenimiento y producción. Se puede volver a bajar desde la orden (**Remito interno (PDF)**). Es un documento interno: no reemplaza al remito ni a la factura fiscal (ARCA).
+- **Informe de baja de un equipo**: al dar de baja un equipo (botón **Dar de baja** en su ficha) se pide la fecha, el destino, el **motivo detallado**, quién lo retira y el valor de venta o recupero. Se descarga solo un PDF con esos datos y el historial completo del equipo (órdenes, fallas, horas de parada, costo de mantenimiento y movimientos). La ficha del equipo muestra la baja con su motivo y el informe se vuelve a bajar desde ahí o desde **Movimientos → Historial → Bajas**.
 - **Intervenciones externas** (menú): todos los casos en que un equipo **salió de planta para repararlo** (Reparación externa) o en que **un contratista trabajó en él** (ficha cargada por el jefe a nombre del contratista). Cada caso tiene su **Informe PDF** (taller o contratista, fechas, días fuera, costo, remito, garantía, fotos y firmas) y el listado se filtra por empresa, tipo y fechas y se exporta a Excel.
 
 ## 13. Registro de cambios
@@ -261,7 +262,7 @@ Supabase local: `npx supabase@2.58.5 init`, copiar `supabase/migrations/*` a la 
 
 | Prueba | Comando (con `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `DB_URL` definidos) |
 |---|---|
-| Permisos de cada perfil (156 casos) | `npm run test:permisos` (base recién reseteada) |
+| Permisos de cada perfil (167 casos) | `npm run test:permisos` (base recién reseteada) |
 | Función de avisos | `SERVICE_ROLE_KEY=… npm run test:avisos` (después de la de permisos) |
 | Datos de ejemplo | `npm run test:ejemplo` (base recién reseteada) |
 | Recorrido completo en el navegador | `APP_URL=http://localhost:5173/ npm run test:e2e [carpeta-capturas]` (base recién reseteada y `npm run dev` andando) |

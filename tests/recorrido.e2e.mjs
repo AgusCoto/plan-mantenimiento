@@ -249,12 +249,24 @@ await jefe.goto(APP + "equipos/" + idIny); await jefe.click(".encabezado button:
 prueba("el jefe reubica dentro de la empresa", await aviso(jefe, /Equipo reubicado/) && ubic("INY-INY-001") === "INY|Nave 2, línea 3");
 
 await jefe.goto(APP + "equipos/" + idApl); await jefe.click(".encabezado button:has-text('Dar de baja')"); await jefe.waitForSelector(".ventana form");
-await jefe.selectOption(".ventana select[name=destino]", "venta"); await jefe.fill(".ventana input[name=motivo]", "Reemplazado por uno nuevo"); await jefe.click(".ventana button[type=submit]");
-prueba("baja con motivo y destino", await aviso(jefe, /dado de baja/) && estadoEq("LIM-APL-001") === "baja");
+await jefe.selectOption(".ventana select[name=destino]", "venta");
+await jefe.fill(".ventana textarea[name=motivo]", "Bateria agotada y motor de traccion quemado: repararlo cuesta mas que uno nuevo. Se reemplaza por un apilador nuevo.");
+await jefe.fill(".ventana input[name=receptor]", "Autoelevadores Oeste"); await jefe.fill(".ventana input[name=valor]", "850.000");
+const [infBaja] = await Promise.all([jefe.waitForEvent("download", { timeout: 20000 }), jefe.click(".ventana button[type=submit]")]);
+prueba("baja con motivo detallado, destino, quién lo retira y valor", estadoEq("LIM-APL-001") === "baja"
+  && sql("select receptor || '|' || valor_recupero::int from movimientos_equipo where tipo = 'baja'") === "Autoelevadores Oeste|850000");
+const bajaPdf = (await fs.promises.readFile(await infBaja.path())).toString("latin1");
+const enBaja = ["LIM-APL-001", "Bateria agotada", "motor de traccion", "Autoelevadores Oeste", "850.000", "Historial de mantenimiento", "Movimientos anteriores"];
+prueba("se descarga solo el informe de baja con el motivo y el historial del equipo", infBaja.suggestedFilename() === "informe-baja-LIM-APL-001.pdf" && bajaPdf.startsWith("%PDF")
+  && enBaja.every((t) => bajaPdf.includes(t)), enBaja.filter((t) => !bajaPdf.includes(t)));
 await jefe.goto(APP + "equipos/" + idApl); await jefe.waitForSelector(".placa .pastilla:has-text('De baja')", { timeout: 8000 }).catch(() => {});
 prueba("el equipo dado de baja conserva su historial y ya no ofrece movimientos", /De baja/.test(await jefe.textContent(".placa")) && !(await jefe.$(".encabezado button:has-text('Dar de baja')")) && !(await jefe.$(".encabezado button:has-text('Préstamo')")));
 await jefe.click("button[role=tab]:has-text('Movimientos')");
 prueba("la ficha lista sus movimientos (préstamo y baja)", (await jefe.$$("table tbody tr")).length === 2);
+prueba("la ficha muestra la baja con su motivo", /Dado de baja el/.test(await jefe.textContent("main")) && /motor de traccion quemado/.test(await jefe.textContent("main")));
+prueba("y el informe de baja se puede volver a bajar desde la ficha", !!(await jefe.$("button:has-text('Informe de baja (PDF)')")));
+await jefe.goto(APP + "movimientos"); await jefe.click("button[role=tab]:has-text('Historial')"); await jefe.selectOption("select[aria-label='Tipo de movimiento']", "baja");
+prueba("Movimientos → Historial filtra las bajas, con su informe", (await jefe.$$("main table tbody tr")).length === 1 && !!(await jefe.$("tr:has-text('LIM-APL-001') button:has-text('Informe PDF')")));
 await foto(jefe, "31-ficha-baja");
 await op.goto(APP + "e/LIM-APL-001"); await op.waitForSelector(".op h1");
 prueba("el operario no puede reportar un equipo dado de baja", /dado de baja/.test(await op.textContent(".op")));
@@ -411,6 +423,17 @@ if (subOk) {
   await jefe.click("button:has-text('Salir')"); await jefe.waitForSelector("#l-u");
   prueba("al salir de la cuenta, el celular deja de recibir sus avisos", sql(`select count(*) from push_suscripciones where usuario_id = '${jefeId}'`) === "0");
 }
+
+console.log("Editar mis datos");
+const yo = await como("jefe");
+await yo.goto(APP + "usuarios"); await yo.click("button:has-text('Editar mis datos')"); await yo.waitForSelector(".ventana form");
+prueba("el perfil de jefe no se puede cambiar desde ahí", (await yo.$eval(".ventana input[disabled]", (x) => x.value)) === "Jefe de mantenimiento");
+await yo.fill(".ventana input[name=nombre]", "Agustín Coto T."); await yo.fill(".ventana input[name=usuario]", "agustin"); await yo.fill(".ventana input[name=telefono]", "11 6000-1234");
+await yo.click(".ventana button[type=submit]");
+prueba("el jefe edita su nombre, teléfono y usuario de ingreso", await aviso(yo, /Tus datos se guardaron/)
+  && sql("select usuario || '|' || nombre || '|' || telefono from usuarios where perfil = 'jefe'") === "agustin|Agustín Coto T.|11 6000-1234");
+const yo2 = await como(null); await yo2.goto(APP); await yo2.fill("#l-u", "agustin"); await yo2.fill("#l-p", "clave-jefe"); await yo2.click("form button[type=submit]");
+prueba("y entra con el usuario nuevo y la misma contraseña", !!(await yo2.waitForSelector("main h1", { timeout: 15000 }).catch(() => null)));
 
 console.log(`\n${ok} correctas, ${mal} con problemas, ${errores.length} errores de página`);
 await b.close();

@@ -6,7 +6,8 @@ import { useDatos } from "../../datos/store";
 import { useSesion } from "../../datos/sesion";
 import { useTema } from "../../sistema/tema";
 import { llamar } from "../../datos/cola";
-import { Campo, Codigo, Emp, Pastilla, Ventana, abrir, avisar, type ColorEstado } from "../../comun/ui";
+import { Campo, Codigo, Emp, Pastilla, Ventana, abrir, avisar, descargar, type ColorEstado } from "../../comun/ui";
+import { pdfBaja } from "../../comun/informes";
 import { Medios } from "../../comun/archivos";
 import { fd, hoy, pesos } from "../../comun/formato";
 import { numero } from "./AccionesEquipo";
@@ -86,17 +87,21 @@ export function Movimientos() {
   const d = useDatos(), s = useSesion(), tema = useTema();
   const p = s.usuario!.perfil;
   const [ver, setVer] = useState<"tramite" | "todos">("tramite");
+  const [tipo, setTipo] = useState("");
   const enTramite = d.movimientos_equipo.filter((m) => ["solicitado", "aprobado", "en_curso"].includes(m.estado));
-  const l = ver === "tramite" ? enTramite : d.movimientos_equipo;
+  const l = (ver === "tramite" ? enTramite : d.movimientos_equipo).filter((m) => !tipo || m.tipo === tipo);
   const TIPOS: Record<Movimiento["tipo"], string> = { prestamo: tema.t("prestamo"), reparacion_externa: tema.t("reparacion_externa"), reubicacion: "Reubicación", baja: "Baja" };
   return (
     <>
       <div className="encabezado"><div><h1>{tema.t("movimientos")}</h1>
-        <p>Préstamos entre empresas, reparaciones externas, reubicaciones y bajas. Se inician desde la ficha de cada equipo (botón «{tema.t("movimientos")}»).</p></div></div>
+        <p>Préstamos entre empresas, reparaciones externas, reubicaciones y bajas. Se inician desde la ficha de cada equipo. Las bajas tienen su informe en PDF con el motivo y el historial del equipo.</p></div></div>
       <div className="pestanas" role="tablist">
         <button role="tab" aria-selected={ver === "tramite"} className={ver === "tramite" ? "activa" : ""} onClick={() => setVer("tramite")}>En trámite ({enTramite.length})</button>
         <button role="tab" aria-selected={ver === "todos"} className={ver === "todos" ? "activa" : ""} onClick={() => setVer("todos")}>Historial</button>
       </div>
+      {ver === "todos" && <div className="filtros"><select value={tipo} onChange={(e) => setTipo(e.target.value)} aria-label="Tipo de movimiento">
+        <option value="">Todos los movimientos</option><option value="baja">Bajas</option><option value="prestamo">{tema.t("prestamo")}s</option>
+        <option value="reparacion_externa">{tema.t("reparacion_externa")}</option><option value="reubicacion">Reubicaciones</option></select></div>}
       <section className="panel">{l.length ? (
         <div className="tabla"><table><thead><tr><th>Fecha</th><th>Equipo</th><th>Movimiento</th><th>Detalle</th><th>Estado</th><th></th></tr></thead><tbody>
           {l.map((m) => {
@@ -121,6 +126,9 @@ export function Movimientos() {
                 <td><div className="botones" style={{ flexWrap: "nowrap" }}>
                   {p === "jefe" && m.estado === "solicitado" && <><button className="boton chico pri" onClick={() => abrir(<Resolver m={m} aprobar />)}>Aprobar</button><button className="boton chico" onClick={() => abrir(<Resolver m={m} aprobar={false} />)}>Rechazar</button></>}
                   {p === "jefe" && m.tipo === "prestamo" && m.estado === "aprobado" && <button className="boton chico pri" onClick={() => abrir(<Salida m={m} />)}>Salió</button>}
+                  {m.tipo === "baja" && <button className="boton chico" onClick={async () => {
+                    try { descargar(`informe-baja-${d.equipo(m.equipo_id)?.codigo || ""}.pdf`, await pdfBaja(d, tema.tokens, m.equipo_id, tema.t("orden_abrev"))); } catch { avisar("No se pudo armar el informe."); }
+                  }}>Informe PDF</button>}
                   {p === "jefe" && m.estado === "en_curso" && <button className="boton chico pri" onClick={() => abrir(<Vuelta m={m} />)}>Volvió</button>}
                   {p === "jefe" && m.tipo === "prestamo" && ["solicitado", "aprobado"].includes(m.estado) && <button className="boton chico" onClick={() => abrir(<Cancelar m={m} />)}>Cancelar</button>}
                 </div></td>
