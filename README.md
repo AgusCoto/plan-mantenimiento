@@ -12,7 +12,7 @@ App web instalable (PWA) para el mantenimiento de las cuatro empresas del grupo:
 - **Apariencia** editable por el jefe (colores, logo, textos, etiquetas, pantallas de inicio…), con versiones y vuelta atrás.
 - **Exportar** todo a Excel o CSV. **Registro de cambios** inmutable.
 
-Tecnología: React + Vite + TypeScript · Supabase (Postgres, Auth, Storage, Edge Functions, Realtime) · Netlify.
+Tecnología: React + Vite + TypeScript · Supabase (Postgres, Auth, Storage, Edge Functions, Realtime) · GitHub Pages.
 
 ---
 
@@ -24,7 +24,7 @@ Tecnología: React + Vite + TypeScript · Supabase (Postgres, Auth, Storage, Edg
 4. [Instalar la base (migraciones)](#4-instalar-la-base)
 5. [Primera cuenta del jefe](#5-primera-cuenta-del-jefe)
 6. [Conectar GitHub](#6-conectar-github)
-7. [Publicar en Netlify](#7-publicar-en-netlify)
+7. [Publicar en GitHub Pages](#7-publicar-en-github-pages)
 8. [Avisos push](#8-avisos-push)
 9. [Imprimir etiquetas y grabar los chips NFC](#9-imprimir-etiquetas-y-grabar-los-chips-nfc)
 10. [Datos de ejemplo](#10-datos-de-ejemplo)
@@ -67,12 +67,12 @@ En **Project Settings → API** (o **API Keys**) están:
 
 | Dato | ¿Es secreto? | Dónde va |
 |---|---|---|
-| **Project URL** (`https://xxxx.supabase.co`) | No | Netlify (`VITE_SUPABASE_URL`), GitHub (`SUPABASE_URL`), `avisos-activar.sql` |
-| **anon / publishable key** | **No**: es pública por diseño (los permisos los controla la base) | Netlify (`VITE_SUPABASE_ANON_KEY`), GitHub (`SUPABASE_ANON_KEY`), `avisos-activar.sql` |
-| **service_role / secret key** | **Sí. Nunca** en la app, en Netlify, en GitHub ni en un chat | No se usa en ningún lado: la función de avisos la recibe sola de Supabase |
+| **Project URL** (`https://xxxx.supabase.co`) | No | GitHub (secreto `SUPABASE_URL`), `avisos-activar.sql` |
+| **anon / publishable key** | **No**: es pública por diseño (los permisos los controla la base) | GitHub (secreto `SUPABASE_ANON_KEY`), `avisos-activar.sql` |
+| **service_role / secret key** | **Sí. Nunca** en la app, en GitHub ni en un chat | No se usa en ningún lado: la función de avisos la recibe sola de Supabase |
 | **Contraseña de la base** | **Sí** | Solo para entrar al SQL Editor o a la CLI |
 | **Clave privada VAPID** (avisos) | **Sí** | Solo en los secretos de la función «avisos» de Supabase |
-| **Clave pública VAPID** | No | Netlify (`VITE_VAPID_PUBLIC_KEY`) y secretos de la función |
+| **Clave pública VAPID** | No | GitHub (variable `VAPID_PUBLIC_KEY`) y secretos de la función |
 
 El archivo `.env.example` tiene la lista de variables de la app. Para trabajar en tu computadora, copialo como `.env.local` y completalo (está en `.gitignore`: no se sube).
 
@@ -107,8 +107,8 @@ Se ingresa con **usuario** (no con email). Si migrás desde W-Main, tu administr
 El código vive en este repositorio. Para que las tareas automáticas funcionen:
 
 1. GitHub → repositorio → **Settings → Secrets and variables → Actions**.
-2. Pestaña **Secrets** → **New repository secret**: `SUPABASE_URL` (Project URL) y `SUPABASE_ANON_KEY` (clave pública). Los usa «Mantener activa la base», que consulta la base cada 3 días para que el plan gratuito de Supabase no la pause.
-3. Pestaña **Variables** → **New repository variable**: `APP_URL` = la dirección de la app en Netlify (ej.: `https://mantenimiento-grupo.netlify.app`). Solo se usa al pasar de W-Main (punto 11).
+2. Pestaña **Secrets** → **New repository secret**: `SUPABASE_URL` (Project URL) y `SUPABASE_ANON_KEY` (clave pública). Los usan «Publicar la app» y «Mantener activa la base» (consulta la base cada 3 días para que el plan gratuito de Supabase no la pause).
+3. Pestaña **Variables** → **New repository variable**: `VAPID_PUBLIC_KEY` = la clave pública de los avisos push (punto 8), cuando la tengas.
 
 Tareas automáticas (`.github/workflows/`):
 
@@ -116,23 +116,19 @@ Tareas automáticas (`.github/workflows/`):
 |---|---|---|
 | **Pruebas** | En cada cambio | Levanta un Supabase temporal y prueba los permisos de cada perfil, la función de avisos, los datos de ejemplo y que la app compile. No toca la base real. |
 | **Mantener activa la base** | Cada 3 días | Una consulta liviana para que Supabase no pause el proyecto. |
-| **Etiquetas viejas a la app nueva** | Solo a mano | Ver punto 11. |
+| **Publicar la app** | En cada cambio de `main` | Arma la app y la publica en GitHub Pages. |
 
-## 7. Publicar en Netlify
+## 7. Publicar en GitHub Pages
 
-Usamos Netlify porque su plan gratuito permite uso comercial (el plan gratuito de Vercel no).
+La app se publica gratis en GitHub Pages, sin anuncios ni carteles, en la misma dirección que tenía W-Main:
+**https://aguscoto.github.io/plan-mantenimiento/**
 
-1. Entrá a <https://app.netlify.com> (podés ingresar con GitHub).
-2. **Add new site → Import an existing project → GitHub** → autorizá y elegí este repositorio.
-3. **Branch to deploy**: `main` (o `app-mantenimiento` para probar antes de pasar a producción). La configuración de compilación sale sola de `netlify.toml` (comando `npm run build`, carpeta `dist`).
-4. Antes de publicar, en **Add environment variables** (o después en **Site configuration → Environment variables**):
-   - `VITE_SUPABASE_URL` = Project URL
-   - `VITE_SUPABASE_ANON_KEY` = clave pública
-   - `VITE_VAPID_PUBLIC_KEY` = clave pública VAPID (punto 8; si todavía no la tenés, se agrega después y se vuelve a publicar)
-5. **Deploy**. En **Site configuration → Change site name** elegí una dirección (ej.: `mantenimiento-grupo.netlify.app`) o conectá un dominio propio en **Domain management**.
-6. **Importante**: la dirección queda impresa en las etiquetas QR y grabada en los chips NFC. Definila **antes** de imprimir etiquetas. Si después cambia, hay que reimprimir (o mantener la dirección vieja redirigiendo a la nueva).
+1. GitHub → repositorio → **Settings → Pages** → en **Source** elegí **GitHub Actions** (W-Main ya lo tenía así).
+2. Cargá los secretos `SUPABASE_URL` y `SUPABASE_ANON_KEY` (punto 6).
+3. Cada cambio que llega a `main` se publica solo con la tarea **Publicar la app** (pestaña **Actions**). También se puede correr a mano: **Actions → Publicar la app → Run workflow**.
+4. Para instalarla en el celular: abrí la dirección en Chrome (Android) o Safari (iPhone) → menú → **Agregar a la pantalla de inicio**. Si tenías W-Main instalado, se actualiza solo a la app nueva.
 
-Cada cambio que se sube a la rama elegida se publica solo. Para instalar la app en el celular: abrí la dirección en Chrome (Android) o Safari (iPhone) → menú → **Agregar a la pantalla de inicio**.
+La dirección queda impresa en las etiquetas QR y grabada en los chips NFC. Las etiquetas viejas de W-Main (`…/plan-mantenimiento/#código`) abren el equipo en la app nueva por su código viejo.
 
 ## 8. Avisos push
 
@@ -143,7 +139,7 @@ Los avisos siempre se ven en la **campanita** de la app. Para que además llegue
    (Con la CLI: `npx supabase functions deploy avisos --no-verify-jwt`.)
 3. **Secretos de la función** — **Edge Functions → Secrets** (o **Manage secrets**): `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` y `VAPID_SUBJECT` = la dirección de la app (ej.: `https://mantenimiento-grupo.netlify.app`).
 4. **Conectar la base con la función** — SQL Editor: pegá `supabase/avisos-activar.sql`, reemplazá la URL del proyecto y la clave pública, y **Run**. Al final muestra lo configurado y las dos tareas programadas (avisos diarios a las 8 y reintentos cada 5 minutos).
-5. **Netlify** — agregá `VITE_VAPID_PUBLIC_KEY` (la clave pública) y volvé a publicar (**Deploys → Trigger deploy**).
+5. **GitHub** — cargá la variable `VAPID_PUBLIC_KEY` (la clave pública, punto 6) y volvé a publicar (**Actions → Publicar la app → Run workflow**).
 6. **En cada celular** — **Mi cuenta** (o la campanita) → **Activar avisos en este celular**.
 
 **iPhone**: los avisos llegan solo con la app instalada en la pantalla de inicio (Safari → Compartir → **Agregar a inicio**) y con iOS 16.4 o más nuevo. La app muestra esta guía cuando hace falta.
@@ -222,19 +218,21 @@ W-Main sigue funcionando hasta que decidas el cambio. La app nueva se instala **
    ```sql
    select public.migrar_w_main();
    ```
-   Muestra qué se pasó: equipos (con código nuevo; los códigos viejos se guardan y siguen funcionando), manuales, órdenes, trabajos anteriores (como órdenes cerradas con sus fichas), reportes con fotos y usuarios. Los usuarios desde ahora ingresan con **usuario** (lo que estaba antes de la @ del email) y **la misma contraseña**. El plan de preventivos pasa en la etapa 2.
+   Muestra qué se pasó: equipos (con código nuevo; los códigos viejos se guardan y siguen funcionando), manuales, órdenes, trabajos anteriores (como órdenes cerradas con sus fichas), reportes con fotos y usuarios. Los usuarios desde ahora ingresan con **usuario** (lo que estaba antes de la @ del email) y **la misma contraseña**. El plan de preventivos se arma en la app nueva (Menú → Preventivos).
 4. Revisá en **Usuarios** a qué empresas accede cada uno (quedan con todas) y el perfil de cada uno.
-5. **Publicar en Netlify** (punto 7) y **avisos** (punto 8). Probá con usuarios reales.
-6. **Etiquetas viejas**: las etiquetas de W-Main apuntan a GitHub Pages. Cuando la app nueva esté publicada:
-   - Cargá la variable `APP_URL` (punto 6).
-   - GitHub → **Actions → Etiquetas viejas a la app nueva → Run workflow**.
-   - Desde ese momento, una etiqueta vieja abre el equipo en la app nueva (por su código viejo). Las etiquetas nuevas se pueden ir reimprimiendo de a poco.
-   - Esto reemplaza la versión web de W-Main en GitHub Pages; W-Main de escritorio deja de usarse.
+5. **Publicar** (punto 7) y **avisos** (punto 8). La app nueva reemplaza a W-Main en su misma dirección de GitHub Pages: las etiquetas viejas siguen funcionando y abren el equipo en la app nueva. W-Main de escritorio deja de usarse.
 
 ## 11 bis. Empresas, proveedores y contratistas
 
 - **Siglas de las empresas** (Apariencia → Estados y empresas): se pueden cambiar mientras la empresa **no tenga equipos activos**. Los equipos dados de baja conservan su código viejo; los nuevos toman la sigla nueva y empiezan en 001.
 - **Proveedores y contratistas** (menú): talleres, contratistas y proveedores de repuestos. Además, en cualquier lista de contratista, taller o proveedor (orden de trabajo, ficha, compra, reparación externa, ficha del equipo) está la opción **«+ Cargar uno nuevo…»** para escribir el nombre, el rubro y el teléfono en el momento. Los cargan el jefe y el encargado; el jefe los edita o desactiva.
+
+## 11 ter. Preventivos, menú y consultas (como W-Main)
+
+- **Menú** por secciones: Día a día, Equipos, Compras, Consultas e informes y Ajustes. En el celular, abajo: **Inicio**, **Órdenes**, el botón grande **Escanear** (lee el QR también en iPhone, o el chip NFC en Android), **Falla** (en rojo, para reportar) y **Menú**.
+- **Preventivos** (Menú → Preventivos, y en la ficha de cada equipo): tareas cada N días, semanas, meses, años u horas de uso. Tarjetas **Vencidas / Próximas / Al día / Sin datos** (también en Inicio) y la lista con lo más urgente primero. El jefe arma el plan; el jefe y el encargado tocan **Generar orden** (o «Ya se hizo»). Al terminar la orden, la tarea queda al día. Los vencidos llegan en los avisos diarios.
+- **Consultas e informes**: Buscar fallas anteriores, Historial de intervenciones (con Excel), Intervenciones externas, Informe mensual y Resumen para Dirección (se imprimen o guardan en PDF), Historial de modificaciones y Exportar datos. **Manuales** reúne los documentos de todos los equipos. **¿Dónde está cada cosa?** explica dónde se hace cada cosa.
+- La app se llama **W-Main · Plan de mantenimiento** y el perfil del jefe figura como **Gerente de mantenimiento** (se cambia en Configuración → Vocabulario).
 
 ## 12. Remito interno e intervenciones externas
 
@@ -267,7 +265,7 @@ Supabase local: `npx supabase@2.58.5 init`, copiar `supabase/migrations/*` a la 
 
 | Prueba | Comando (con `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `DB_URL` definidos) |
 |---|---|
-| Permisos de cada perfil (187 casos) | `npm run test:permisos` (base recién reseteada) |
+| Permisos de cada perfil (199 casos) | `npm run test:permisos` (base recién reseteada) |
 | Función de avisos | `SERVICE_ROLE_KEY=… npm run test:avisos` (después de la de permisos) |
 | Datos de ejemplo | `npm run test:ejemplo` (base recién reseteada) |
 | Recorrido completo en el navegador | `APP_URL=http://localhost:5173/ npm run test:e2e [carpeta-capturas]` (base recién reseteada y `npm run dev` andando) |
@@ -283,7 +281,6 @@ src/
   comun/          componentes comunes, fotos y videos, QR/NFC, etiquetas PDF, exportar, campanita
   pantallas/      inicio, equipos, órdenes, reportes, operario, movimientos, compras, apariencia, usuarios…
 public/           service worker (sin señal y notificaciones), íconos, manifiesto
-netlify/          función del manifiesto (nombre e íconos según la apariencia)
 supabase/
   migrations/     la base, versionada (tablas, permisos, reglas, avisos, datos de ejemplo, migración de W-Main)
   instalar.sql    todas las migraciones juntas para el SQL Editor (se genera con npm run sql)
