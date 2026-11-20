@@ -439,12 +439,19 @@ prueba("al abrirlos quedan leídos", !(await tec.$(".campanita .insignia")));
 prueba("el operario no tiene campanita", !(await op.$(".campanita")));
 await jefe.context().grantPermissions(["notifications"]);
 await jefe.goto(APP); await jefe.waitForSelector(".campanita"); await jefe.click(".campanita");
-await jefe.waitForSelector(".ventana button:has-text('Activar avisos en este celular')");
-const avisoPush = aviso(jefe, /servicio de notificaciones/);
-await jefe.click(".ventana button:has-text('Activar avisos en este celular')");
+// Según el navegador de prueba: deja pedir el permiso (y falla al registrarse en el servicio push, que no tiene)
+// o ya lo trae bloqueado. En los dos casos la app tiene que explicar qué hacer.
+await jefe.waitForSelector(".ventana button:has-text('Activar avisos en este celular'), .ventana .nota:has-text('bloqueadas')");
+const bloqueadas = !!(await jefe.$(".ventana .nota:has-text('bloqueadas')"));
 const jefeId = sql("select id from usuarios where usuario = 'jefe'");
-const subOk = await (async () => { for (let i = 0; i < 40; i++) { if (sql(`select count(*) from push_suscripciones where usuario_id = '${jefeId}'`) === "1") return true; await jefe.waitForTimeout(250); } return false; })();
-prueba("el jefe activa los avisos en su celular (el navegador de prueba no tiene servicio push: debe explicar por qué)", subOk || await avisoPush);
+let subOk = false;
+if (bloqueadas) prueba("con las notificaciones bloqueadas, explica cómo habilitarlas", /Permitir/.test(await jefe.textContent(".ventana")));
+else {
+  const avisoPush = aviso(jefe, /servicio de notificaciones/);
+  await jefe.click(".ventana button:has-text('Activar avisos en este celular')");
+  subOk = await (async () => { for (let i = 0; i < 40; i++) { if (sql(`select count(*) from push_suscripciones where usuario_id = '${jefeId}'`) === "1") return true; await jefe.waitForTimeout(250); } return false; })();
+  prueba("el jefe activa los avisos en su celular (el navegador de prueba no tiene servicio push: debe explicar por qué)", subOk || await avisoPush);
+}
 if (subOk) {
   await foto(jefe, "51-avisos-activos");
   await jefe.click(".encabezado ~ * , body", { position: { x: 5, y: 5 } }).catch(() => {});
