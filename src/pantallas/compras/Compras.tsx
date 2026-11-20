@@ -10,6 +10,7 @@ import { Campo, Codigo, Emp, Pastilla, Ventana, abrir, avisar, confirmar, type C
 import { fd, nf, pesos } from "../../comun/formato";
 import { Ico } from "../../sistema/iconos";
 import { num4 } from "../ordenes/comun";
+import { ProveedorCampo, proveedorDe } from "../../comun/proveedor";
 import type { Pedido } from "../../datos/tipos";
 
 const ESTADOS: Record<Pedido["estado"], [string, ColorEstado]> = {
@@ -35,7 +36,7 @@ function NuevoPedido() {
   const d = useDatos(), tema = useTema();
   return (
     <Ventana titulo={"Nuevo " + tema.t("pedido").toLowerCase()} ok="Pedir" onSubmit={async (v) => {
-      await insertar("pedidos_compra", { empresa_id: v.empresa, equipo_id: v.equipo || null, descripcion: v.descripcion, cantidad: Number(v.cantidad.replace(",", ".")) || 1, monto_estimado: monto(v.monto), proveedor_id: v.proveedor || null });
+      await insertar("pedidos_compra", { empresa_id: v.empresa, equipo_id: v.equipo || null, descripcion: v.descripcion, cantidad: Number(v.cantidad.replace(",", ".")) || 1, monto_estimado: monto(v.monto), proveedor_id: await proveedorDe(v, "proveedor", d) });
       await d.recargar("pedidos_compra"); avisar("Pedido cargado y aprobado");
     }}>
       <p className="chico suave">Para un repuesto de una orden, pedilo desde la orden: así queda esperando el repuesto.</p>
@@ -46,7 +47,7 @@ function NuevoPedido() {
       </div>
       <Campo label="Empresa que paga *"><select name="empresa" required defaultValue="">{<option value="">Elegí…</option>}{d.empresas.filter((e) => e.activa).map((e) => <option key={e.id} value={e.id}>{e.sigla} · {e.nombre}</option>)}</select></Campo>
       <Campo label={tema.t("equipo") + " (opcional)"}><select name="equipo" defaultValue=""><option value="">Ninguno</option>{d.equipos.filter((e) => e.estado !== "baja").map((e) => <option key={e.id} value={e.id}>{e.codigo} · {e.nombre}</option>)}</select></Campo>
-      <Campo label={tema.t("proveedor")}><select name="proveedor" defaultValue=""><option value="">Sin indicar</option>{d.proveedores.filter((p) => p.activo).map((p) => <option key={p.id} value={p.id}>{p.nombre}</option>)}</select></Campo>
+      <ProveedorCampo name="proveedor" label={tema.t("proveedor")} vacio="Sin indicar" />
     </Ventana>
   );
 }

@@ -250,5 +250,42 @@ sql("select public.avisos_diarios()");
 prueba("avisos diarios: resumen al jefe y a dirección", avisosDe(jefe.uid, "resumen_diario") === 1 && avisosDe(dir.uid, "resumen_diario") === 1 && avisosDe(enc.uid, "resumen_diario") === 0);
 prueba("y órdenes vencidas al encargado", nVenc === "0" || avisosDe(enc.uid, "orden_vencida") >= 1, nVenc);
 
+console.log("Siglas de las empresas");
+r = await jefe.from("empresas").update({ sigla: "INX" }).eq("id", emp.INY).select(); prueba("una empresa con equipos activos no cambia la sigla", !!r.error, r);
+r = await jefe.from("empresas").insert({ sigla: "PRB", nombre: "Empresa de prueba", orden: 9 }).select().single(); const prb = r.data;
+r = await jefe.from("equipos").insert({ empresa_duena_id: prb.id, tipo: "BOM", nombre: "Bomba vieja", codigo: "", numero: 0 }).select().single(); const vieja = r.data;
+prueba("(preparación: equipo PRB-BOM-001)", vieja?.codigo === "PRB-BOM-001", r);
+r = await jefe.rpc("baja_equipo", { p_equipo: vieja.id, p_motivo: "Equipo de prueba, se da de baja", p_destino: "chatarra" });
+r = await jefe.from("empresas").update({ sigla: "NVA" }).eq("id", prb.id).select(); prueba("sin equipos activos (solo dados de baja) la sigla se cambia", filas(r) === 1, r);
+r = await jefe.from("equipos").insert({ empresa_duena_id: prb.id, tipo: "BOM", nombre: "Bomba nueva", codigo: "", numero: 0 }).select().single();
+prueba("el equipo nuevo toma la sigla nueva y empieza en 001; el dado de baja conserva su código", r.data?.codigo === "NVA-BOM-001" && sql(`select codigo from equipos where id = '${vieja.id}'`) === "PRB-BOM-001", r);
+r = await jefe.from("empresas").update({ sigla: "PRA" }).eq("id", prb.id).select(); prueba("y con un equipo activo, ya no", !!r.error, r);
+r = await tec.from("empresas").update({ nombre: "x" }).eq("id", emp.LIM).select(); prueba("solo el jefe edita empresas", no(r) || !!r.error, r);
+
+console.log("Proveedores y contratistas");
+r = await enc.from("proveedores").insert({ nombre: "Contratista del encargado", rubro: "Soldadura" }).select().single(); prueba("el encargado carga un contratista nuevo", !!r.data?.id, r.error);
+r = await tec.from("proveedores").insert({ nombre: "Contratista del técnico" }).select(); prueba("el técnico no carga proveedores", no(r) || !!r.error, r);
+r = await enc.from("proveedores").update({ activo: false }).eq("nombre", "Contratista del encargado").select(); prueba("solo el jefe los edita o desactiva", no(r) || !!r.error, r);
+
+console.log("Eliminar usuarios");
+for (const [u, p] of [["borrable", "operario"], ["con.historia", "operario"]]) await crear(jefe, u, p, ["INY"]);
+const borrable = sql("select id from usuarios where usuario = 'borrable'"), conHist = sql("select id from usuarios where usuario = 'con.historia'");
+const ch = await entrar("con.historia");
+r = await ch.from("reportes_falla").insert({ equipo_id: comp2.id, tipo_falla: "ruido", parada: false, texto: "Reporte de quien después se elimina" }).select().single();
+prueba("(preparación: un operario con un reporte cargado)", !!r.data, r.error);
+r = await jefe.rpc("eliminar_usuario", { p_id: borrable }); prueba("no se elimina a alguien activo: primero se da de baja", !!r.error);
+await jefe.rpc("estado_usuario", { p_id: borrable, p_activo: false }); await jefe.rpc("estado_usuario", { p_id: conHist, p_activo: false });
+r = await enc.rpc("eliminar_usuario", { p_id: borrable }); prueba("solo el jefe elimina usuarios", !!r.error);
+r = await jefe.rpc("eliminar_usuario", { p_id: jefe.uid }); prueba("el jefe no se elimina a sí mismo", !!r.error);
+r = await jefe.rpc("eliminar_usuario", { p_id: borrable });
+prueba("sin historia se borra del todo (también su cuenta)", r.data === "borrado" && sql(`select count(*) from usuarios where id = '${borrable}'`) === "0" && sql(`select count(*) from auth.users where id = '${borrable}'`) === "0", r.error || r.data);
+r = await jefe.rpc("eliminar_usuario", { p_id: conHist });
+prueba("con historia deja de figurar y libera su usuario", r.data === "archivado" && sql(`select eliminado || '|' || (usuario like 'eliminado.%') from usuarios where id = '${conHist}'`) === "true|true", r.error || r.data);
+prueba("pero su nombre queda en el historial", sql(`select n.nombre from reportes_falla x join usuarios n on n.id = x.operario_id where x.texto = 'Reporte de quien después se elimina'`) === "Nombre con.historia");
+await entrar("con.historia").then(() => prueba("y no puede ingresar", false), () => prueba("y no puede ingresar", true));
+r = await jefe.rpc("estado_usuario", { p_id: conHist, p_activo: true }); prueba("un eliminado no se reactiva", !!r.error);
+r = await crear(jefe, "con.historia", "operario", ["INY"]); prueba("el usuario liberado se puede volver a usar", !r.error, r.error);
+try { sql(`delete from usuarios where id = '${conHist}'`); prueba("fuera de eliminar_usuario, los usuarios no se borran", false); } catch { prueba("fuera de eliminar_usuario, los usuarios no se borran", true); }
+
 console.log(`\n${ok} correctas, ${mal} con problemas`);
 process.exit(mal ? 1 : 0);

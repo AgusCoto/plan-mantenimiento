@@ -232,7 +232,7 @@ sql("insert into proveedores (nombre, rubro) values ('Bobinados Sur', 'Motores e
 await jefe.goto(APP); await jefe.reload(); await jefe.waitForSelector("main h1");
 const idCom = sql("select id from equipos where codigo = 'INY-COM-001'");
 await menuMov(jefe, idCom, "Reparación externa");
-await jefe.selectOption(".ventana select[name=proveedor]", { label: "Bobinados Sur" }); await jefe.fill(".ventana input[name=presupuesto]", "250.000");
+await jefe.selectOption(".ventana select[name=proveedor]", { label: "Bobinados Sur · Motores eléctricos" }); await jefe.fill(".ventana input[name=presupuesto]", "250.000");
 await jefe.fill(".ventana input[name=remito]", "R-0001-123"); await jefe.fill(".ventana input[name=motivo]", "Rebobinado del motor");
 await jefe.setInputFiles(".ventana input[accept='image/*'][multiple]", { name: "remito.png", mimeType: "image/png", buffer: png });
 await jefe.waitForSelector(".ventana .captura .medios img");
@@ -352,7 +352,7 @@ prueba("los ingresos siguen guardados y se ven si se piden", /Ingresó/.test(awa
 await foto(jefe, "35-registro");
 sql(`insert into fichas (orden_id, contratista_id, trabajo, horas, remito) select o.id, p.id, 'Medición de aislación del motor principal', 2, 'R-0003-0000777' from ordenes o, proveedores p where o.numero = 2 and p.nombre = 'Bobinados Sur' limit 1`);
 await jefe.goto(APP); await jefe.reload(); await jefe.waitForSelector("nav a[href='/externos']"); await jefe.click("nav a[href='/externos']");
-await jefe.waitForSelector("main table tbody tr");
+await jefe.waitForSelector("td:has-text('Medición de aislación')", { timeout: 10000 }).catch(() => {});
 const extTxt = await jefe.textContent("main table");
 prueba("intervenciones externas: lista la reparación externa y el trabajo del contratista", /Bobinados Sur/.test(extTxt) && /Rebobinado del motor/.test(extTxt) && /Medición de aislación/.test(extTxt) && /Volvió/.test(extTxt), extTxt.slice(0, 300));
 await foto(jefe, "36-externos");
@@ -369,6 +369,35 @@ await jefe.click("tr:has-text('Lucas Paz') button:has-text('Dar de baja')"); awa
 prueba("el jefe da de baja a un usuario (no puede ingresar más; el historial queda)", await aviso(jefe, /dado de baja/) && sql("select activo from usuarios where usuario = 'tecnico2'") === "f");
 await jefe.click("tr:has-text('Lucas Paz') button:has-text('Reactivar')"); await jefe.click(".ventana button[type=submit]");
 prueba("y lo reactiva", await aviso(jefe, /reactivado/) && sql("select activo from usuarios where usuario = 'tecnico2'") === "t");
+
+console.log("Contratista cargado a mano, eliminar usuarios y siglas");
+await jefe.goto(APP + "ordenes/nueva?equipo=" + idIny); await jefe.waitForSelector("select[name=contratista]");
+await jefe.selectOption("select[name=contratista]", "__nuevo__");
+await jefe.fill("input[name=contratista_nombre]", "Tornería López"); await jefe.fill("input[name=contratista_rubro]", "Tornería"); await jefe.fill("input[name=contratista_telefono]", "11 4000-2222");
+await jefe.fill("input[name=titulo]", "Rectificar el eje del tornillo");
+await jefe.click("button[type=submit]:has-text('Crear')"); await jefe.waitForURL(/\/ordenes\/[0-9a-f-]{36}$/);
+prueba("orden asignada a un contratista escrito a mano (queda cargado como proveedor)", /Tornería López/.test(await jefe.textContent("main"))
+  && sql("select p.rubro || '|' || p.telefono from ordenes o join proveedores p on p.id = o.contratista_id where o.titulo = 'Rectificar el eje del tornillo'") === "Tornería|11 4000-2222");
+await jefe.goto(APP + "proveedores"); await jefe.waitForSelector("td:has-text('Tornería López')", { timeout: 8000 }).catch(() => {});
+prueba("y aparece en Proveedores y contratistas", /Tornería López/.test(await jefe.textContent("main")) && /Bobinados Sur/.test(await jefe.textContent("main")));
+await foto(jefe, "37-proveedores");
+await jefe.goto(APP + "usuarios"); await jefe.waitForSelector("tr:has-text('Lucas Paz')");
+prueba("un usuario activo no muestra «Eliminar»", !(await jefe.$("tr:has-text('Lucas Paz') button:has-text('Eliminar')")));
+await jefe.click("tr:has-text('Lucas Paz') button:has-text('Dar de baja')"); await jefe.click(".ventana button[type=submit]"); await aviso(jefe, /dado de baja/);
+await jefe.click("tr:has-text('Lucas Paz') button:has-text('Eliminar')"); await jefe.click(".ventana button[type=submit]");
+prueba("dado de baja, el jefe lo elimina", await aviso(jefe, /Usuario eliminado/) && sql("select count(*) from usuarios where usuario = 'tecnico2' and not eliminado") === "0");
+await jefe.waitForTimeout(500);
+prueba("y ya no figura en la lista", !(await jefe.$("tr:has-text('Lucas Paz')")));
+await jefe.goto(APP + "apariencia"); await jefe.click("button[role=tab]:has-text('Estados y empresas')");
+// Cada empresa es una fila con su sigla, su nombre y «Guardar»
+const filaEmp = (nombre) => jefe.locator(".fila").filter({ has: jefe.locator("button:text-is('Guardar')") }).filter({ has: jefe.locator(`input[value="${nombre}"]`) }).last();
+await filaEmp("Inyectora de plásticos").waitFor();
+prueba("la sigla de una empresa con equipos activos (INY) no se puede tocar", await filaEmp("Inyectora de plásticos").locator("input[maxlength='4']").isDisabled());
+const sal = filaEmp("Salsas y aderezos");
+await sal.locator("input[maxlength='4']").fill("SYA"); await sal.locator("button:text-is('Guardar')").click();
+prueba("la de una empresa sin equipos activos (SAL → SYA) sí", await aviso(jefe, /Empresa guardada/) && sql("select count(*) from empresas where sigla = 'SYA'") === "1");
+await foto(jefe, "38-siglas");
+await sal.locator("input[maxlength='4']").fill("SAL"); await sal.locator("button:text-is('Guardar')").click(); await aviso(jefe, /Empresa guardada/);
 
 console.log("Exportar datos");
 await jefe.goto(APP + "exportar"); await jefe.waitForSelector("h1:has-text('Exportar datos')");

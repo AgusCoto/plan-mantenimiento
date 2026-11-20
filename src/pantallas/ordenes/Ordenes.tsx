@@ -10,6 +10,8 @@ import { fd, hace } from "../../comun/formato";
 import { Ico } from "../../sistema/iconos";
 import { ACTIVAS, EstadoOT, PrioridadOT, PRIORIDADES, NOMBRE_PRIORIDAD, num4, prioridadDe, rangoPrioridad, tecnicosPara, vencida } from "./comun";
 import { TarjetaReporte } from "./Reportes";
+import { ProveedorCampo, proveedorDe, valores } from "../../comun/proveedor";
+
 import type { Orden } from "../../datos/tipos";
 
 export function Ordenes() {
@@ -85,7 +87,7 @@ export function NuevaOrden() {
       const id = crypto.randomUUID();
       await insertar("ordenes", {
         id, equipo_id: equipoId, reporte_id: r?.id || null, titulo: v("titulo"), descripcion: v("descripcion") || null, tipo: v("tipo") || "correctiva",
-        parada: r ? r.parada : parada, asignado_a: v("asignado") || null, contratista_id: v("contratista") || null, vence: v("vence") || null,
+        parada: r ? r.parada : parada, asignado_a: v("asignado") || null, contratista_id: await proveedorDe(valores(f), "contratista", d), vence: v("vence") || null,
       });
       await d.recargar("ordenes", "reportes_falla", "equipos");
       avisar(`${tema.t("orden")} creada`); nav("/ordenes/" + id, { replace: true });
@@ -110,7 +112,7 @@ export function NuevaOrden() {
         {!r && <label className="opciones"><input type="checkbox" checked={parada} onChange={(x) => setParada(x.target.checked)} /><span>La máquina está parada</span></label>}
         <div className="fila">
           <Campo label="Asignar a" ayuda={e ? "Técnicos y encargados con acceso a la empresa del equipo" : undefined}><select name="asignado" defaultValue=""><option value="">Sin asignar todavía</option>{tecnicos.map((u) => <option key={u.id} value={u.id}>{u.nombre} · {tema.t(u.perfil)}</option>)}</select></Campo>
-          <Campo label={"…o a un " + tema.t("contratista").toLowerCase()}><select name="contratista" defaultValue=""><option value="">Ninguno</option>{d.proveedores.filter((p) => p.activo).map((p) => <option key={p.id} value={p.id}>{p.nombre}</option>)}</select></Campo>
+          <ProveedorCampo name="contratista" label={"…o a un " + tema.t("contratista").toLowerCase()} />
         </div>
         {e && pri && <p className="chico">Prioridad calculada: <PrioridadOT p={pri} /> (criticidad {e.criticidad}{(r ? r.parada : parada) ? ", máquina parada" : ""}). El jefe la puede confirmar o cambiar.{e.criticidad === "alta" && " Equipo crítico: el cierre lo firma el supervisor de producción."}</p>}
         {error && <p className="nota critico" role="alert">{error}</p>}

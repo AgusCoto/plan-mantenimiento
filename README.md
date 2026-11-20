@@ -98,7 +98,7 @@ Esto crea las tablas, permisos, reglas, buckets de Storage (`adjuntos`, `documen
 2. Reemplazá `<usuario>`, `<Nombre y apellido>`, `<clave>` (mínimo 8 caracteres) y el teléfono (o dejalo vacío: `''`).
 3. **Run**. Con ese usuario y clave ingresás a la app.
 4. Ya en la app: **Mi cuenta → Cambiar la contraseña** (el SQL Editor guarda el historial de lo que corrés).
-5. Los demás usuarios se crean desde **Usuarios** (perfil, empresas a las que accede, clave inicial). Ahí también se dan de baja y se reactivan, y con **Editar mis datos** cambiás tu nombre, teléfono o el usuario con el que ingresás.
+5. Los demás usuarios se crean desde **Usuarios** (perfil, empresas a las que accede, clave inicial). Ahí también se dan de baja y se reactivan; un usuario dado de baja se puede **eliminar** (si nunca cargó nada se borra del todo; si tiene historia, deja de figurar y libera su usuario, pero su nombre queda en las órdenes y fichas). Con **Editar mis datos** cambiás tu nombre, teléfono o el usuario con el que ingresás.
 
 Se ingresa con **usuario** (no con email). Si migrás desde W-Main, tu administrador ya queda como jefe (ver punto 11).
 
@@ -231,6 +231,11 @@ W-Main sigue funcionando hasta que decidas el cambio. La app nueva se instala **
    - Desde ese momento, una etiqueta vieja abre el equipo en la app nueva (por su código viejo). Las etiquetas nuevas se pueden ir reimprimiendo de a poco.
    - Esto reemplaza la versión web de W-Main en GitHub Pages; W-Main de escritorio deja de usarse.
 
+## 11 bis. Empresas, proveedores y contratistas
+
+- **Siglas de las empresas** (Apariencia → Estados y empresas): se pueden cambiar mientras la empresa **no tenga equipos activos**. Los equipos dados de baja conservan su código viejo; los nuevos toman la sigla nueva y empiezan en 001.
+- **Proveedores y contratistas** (menú): talleres, contratistas y proveedores de repuestos. Además, en cualquier lista de contratista, taller o proveedor (orden de trabajo, ficha, compra, reparación externa, ficha del equipo) está la opción **«+ Cargar uno nuevo…»** para escribir el nombre, el rubro y el teléfono en el momento. Los cargan el jefe y el encargado; el jefe los edita o desactiva.
+
 ## 12. Remito interno e intervenciones externas
 
 - **Remito interno de la orden**: al cerrar una orden se descarga solo un PDF «Remito interno RI-<número de la orden>» con el equipo, la empresa a la que se carga, los trabajos (quién, cuándo, horas), la causa, los repuestos y costos, las fotos, la firma del supervisor (equipos críticos) y lugar para las firmas de mantenimiento y producción. Se puede volver a bajar desde la orden (**Remito interno (PDF)**). Es un documento interno: no reemplaza al remito ni a la factura fiscal (ARCA).
@@ -262,7 +267,7 @@ Supabase local: `npx supabase@2.58.5 init`, copiar `supabase/migrations/*` a la 
 
 | Prueba | Comando (con `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `DB_URL` definidos) |
 |---|---|
-| Permisos de cada perfil (167 casos) | `npm run test:permisos` (base recién reseteada) |
+| Permisos de cada perfil (187 casos) | `npm run test:permisos` (base recién reseteada) |
 | Función de avisos | `SERVICE_ROLE_KEY=… npm run test:avisos` (después de la de permisos) |
 | Datos de ejemplo | `npm run test:ejemplo` (base recién reseteada) |
 | Recorrido completo en el navegador | `APP_URL=http://localhost:5173/ npm run test:e2e [carpeta-capturas]` (base recién reseteada y `npm run dev` andando) |

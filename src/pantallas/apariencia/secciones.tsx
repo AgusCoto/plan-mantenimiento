@@ -138,9 +138,10 @@ export function Estados({ tk, poner }: { tk: Tokens; poner: Poner }) {
 export function Empresas() {
   const d = useDatos();
   const [nueva, setNueva] = useState({ sigla: "", nombre: "", color: "#566472" });
-  const conEquipos = new Set(d.equipos.map((e) => e.empresa_duena_id));
+  // La sigla se puede cambiar mientras la empresa no tenga equipos activos (los dados de baja conservan su código)
+  const conEquipos = new Set(d.equipos.filter((e) => e.estado !== "baja").map((e) => e.empresa_duena_id));
   return (
-    <Grupo titulo="Empresas" ayuda="Nombre, sigla y color propios. La sigla no se puede cambiar si la empresa ya tiene equipos (es parte de sus códigos). Se guarda al momento.">
+    <Grupo titulo="Empresas" ayuda="Nombre, sigla y color propios. La sigla se puede cambiar mientras la empresa no tenga equipos activos (es parte de sus códigos; los equipos dados de baja conservan el código viejo). Se guarda al tocar «Guardar».">
       {d.empresas.map((e) => <FilaEmpresa key={e.id} e={e} bloqueada={conEquipos.has(e.id)} />)}
       <div className="fila" style={{ alignItems: "end" }}>
         <Campo label="Sigla nueva"><input type="text" value={nueva.sigla} maxLength={4} onChange={(x) => setNueva({ ...nueva, sigla: x.target.value.toUpperCase().replace(/[^A-Z]/g, "") })} /></Campo>
@@ -161,7 +162,7 @@ function FilaEmpresa({ e, bloqueada }: { e: { id: string; sigla: string; nombre:
   const cambio = x.sigla !== e.sigla || x.nombre !== e.nombre || x.color !== e.color || x.activa !== e.activa;
   return (
     <div className="fila" style={{ alignItems: "end" }}>
-      <Campo label="Sigla" ayuda={bloqueada ? "Tiene equipos: no se cambia" : undefined}><input type="text" value={x.sigla} maxLength={4} disabled={bloqueada} onChange={(v) => setX({ ...x, sigla: v.target.value.toUpperCase().replace(/[^A-Z]/g, "") })} /></Campo>
+      <Campo label="Sigla" ayuda={bloqueada ? "Tiene equipos activos: no se cambia" : "2 a 4 letras"}><input type="text" value={x.sigla} maxLength={4} disabled={bloqueada} onChange={(v) => setX({ ...x, sigla: v.target.value.toUpperCase().replace(/[^A-Z]/g, "") })} /></Campo>
       <Campo label="Nombre"><input type="text" value={x.nombre} onChange={(v) => setX({ ...x, nombre: v.target.value })} /></Campo>
       <ColorCampo label="Color" valor={x.color} onChange={(c) => setX({ ...x, color: c })} />
       <label className="chico" style={{ display: "flex", gap: 6, alignItems: "center", minHeight: 40 }}><input type="checkbox" checked={x.activa} onChange={(v) => setX({ ...x, activa: v.target.checked })} /> Activa</label>

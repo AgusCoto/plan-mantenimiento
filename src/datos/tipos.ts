@@ -3,7 +3,7 @@ import type { Perfil, Tokens } from "../sistema/tokens";
 
 interface Control { creado_por: string | null; creado_en: string; modificado_por: string | null; modificado_en: string }
 export interface Empresa extends Control { id: string; sigla: string; nombre: string; color: string; activa: boolean; orden: number }
-export interface Usuario extends Control { id: string; usuario: string; nombre: string; perfil: Perfil; telefono: string | null; activo: boolean; ejemplo: boolean }
+export interface Usuario extends Control { id: string; usuario: string; nombre: string; perfil: Perfil; telefono: string | null; activo: boolean; ejemplo: boolean; eliminado?: boolean }
 export interface UsuarioEmpresa { usuario_id: string; empresa_id: string }
 export interface Area extends Control { id: string; nombre: string; activa: boolean; orden: number }
 export interface CampoTipo { clave: string; etiqueta: string; tipo: "texto" | "numero" | "fecha" | "lista" | "foto"; unidad?: string; opciones?: string[]; obligatorio?: boolean }

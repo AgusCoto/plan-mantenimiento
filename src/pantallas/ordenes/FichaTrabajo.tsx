@@ -9,6 +9,8 @@ import { insertar } from "../../datos/cola";
 import { Captura, subir, subirAdjuntos, type Medio } from "../../comun/archivos";
 import { Campo, Codigo, avisar } from "../../comun/ui";
 import { num4, TERMINADAS } from "./comun";
+import { ProveedorCampo, proveedorDe, valores } from "../../comun/proveedor";
+
 
 /** Lienzo para firmar con el dedo. Devuelve la firma como PNG (o null si está vacío). */
 export function Firma({ alCambiar }: { alCambiar: (png: (() => Promise<Blob | null>) | null) => void }) {
@@ -72,7 +74,7 @@ export function FichaTrabajo() {
       }
       const fid = crypto.randomUUID();
       const fila = await insertar("fichas", { tecnico_id: v("contratista") ? null : s.usuario!.id,
-        id: fid, orden_id: o!.id, contratista_id: v("contratista") || null, es_cierre: cierre, trabajo: v("trabajo"), horas: num("horas"), horas_parada: num("horas_parada"),
+        id: fid, orden_id: o!.id, contratista_id: jefe ? await proveedorDe(valores(f), "contratista", d) : null, es_cierre: cierre, trabajo: v("trabajo"), horas: num("horas"), horas_parada: num("horas_parada"),
         causa: cierre ? v("causa") || null : null, supervisor_nombre: v("supervisor") || null, firma_ruta, remito: v("remito") || null, hecho_en: new Date().toISOString(),
       });
       try {
@@ -90,8 +92,7 @@ export function FichaTrabajo() {
         <h1>{cierre ? tema.t("ficha_cierre") : tema.t("ficha")}</h1>
         <p><Codigo>{e?.codigo}</Codigo> {e?.nombre} · {o.titulo}</p></div></div>
       <form className="form panel" onSubmit={guardar}>
-        {jefe && <Campo label={"Trabajo hecho por"} ayuda={"Si lo hizo un " + tema.t("contratista").toLowerCase() + ", elegilo: la ficha queda a su nombre"}>
-          <select name="contratista" defaultValue={o.contratista_id || ""}><option value="">Yo ({s.usuario!.nombre})</option>{d.proveedores.filter((p) => p.activo).map((p) => <option key={p.id} value={p.id}>{p.nombre}</option>)}</select></Campo>}
+        {jefe && <ProveedorCampo name="contratista" label="Trabajo hecho por" valor={o.contratista_id} vacio={"Yo (" + s.usuario!.nombre + ")"} ayuda={"Si lo hizo un " + tema.t("contratista").toLowerCase() + ", elegilo o cargalo: la ficha queda a su nombre"} />}
         <Campo label="Trabajo realizado *"><textarea name="trabajo" required minLength={2} placeholder="Qué se hizo, qué se cambió, qué falta" /></Campo>
         <div className="fila">
           <Campo label="Horas de trabajo"><input type="text" name="horas" inputMode="decimal" pattern="[0-9]+([,.][0-9]+)?" title="Un número, por ejemplo 1,5" placeholder="Ej.: 1,5" /></Campo>

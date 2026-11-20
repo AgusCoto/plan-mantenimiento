@@ -10,6 +10,7 @@ import { achicarFoto, subir } from "../../comun/archivos";
 import { Campo, avisar } from "../../comun/ui";
 import { Ico } from "../../sistema/iconos";
 import { Recien } from "./Recien";
+import { ProveedorCampo, proveedorDe, valores as valoresForm } from "../../comun/proveedor";
 import type { CampoTipo, Equipo } from "../../datos/tipos";
 
 function CampoPropio({ c, valor }: { c: CampoTipo; valor: unknown }) {
@@ -48,7 +49,7 @@ export function FormEquipo() {
       }
       const fila: Record<string, unknown> = {
         nombre: v("nombre"), marca: v("marca") || null, modelo: v("modelo") || null, serie: v("serie") || null, potencia: v("potencia") || null,
-        tension: v("tension") || null, proveedor_id: v("proveedor") || null, planos: v("planos") || null, criticidad: v("criticidad") || "media",
+        tension: v("tension") || null, proveedor_id: await proveedorDe(valoresForm(f), "proveedor", d), planos: v("planos") || null, criticidad: v("criticidad") || "media",
         notas: v("notas") || null, campos: valores,
       };
       let eq: Equipo;
@@ -109,7 +110,7 @@ export function FormEquipo() {
             <Campo label="Criticidad"><select name="criticidad" defaultValue={e?.criticidad || "media"}><option value="alta">Alta</option><option value="media">Media</option><option value="baja">Baja</option></select></Campo>
           </div>
           <div className="fila">
-            <Campo label={tema.t("proveedor")}><select name="proveedor" defaultValue={e?.proveedor_id || ""}><option value="">Sin indicar</option>{d.proveedores.filter((p) => p.activo).map((p) => <option key={p.id} value={p.id}>{p.nombre}</option>)}</select></Campo>
+            <ProveedorCampo name="proveedor" label={tema.t("proveedor")} valor={e?.proveedor_id} vacio="Sin indicar" />
             <Campo label="Planos" ayuda="Dónde están o un enlace"><input type="text" name="planos" defaultValue={e?.planos || ""} /></Campo>
           </div>
           {campos.length > 0 && <div className="fila">{campos.map((c) => <CampoPropio key={c.clave} c={c} valor={e?.campos?.[c.clave]} />)}</div>}

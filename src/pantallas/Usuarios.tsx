@@ -67,11 +67,11 @@ function NuevaClave({ u }: { u: Usuario }) {
 
 export function Usuarios() {
   const d = useDatos(), s = useSesion(), tema = useTema();
-  const l = [...d.usuarios].sort((a, b) => Number(!a.activo) - Number(!b.activo) || PERFILES.indexOf(a.perfil) - PERFILES.indexOf(b.perfil) || a.nombre.localeCompare(b.nombre));
+  const l = d.usuarios.filter((u) => !u.eliminado).sort((a, b) => Number(!a.activo) - Number(!b.activo) || PERFILES.indexOf(a.perfil) - PERFILES.indexOf(b.perfil) || a.nombre.localeCompare(b.nombre));
   const empresasDe = (id: string) => d.usuario_empresas.filter((x) => x.usuario_id === id).map((x) => d.empresa(x.empresa_id)).filter(Boolean);
   return (
     <>
-      <div className="encabezado"><div><h1>Usuarios</h1><p>Cada persona entra con su usuario y queda registrado lo que hace. Alta con «Nuevo usuario». Con «Dar de baja» la persona deja de poder ingresar; su historial se conserva (los usuarios no se borran).</p></div><span className="sp" />
+      <div className="encabezado"><div><h1>Usuarios</h1><p>Cada persona entra con su usuario y queda registrado lo que hace. Alta con «Nuevo usuario». Con «Dar de baja» la persona deja de poder ingresar; su historial se conserva. Un usuario dado de baja se puede eliminar.</p></div><span className="sp" />
         <button className="boton pri" onClick={() => abrir(<FormUsuario />)}>Nuevo usuario</button></div>
       <section className="panel"><div className="tabla"><table><thead><tr><th>Nombre</th><th>Usuario</th><th>Perfil</th><th>Empresas</th><th>Estado</th><th></th></tr></thead><tbody>
         {l.map((u) => (
@@ -87,6 +87,10 @@ export function Usuarios() {
                 u.activo ? `${u.nombre} no va a poder ingresar más. Su historial se conserva.` : `${u.nombre} va a poder volver a ingresar.`, u.activo ? "Dar de baja" : "Reactivar",
                 async () => { await llamar("estado_usuario", { p_id: u.id, p_activo: !u.activo }); await d.recargar("usuarios", "registro_cambios"); avisar(u.activo ? "Usuario dado de baja" : "Usuario reactivado"); }, u.activo)}>
                 {u.activo ? "Dar de baja" : "Reactivar"}</button>
+              {!u.activo && <button className="boton chico peligro" onClick={() => confirmar("Eliminar a " + u.nombre,
+                <>Se elimina de la lista de usuarios y no puede volver a ingresar. Si nunca cargó ni tuvo asignado nada, se borra del todo. Si tiene historia (reportes, órdenes, fichas…), su nombre sigue figurando ahí para no perder quién hizo cada cosa, y el usuario «{u.usuario}» queda libre. No se puede deshacer.</>,
+                "Eliminar", async () => { const r = await llamar<string>("eliminar_usuario", { p_id: u.id }); await d.recargar("usuarios", "usuario_empresas", "registro_cambios");
+                  avisar(r === "borrado" ? "Usuario eliminado" : "Usuario eliminado (su nombre queda en el historial)"); }, true)}>Eliminar</button>}
             </div>}</td>
           </tr>))}
       </tbody></table></div></section>

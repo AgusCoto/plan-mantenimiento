@@ -9,6 +9,7 @@ import { llamar } from "../../datos/cola";
 import { sb } from "../../datos/supabase";
 import { Campo, Ventana, abrir, avisar, cerrar, descargar } from "../../comun/ui";
 import { pdfBaja } from "../../comun/informes";
+import { ProveedorCampo, proveedorDe } from "../../comun/proveedor";
 import { Captura, subirAdjuntos, type Medio } from "../../comun/archivos";
 import { hoy } from "../../comun/formato";
 import { Ico } from "../../sistema/iconos";
@@ -72,12 +73,12 @@ function ReparacionExterna({ e }: { e: Equipo }) {
   const d = useDatos(), tema = useTema(), f = useFotos();
   return (
     <Ventana titulo={tema.t("reparacion_externa") + ": " + e.codigo} ok="Registrar salida" onSubmit={async (v) => {
-      const id = await llamar<string>("reparacion_externa", { p_equipo: e.id, p_proveedor: v.proveedor || null, p_salida: v.salida || null, p_vuelta: v.vuelta || null,
+      const id = await llamar<string>("reparacion_externa", { p_equipo: e.id, p_proveedor: await proveedorDe(v, "proveedor", d), p_salida: v.salida || null, p_vuelta: v.vuelta || null,
         p_presupuesto: numero(v.presupuesto), p_remito: v.remito || null, p_motivo: v.motivo });
       await f.subirA(id);
       await d.recargar("equipos", "movimientos_equipo", "adjuntos"); avisar("Salida a reparación registrada");
     }}>
-      <Campo label={tema.t("proveedor") + " / taller *"}><select name="proveedor" required defaultValue="">{<option value="">Elegí…</option>}{d.proveedores.filter((p) => p.activo).map((p) => <option key={p.id} value={p.id}>{p.nombre}</option>)}</select></Campo>
+      <ProveedorCampo name="proveedor" label={tema.t("proveedor") + " / taller *"} requerido />
       <div className="fila">
         <Campo label="Salida"><input type="date" name="salida" defaultValue={hoy()} /></Campo>
         <Campo label="Vuelta prevista"><input type="date" name="vuelta" /></Campo>

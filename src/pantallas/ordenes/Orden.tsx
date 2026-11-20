@@ -11,6 +11,8 @@ import { fd, fdt, nf, pesos } from "../../comun/formato";
 import { Ico } from "../../sistema/iconos";
 import { ACTIVAS, EstadoOT, NOMBRE_PRIORIDAD, PRIORIDADES, PrioridadOT, TERMINADAS, costoOrden, num4, tecnicosPara, vencida } from "./comun";
 import { TarjetaReporte } from "./Reportes";
+import { ProveedorCampo, proveedorDe } from "../../comun/proveedor";
+
 import { EstadoPedido } from "../compras/Compras";
 import type { Ficha, Orden as TOrden } from "../../datos/tipos";
 
@@ -21,7 +23,7 @@ function Editar({ o }: { o: TOrden }) {
   const e = d.equipo(o.equipo_id);
   return (
     <Ventana titulo={"Editar " + tema.t("orden_abrev") + "-" + num4(o.numero)} onSubmit={async (v) => {
-      await actualizar("ordenes", o.id, { titulo: v.titulo, descripcion: v.descripcion || null, tipo: v.tipo, vence: v.vence || null, asignado_a: v.asignado || null, contratista_id: v.contratista || null });
+      await actualizar("ordenes", o.id, { titulo: v.titulo, descripcion: v.descripcion || null, tipo: v.tipo, vence: v.vence || null, asignado_a: v.asignado || null, contratista_id: await proveedorDe(v, "contratista", d) });
       await d.recargar("ordenes"); avisar("Orden guardada");
     }}>
       <Campo label="Título"><input type="text" name="titulo" required defaultValue={o.titulo} /></Campo>
@@ -31,7 +33,7 @@ function Editar({ o }: { o: TOrden }) {
         <Campo label="Vence"><input type="date" name="vence" defaultValue={o.vence || ""} /></Campo>
       </div>
       <Campo label="Asignada a"><select name="asignado" defaultValue={o.asignado_a || ""}><option value="">Sin asignar</option>{tecnicosPara(d, e).map((u) => <option key={u.id} value={u.id}>{u.nombre} · {tema.t(u.perfil)}</option>)}</select></Campo>
-      <Campo label={tema.t("contratista")}><select name="contratista" defaultValue={o.contratista_id || ""}><option value="">Ninguno</option>{d.proveedores.filter((p) => p.activo).map((p) => <option key={p.id} value={p.id}>{p.nombre}</option>)}</select></Campo>
+      <ProveedorCampo name="contratista" label={tema.t("contratista")} valor={o.contratista_id} />
     </Ventana>
   );
 }
@@ -40,7 +42,7 @@ function PedirRepuesto({ o }: { o: TOrden }) {
   return (
     <Ventana titulo="Pedir un repuesto" ok="Pedir" onSubmit={async (v) => {
       await llamar("pedir_repuesto", { p_orden: o.id, p_descripcion: v.descripcion, p_cantidad: Number(v.cantidad.replace(",", ".")) || 1,
-        p_monto: v.monto ? Number(v.monto.replace(/\./g, "").replace(",", ".")) : null, p_proveedor: v.proveedor || null });
+        p_monto: v.monto ? Number(v.monto.replace(/\./g, "").replace(",", ".")) : null, p_proveedor: await proveedorDe(v, "proveedor", d) });
       await d.recargar("pedidos_compra", "ordenes"); avisar("Pedido enviado: la orden queda esperando el repuesto");
     }}>
       <p className="chico suave">Se genera un {tema.t("pedido").toLowerCase()} para que lo apruebe el jefe de mantenimiento (si lo pedís vos como jefe, queda aprobado). La orden pasa a «esperando repuesto» hasta que llegue.</p>
@@ -49,7 +51,7 @@ function PedirRepuesto({ o }: { o: TOrden }) {
         <Campo label="Cantidad"><input type="text" name="cantidad" inputMode="decimal" defaultValue="1" /></Campo>
         <Campo label="Monto estimado ($)"><input type="text" name="monto" inputMode="decimal" placeholder="Ej.: 45.000" /></Campo>
       </div>
-      <Campo label={tema.t("proveedor")}><select name="proveedor" defaultValue=""><option value="">Sin indicar</option>{d.proveedores.filter((p) => p.activo).map((p) => <option key={p.id} value={p.id}>{p.nombre}</option>)}</select></Campo>
+      <ProveedorCampo name="proveedor" label={tema.t("proveedor")} vacio="Sin indicar" />
     </Ventana>
   );
 }
@@ -58,7 +60,7 @@ function NuevoCosto({ o, soloRepuesto }: { o: TOrden; soloRepuesto: boolean }) {
   return (
     <Ventana titulo="Agregar costo" onSubmit={async (v) => {
       await insertar("costos_orden", { orden_id: o.id, tipo: v.tipo, descripcion: v.descripcion, cantidad: Number(v.cantidad.replace(",", ".")) || 1,
-        costo_unitario: Number((v.unitario || "0").replace(/\./g, "").replace(",", ".")) || 0, proveedor_id: v.proveedor || null, remito: v.remito || null });
+        costo_unitario: Number((v.unitario || "0").replace(/\./g, "").replace(",", ".")) || 0, proveedor_id: await proveedorDe(v, "proveedor", d), remito: v.remito || null });
       await d.recargar("costos_orden"); avisar("Costo agregado");
     }}>
       <Campo label="Tipo"><select name="tipo" defaultValue="repuesto"><option value="repuesto">Repuesto</option>{!soloRepuesto && <><option value="servicio">Servicio externo</option><option value="otro">Otro</option></>}</select></Campo>
@@ -68,7 +70,7 @@ function NuevoCosto({ o, soloRepuesto }: { o: TOrden; soloRepuesto: boolean }) {
         <Campo label="Costo unitario ($)"><input type="text" name="unitario" inputMode="decimal" /></Campo>
       </div>
       <div className="fila">
-        <Campo label={tema.t("proveedor")}><select name="proveedor" defaultValue=""><option value="">Sin indicar</option>{d.proveedores.filter((p) => p.activo).map((p) => <option key={p.id} value={p.id}>{p.nombre}</option>)}</select></Campo>
+        <ProveedorCampo name="proveedor" label={tema.t("proveedor")} vacio="Sin indicar" />
         <Campo label="Remito / factura"><input type="text" name="remito" /></Campo>
       </div>
     </Ventana>
