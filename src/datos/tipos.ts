@@ -38,7 +38,12 @@ export interface Orden extends Control {
   id: string; numero: number; equipo_id: string; reporte_id: string | null; titulo: string; descripcion: string | null; tipo: "correctiva" | "preventiva" | "mejora";
   estado: EstadoOrden; parada: boolean; prioridad_calculada: Prioridad; prioridad: Prioridad; prioridad_por: string | null; prioridad_en: string | null;
   asignado_a: string | null; contratista_id: string | null; vence: string | null; empresa_cargo_id: string; requiere_verificacion: boolean;
-  terminada_en: string | null; cerrada_en: string | null; motivo_anulacion: string | null;
+  terminada_en: string | null; cerrada_en: string | null; motivo_anulacion: string | null; preventivo_id?: string | null;
+}
+export type UnidadPreventivo = "dias" | "semanas" | "meses" | "anios" | "horas";
+export interface Preventivo extends Control {
+  id: string; equipo_id: string; titulo: string; descripcion: string | null; frecuencia: number; unidad: UnidadPreventivo;
+  aviso_dias: number; aviso_horas: number; ultima_fecha: string | null; ultima_horas: number | null; asignado_a: string | null; activo: boolean; ejemplo: boolean;
 }
 export interface Ficha extends Control {
   id: string; orden_id: string; tecnico_id: string | null; contratista_id: string | null; es_cierre: boolean; trabajo: string; horas: number; horas_parada: number;
@@ -60,6 +65,6 @@ export interface Aviso { id: number; usuario_id: string; tipo: string; titulo: s
 export interface Datos {
   empresas: Empresa[]; usuarios: Usuario[]; usuario_empresas: UsuarioEmpresa[]; areas: Area[]; tipos_equipo: TipoEquipo[]; listas: ItemLista[]; config: Config[];
   proveedores: Proveedor[]; equipos: Equipo[]; equipo_alias: Alias[]; documentos: Documento[]; movimientos_equipo: Movimiento[]; reportes_falla: Reporte[];
-  ordenes: Orden[]; fichas: Ficha[]; costos_orden: Costo[]; pedidos_compra: Pedido[]; adjuntos: Adjunto[]; registro_cambios: Cambio[]; temas: Tema[]; avisos: Aviso[];
+  ordenes: Orden[]; fichas: Ficha[]; costos_orden: Costo[]; pedidos_compra: Pedido[]; adjuntos: Adjunto[]; registro_cambios: Cambio[]; temas: Tema[]; avisos: Aviso[]; preventivos: Preventivo[];
 }
 export type Tabla = keyof Datos;

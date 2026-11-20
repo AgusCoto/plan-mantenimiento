@@ -7,7 +7,7 @@ import type { Tabla } from "../datos/tipos";
 
 export const HOJAS: [Tabla, string][] = [
   ["empresas", "Empresas"], ["usuarios", "Usuarios"], ["usuario_empresas", "Accesos"], ["areas", "Áreas"], ["tipos_equipo", "Tipos de equipo"],
-  ["listas", "Listas"], ["config", "Configuración"], ["proveedores", "Proveedores"], ["equipos", "Equipos"], ["equipo_alias", "Códigos anteriores"],
+  ["listas", "Listas"], ["config", "Configuración"], ["proveedores", "Proveedores"], ["equipos", "Equipos"], ["equipo_alias", "Códigos anteriores"], ["preventivos", "Preventivos"],
   ["documentos", "Documentos"], ["movimientos_equipo", "Movimientos"], ["reportes_falla", "Reportes de falla"], ["ordenes", "Órdenes"],
   ["fichas", "Fichas de trabajo"], ["costos_orden", "Costos"], ["pedidos_compra", "Pedidos de compra"], ["adjuntos", "Fotos y videos"],
   ["registro_cambios", "Registro de cambios"],

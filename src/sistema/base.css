@@ -237,3 +237,14 @@ button.conexion { border: 0; cursor: pointer; font-family: inherit; color: inher
 /* Ítems de lista que son botones (avisos, menú de movimientos) */
 button.item { border: 0; border-bottom: var(--borde) solid var(--linea); border-radius: 0; padding-inline: var(--e2); min-height: 48px; }
 button.item:last-child { border-bottom: 0; }
+
+/* Preventivos (tarjetas al estilo W-Main: borde de color a la izquierda) */
+.kpis-prev { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
+.kpis-prev .kpi { cursor: pointer; text-align: left; font: inherit; color: var(--tinta); border-left-width: 5px; }
+.kpis-prev .kpi .k { text-transform: uppercase; letter-spacing: .06em; }
+.kpi-vencida { border-left-color: var(--critico) !important; } .kpi-vencida .v { color: var(--critico); }
+.kpi-proxima { border-left-color: var(--alerta) !important; } .kpi-proxima .v { color: var(--alerta); }
+.kpi-al_dia { border-left-color: var(--ok) !important; } .kpi-al_dia .v { color: var(--ok); }
+.kpi-sin_datos { border-left-color: var(--tinta-suave) !important; } .kpi-sin_datos .v { color: var(--tinta-suave); }
+.kpis-prev .kpi.activo { outline: 2px solid var(--acento); outline-offset: 2px; }
+.tarea-prev { align-items: center; flex-wrap: wrap; }

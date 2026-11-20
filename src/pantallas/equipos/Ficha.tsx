@@ -16,10 +16,12 @@ import { BotonNFC, datosEtiqueta } from "./Recien";
 import { Ico } from "../../sistema/iconos";
 import { AccionesEquipo } from "../movimientos/AccionesEquipo";
 import { pdfBaja } from "../../comun/informes";
+import { FormPreventivo, ListaPrev } from "../preventivos/Preventivos";
+import { estadoPrev } from "../preventivos/comun";
 import { ESTADOS_MOV } from "../movimientos/Movimientos";
 import type { Documento, Equipo } from "../../datos/tipos";
 
-const CATEGORIAS: Record<string, string> = { chapa: "Foto de la chapa", foto: "Foto", manual: "Manual del fabricante", plano: "Plano eléctrico", plc: "Programa de PLC", bloqueo: "Bloqueo y etiquetado", configuracion: "Foto de configuración", otro: "Otro" };
+export const CATEGORIAS: Record<string, string> = { chapa: "Foto de la chapa", foto: "Foto", manual: "Manual del fabricante", plano: "Plano eléctrico", plc: "Programa de PLC", bloqueo: "Bloqueo y etiquetado", configuracion: "Foto de configuración", otro: "Otro" };
 
 function Qr({ codigo }: { codigo: string }) {
   const [u, setU] = useState("");
@@ -56,7 +58,7 @@ function NuevoDocumento({ e }: { e: Equipo }) {
     </Ventana>
   );
 }
-function AbrirDoc({ doc }: { doc: Documento }) {
+export function AbrirDoc({ doc }: { doc: Documento }) {
   return <a href={doc.url || "#"} target="_blank" rel="noopener" className="t" onClick={async (ev) => {
     if (doc.url) return;
     ev.preventDefault();
@@ -94,7 +96,8 @@ export function Ficha() {
   hist.sort((a, b) => b.ts.localeCompare(a.ts));
   const [est, c] = estadoEquipo(e.estado);
   const verDocs = ["jefe", "encargado", "tecnico"].includes(perfil);
-  const tabs: [string, string][] = [["historial", "Historial"], ["ordenes", `${tema.t("ordenes")} (${ordenes.length})`], ...(verDocs ? [["documentos", `Documentos (${docs.length})`] as [string, string]] : []), ["movimientos", `${tema.t("movimientos")} (${movs.length})`], ["datos", "Datos"]];
+  const prevs = d.preventivos.filter((p) => p.equipo_id === e.id && p.activo);
+  const tabs: [string, string][] = [["historial", "Historial"], ["ordenes", `${tema.t("ordenes")} (${ordenes.length})`], ["preventivos", `Preventivos (${prevs.length})`], ...(verDocs ? [["documentos", `Documentos (${docs.length})`] as [string, string]] : []), ["movimientos", `${tema.t("movimientos")} (${movs.length})`], ["datos", "Datos"]];
   const tel = d.conf<string>("telefono_mantenimiento", "");
   return (
     <>
@@ -153,6 +156,10 @@ export function Ficha() {
             {movs.map((m) => <tr key={m.id}><td className="num">{fd(m.creado_en)}</td><td>{({ prestamo: tema.t("prestamo"), reparacion_externa: tema.t("reparacion_externa"), baja: "Baja", reubicacion: "Reubicación" } as Record<string, string>)[m.tipo]}</td><td><Pastilla c={ESTADOS_MOV[m.estado][1]}>{ESTADOS_MOV[m.estado][0]}</Pastilla></td>
               <td className="chico">{[m.empresa_destino_id && d.empresa(m.empresa_destino_id)?.sigla, m.motivo, m.presupuesto ? pesos(m.presupuesto) : null, m.remito && "Remito " + m.remito, m.destino_baja].filter(Boolean).join(" · ")}</td></tr>)}
           </tbody></table></div> : <p className="vacio">Sin movimientos.</p>)}
+          {tab === "preventivos" && <>
+            <ListaPrev items={prevs.map((p) => ({ p, e, estado: estadoPrev(p, e) }))} mostrarEquipo={false} />
+            {perfil === "jefe" && e.estado !== "baja" && <button className="boton" style={{ marginTop: "var(--e3)" }} onClick={() => abrir(<FormPreventivo equipoId={e.id} />)}><Ico n="mas" />Tarea preventiva</button>}
+          </>}
           {tab === "datos" && <dl className="placa" style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: "var(--e1) var(--e3)", margin: 0 }}>
             {(tipo?.campos || []).filter((c) => c.tipo !== "foto").map((c) => <Fragment key={c.clave}><dt className="suave">{c.etiqueta}</dt><dd style={{ margin: 0 }}>{e.campos?.[c.clave] != null && e.campos[c.clave] !== "" ? String(e.campos[c.clave]) + (c.unidad ? " " + c.unidad : "") : "—"}</dd></Fragment>)}
             <dt className="suave">{tema.t("proveedor")}</dt><dd style={{ margin: 0 }}>{d.proveedores.find((p) => p.id === e.proveedor_id)?.nombre || "—"}</dd>

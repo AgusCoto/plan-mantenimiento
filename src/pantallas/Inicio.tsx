@@ -11,6 +11,7 @@ import { guardarPreferencias } from "./MiCuenta";
 import { hace } from "../comun/formato";
 import type { Perfil } from "../sistema/tokens";
 import { InicioOperario } from "./operario/InicioOperario";
+import { ListaPrev, TarjetasPrev, useResumenPrev } from "./preventivos/Preventivos";
 
 export interface Tarjeta { id: string; titulo: string; perfiles: Perfil[]; Vista: () => JSX.Element }
 export type Orden = { id: string; visible: boolean }[];
@@ -69,6 +70,13 @@ function Aprobaciones() {
   </div>;
 }
 const Proximamente = ({ txt }: { txt: string }) => () => <p className="vacio">{txt}</p>;
+function PreventivosInicio() {
+  const { l, cuenta } = useResumenPrev();
+  const urgentes = l.filter((x) => x.estado === "vencida" || x.estado === "proxima");
+  return <><TarjetasPrev cuenta={cuenta} />
+    <div style={{ marginTop: "var(--e3)" }}>{urgentes.length ? <ListaPrev items={urgentes.slice(0, 6)} /> : <p className="vacio">{l.length ? "No hay tareas vencidas ni próximas." : "Todavía no hay tareas en el plan de preventivos."}</p>}</div>
+    <Link to="/preventivos" className="chico">Ver todo el plan →</Link></>;
+}
 
 export const TARJETAS: Tarjeta[] = [
   { id: "pendientes", titulo: "Pendientes", perfiles: ["jefe", "encargado", "direccion"], Vista: Pendientes },
@@ -76,11 +84,11 @@ export const TARJETAS: Tarjeta[] = [
   { id: "reportes_nuevos", titulo: "Reportes nuevos", perfiles: ["jefe", "encargado", "tecnico", "direccion"], Vista: ReportesNuevos },
   { id: "equipos_parados", titulo: "Equipos parados o en reparación", perfiles: ["jefe", "encargado", "tecnico", "direccion"], Vista: Parados },
   { id: "aprobaciones", titulo: "Para aprobar", perfiles: ["direccion", "jefe"], Vista: Aprobaciones },
-  { id: "preventivos_semana", titulo: "Preventivos de la semana", perfiles: ["jefe", "encargado", "tecnico"], Vista: Proximamente({ txt: "Se suma en la etapa 2 (plan preventivo)." }) },
+  { id: "preventivos", titulo: "Preventivos, lo más urgente primero", perfiles: ["jefe", "encargado", "tecnico", "direccion"], Vista: PreventivosInicio },
   { id: "prestamos_herramientas", titulo: "Préstamos de herramientas", perfiles: ["jefe"], Vista: Proximamente({ txt: "Se suma en la etapa 2 (pañol)." }) },
 ];
 /** Orden de fábrica para cada perfil */
-export const tarjetasDe = (p: Perfil): Orden => TARJETAS.filter((t) => t.perfiles.includes(p)).map((t) => ({ id: t.id, visible: !["preventivos_semana", "prestamos_herramientas"].includes(t.id) }));
+export const tarjetasDe = (p: Perfil): Orden => TARJETAS.filter((t) => t.perfiles.includes(p)).map((t) => ({ id: t.id, visible: !["prestamos_herramientas"].includes(t.id) }));
 /** Combina: preferencia del usuario > valor del jefe para el perfil > fábrica (y suma tarjetas nuevas al final) */
 export function combinarOrden(p: Perfil, delJefe: Orden | undefined, propio: Orden | null | undefined): Orden {
   const base = (propio && propio.length ? propio : delJefe && delJefe.length ? delJefe : tarjetasDe(p)).filter((x) => TARJETAS.some((t) => t.id === x.id && t.perfiles.includes(p)));

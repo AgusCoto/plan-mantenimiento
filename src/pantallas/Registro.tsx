@@ -10,7 +10,7 @@ const TABLAS: Record<string, string> = {
   equipos: "Equipos", movimientos_equipo: "Movimientos", documentos: "Documentos", reportes_falla: "Reportes de falla", ordenes: "Órdenes",
   fichas: "Fichas", costos_orden: "Costos", pedidos_compra: "Compras", adjuntos: "Fotos y videos", usuarios: "Usuarios", usuario_empresas: "Accesos",
   empresas: "Empresas", areas: "Áreas", tipos_equipo: "Tipos de equipo", listas: "Listas", config: "Configuración", proveedores: "Proveedores",
-  temas: "Apariencia", sesion: "Ingresos", "w-main": "Migración de W-Main",
+  temas: "Apariencia", sesion: "Ingresos", preventivos: "Preventivos", "w-main": "Migración de W-Main",
 };
 const valor = (v: unknown) => (v === null || v === undefined || v === "" ? "—" : typeof v === "boolean" ? (v ? "sí" : "no") : typeof v === "object" ? "(cambió)" : String(v));
 function Detalle({ c }: { c: Cambio }) {
@@ -24,7 +24,7 @@ function Detalle({ c }: { c: Cambio }) {
 }
 // Grupos para filtrar. Por defecto se ven los cambios de las órdenes de trabajo; los ingresos solo si se piden.
 const GRUPOS: [string, string, string[] | null][] = [
-  ["ordenes", "Órdenes de trabajo", ["ordenes", "fichas", "costos_orden", "reportes_falla"]],
+  ["ordenes", "Órdenes de trabajo", ["ordenes", "fichas", "costos_orden", "reportes_falla", "preventivos"]],
   ["equipos", "Equipos y movimientos", ["equipos", "movimientos_equipo", "documentos", "equipo_alias"]],
   ["compras", "Compras", ["pedidos_compra"]],
   ["usuarios", "Usuarios", ["usuarios", "usuario_empresas"]],
