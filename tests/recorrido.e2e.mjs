@@ -64,17 +64,24 @@ await jefe.click("text=Ver la ficha"); await jefe.waitForSelector(".placa"); awa
 const placa = await jefe.textContent(".placa");
 prueba("la ficha muestra empresa dueña, dónde está (prestado) y la foto de la chapa", /Productos de limpieza/.test(placa) && /Inyectora de plásticos/.test(placa) && !!(await jefe.$(".placa img[alt='Foto de la chapa']")), placa.slice(0, 200));
 const idApl = jefe.url().split("/").pop();
-await jefe.click("button[role=tab]:has-text('Documentos')"); await jefe.click("text=Agregar documento");
-await jefe.selectOption("select[name=categoria]", "manual"); await jefe.fill("input[name=nombre]", "Manual de operación");
+prueba("la ficha avisa que no tiene manual", /Ninguno cargado: tocá «Cargar manual»/.test(await jefe.textContent(".placa")));
+await jefe.click(".encabezado button:has-text('Cargar manual')"); await jefe.waitForSelector(".ventana form");
+prueba("«Cargar manual» viene con el tipo «Manual» elegido", (await jefe.$eval(".ventana select[name=categoria]", (x) => x.value)) === "manual");
+await jefe.fill(".ventana input[name=nombre]", "Manual de operación");
 await jefe.setInputFiles(".ventana input[type=file]", { name: "manual.pdf", mimeType: "application/pdf", buffer: Buffer.from("%PDF-1.4 prueba") });
 await jefe.click(".ventana button[type=submit]");
-prueba("el jefe sube un manual", await aviso(jefe, /Documento agregado/));
+prueba("el jefe sube un manual desde la ficha", await aviso(jefe, /Documento cargado/));
+await jefe.waitForSelector(".placa a:has-text('Manual de operación')", { timeout: 8000 }).catch(() => {});
+prueba("y queda a la vista en la ficha, debajo de los datos", !!(await jefe.$(".placa a:has-text('Manual de operación')")));
 // Dos equipos más para las etiquetas
 for (const [t, n, e] of [["COM", "Compresor de tornillo 30 HP", "INY"], ["INY", "Inyectora 280 t", "INY"]]) {
   await jefe.goto(APP + "equipos/nuevo"); await jefe.selectOption("select[name=tipo]", t); await jefe.selectOption("select[name=duena]", emp[e]);
-  await jefe.fill("input[name=nombre]", n); await jefe.selectOption("select[name=criticidad]", "alta"); await jefe.click("button[type=submit]:has-text('Dar de alta')");
+  await jefe.fill("input[name=nombre]", n); await jefe.selectOption("select[name=criticidad]", "alta");
+  if (t === "COM") await jefe.setInputFiles("input[name=manuales]", { name: "Manual compresor GA22.pdf", mimeType: "application/pdf", buffer: Buffer.from("%PDF-1.4 compresor") });
+  await jefe.click("button[type=submit]:has-text('Dar de alta')");
   await jefe.waitForSelector("h1:has-text('Equipo dado de alta')");
 }
+prueba("el manual se puede adjuntar en el mismo relevamiento", sql("select count(*) from documentos d join equipos e on e.id = d.equipo_id where e.codigo = 'INY-COM-001' and d.categoria = 'manual' and d.nombre = 'Manual compresor GA22'") === "1");
 await jefe.goto(APP + "equipos/etiquetas"); await jefe.waitForSelector("text=Etiquetas QR y NFC");
 await jefe.click("text=Elegir los 3 filtrados");
 const [pdf3] = await Promise.all([jefe.waitForEvent("download"), jefe.click("button:has-text('PDF de 3 etiquetas')")]);
@@ -514,7 +521,13 @@ await foto(yo2, "64-informe");
 await yo2.goto(APP + "resumen"); await yo2.waitForSelector("h1:has-text('Resumen para Dirección')");
 prueba("Resumen para Dirección", /Lo más urgente/.test(await yo2.textContent("main")));
 await yo2.goto(APP + "manuales"); await yo2.waitForSelector("h1:has-text('Manuales')");
-prueba("Manuales reúne los documentos de todos los equipos", /Manual de operación/.test(await yo2.textContent("main")));
+prueba("Manuales reúne los documentos de todos los equipos", /Manual de operación/.test(await yo2.textContent("main")) && /Manual compresor GA22/.test(await yo2.textContent("main")));
+await yo2.click(".encabezado button:has-text('Cargar manual')"); await yo2.waitForSelector(".ventana form");
+await yo2.selectOption(".ventana select[aria-label=Equipo]", idIny);
+await yo2.setInputFiles(".ventana input[type=file]", [{ name: "Plano electrico.pdf", mimeType: "application/pdf", buffer: Buffer.from("%PDF-1.4 a") }, { name: "Manual inyectora.pdf", mimeType: "application/pdf", buffer: Buffer.from("%PDF-1.4 b") }]);
+await yo2.click(".ventana button[type=submit]");
+prueba("desde Manuales se cargan varios a la vez eligiendo el equipo", await aviso(yo2, /2 documentos cargados/)
+  && sql("select count(*) from documentos d join equipos e on e.id = d.equipo_id where e.codigo = 'INY-INY-001' and d.nombre in ('Plano electrico', 'Manual inyectora')") === "2");
 await yo2.goto(APP + "ayuda"); await yo2.waitForSelector("h1:has-text('¿Dónde está cada cosa?')");
 prueba("«¿Dónde está cada cosa?»", (await yo2.$$("details.ayuda")).length >= 8);
 await yo2.goto(APP + "#INY-INY-001"); await yo2.waitForURL(/\/equipos\/[0-9a-f-]{36}/, { timeout: 15000 }).catch(() => {});

@@ -10,6 +10,7 @@ import { achicarFoto, subir } from "../../comun/archivos";
 import { Campo, avisar } from "../../comun/ui";
 import { Ico } from "../../sistema/iconos";
 import { Recien } from "./Recien";
+import { subirDocumento } from "../../comun/documentos";
 import { ProveedorCampo, proveedorDe, valores as valoresForm } from "../../comun/proveedor";
 import type { CampoTipo, Equipo } from "../../datos/tipos";
 
@@ -73,6 +74,10 @@ export function FormEquipo() {
         if (campo) camposFoto[campo.clave] = ruta;
       }
       if (Object.keys(camposFoto).length) eq = await actualizar("equipos", eq.id, { campos: { ...valores, ...camposFoto } }) as Equipo;
+      // Manuales y otros documentos (PDF, planos, PLC…)
+      const max = Number(d.conf("documento_max_mb", 25));
+      for (const x of f.getAll("manuales")) if (x instanceof File && x.size) await subirDocumento(eq.id, x, "manual", null, max);
+      for (const x of f.getAll("otros_docs")) if (x instanceof File && x.size) await subirDocumento(eq.id, x, /\.(dwg|dxf)$/i.test(x.name) ? "plano" : "otro", null, max);
       await d.recargar("equipos", "documentos", "registro_cambios");
       if (e) { avisar("Ficha guardada"); nav("/equipos/" + eq.id); } else { setCreado(eq); window.scrollTo(0, 0); }
     } catch (x) { setError((x as { msg?: string }).msg || "No se pudo guardar."); setOcupado(false); return; }
@@ -126,7 +131,13 @@ export function FormEquipo() {
           <p className="chico suave">Después del alta, la ubicación se cambia con un movimiento (reubicación o préstamo), así queda registrado.</p>
         </section>}
         <section className="panel form">
+          <h2 style={{ margin: 0 }}>Manual y documentos</h2>
+          <div className="fila">
+            <Campo label="Manual del fabricante (PDF)" ayuda="Podés elegir varios archivos"><input type="file" name="manuales" accept=".pdf,application/pdf,image/*" multiple /></Campo>
+            <Campo label="Planos, programas de PLC u otros"><input type="file" name="otros_docs" multiple /></Campo>
+          </div>
           <Campo label="Más fotos del equipo (opcional)"><input type="file" name="fotos" accept="image/*" multiple /></Campo>
+          <p className="chico suave" style={{ margin: 0 }}>Después se suman más desde la ficha del equipo («Cargar manual») o desde Menú → Manuales. Los ve solo el personal de mantenimiento.</p>
         </section>
         {error && <p className="nota critico" role="alert">{error}</p>}
         <div className="botones"><button className="boton pri grande" type="submit" disabled={ocupado}>{ocupado ? "Guardando…" : e ? "Guardar ficha" : "Dar de alta"}</button></div>

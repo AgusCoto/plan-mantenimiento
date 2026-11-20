@@ -5,13 +5,13 @@ import { Link } from "react-router-dom";
 import { useDatos } from "../datos/store";
 import { useSesion } from "../datos/sesion";
 import { useTema } from "../sistema/tema";
-import { Codigo, Emp, Pastilla, descargar } from "../comun/ui";
+import { Codigo, Emp, Pastilla, abrir, descargar } from "../comun/ui";
 import { fd, fdt, hoy, nf, pesos } from "../comun/formato";
 import { xlsx } from "../comun/exportar";
 import { Ico } from "../sistema/iconos";
 import { ACTIVAS, EstadoOT, PrioridadOT, costoOrden, num4, rangoPrioridad, vencida } from "./ordenes/comun";
 import { estadoEquipo } from "./Inicio";
-import { AbrirDoc, CATEGORIAS } from "./equipos/Ficha";
+import { AbrirDoc, CATEGORIAS, NuevoDocumento } from "./equipos/Ficha";
 import { useResumenPrev } from "./preventivos/Preventivos";
 import type { Equipo, Ficha, Orden } from "../datos/tipos";
 
@@ -213,7 +213,8 @@ export function ResumenDireccion() {
 
 /* ---------- Manuales ---------- */
 export function Manuales() {
-  const d = useDatos();
+  const d = useDatos(), s = useSesion();
+  const jefe = s.usuario!.perfil === "jefe";
   const [q, setQ] = useState(""); const [cat, setCat] = useState(""); const [emp, setEmp] = useState("");
   const ql = q.trim().toLowerCase();
   const l = d.documentos.filter((x) => x.activo && x.categoria !== "chapa" && x.categoria !== "foto").map((x) => ({ x, e: d.equipo(x.equipo_id) }))
@@ -221,7 +222,8 @@ export function Manuales() {
     .sort((a, b) => (a.e?.codigo || "").localeCompare(b.e?.codigo || "") || a.x.nombre.localeCompare(b.x.nombre));
   return (
     <>
-      <div className="encabezado"><div><h1>Manuales</h1><p>Manuales del fabricante, planos eléctricos, programas de PLC y procedimientos de todos los equipos. Se cargan desde la ficha de cada equipo (pestaña Documentos).</p></div></div>
+      <div className="encabezado"><div><h1>Manuales</h1><p>Manuales del fabricante, planos eléctricos, programas de PLC y procedimientos de todos los equipos.</p></div><span className="sp" />
+        {jefe && <button className="boton pri" onClick={() => abrir(<NuevoDocumento />)}><Ico n="mas" />Cargar manual</button>}</div>
       <div className="filtros">
         <input type="search" placeholder="Buscar por equipo, marca, modelo o nombre" value={q} onChange={(e) => setQ(e.target.value)} style={{ flex: 1, minWidth: 180 }} aria-label="Buscar" />
         <select value={cat} onChange={(e) => setCat(e.target.value)} aria-label="Tipo de documento"><option value="">Todo tipo</option>{Object.entries(CATEGORIAS).filter(([k]) => !["chapa", "foto"].includes(k)).map(([k, n]) => <option key={k} value={k}>{n}</option>)}</select>

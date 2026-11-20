@@ -10,12 +10,13 @@ import { fd, fdt, nf, pesos } from "../../comun/formato";
 import { estadoEquipo } from "../Inicio";
 import { enlaceEquipo, qrDataUrl } from "../../comun/qr";
 import { pdfEtiquetas } from "../../comun/etiquetas";
-import { subir, urlFirmada, useUrl, achicarFoto } from "../../comun/archivos";
+import { urlFirmada, useUrl } from "../../comun/archivos";
 import { insertar, actualizar, llamar } from "../../datos/cola";
 import { BotonNFC, datosEtiqueta } from "./Recien";
 import { Ico } from "../../sistema/iconos";
 import { AccionesEquipo } from "../movimientos/AccionesEquipo";
 import { pdfBaja } from "../../comun/informes";
+import { subirDocumento } from "../../comun/documentos";
 import { FormPreventivo, ListaPrev } from "../preventivos/Preventivos";
 import { estadoPrev } from "../preventivos/comun";
 import { ESTADOS_MOV } from "../movimientos/Movimientos";
@@ -32,29 +33,26 @@ function Miniatura({ doc }: { doc: Documento }) {
   const u = useUrl(doc.bucket, doc.ruta);
   return u ? <img src={u} alt={doc.nombre} style={{ width: 120, height: 90, objectFit: "cover", borderRadius: "var(--r-m)", border: "var(--borde) solid var(--linea)" }} /> : null;
 }
-function NuevoDocumento({ e }: { e: Equipo }) {
+/** Cargar manuales y documentos. Sin equipo, pide elegirlo (desde Menú → Manuales). */
+export function NuevoDocumento({ e, categoria = "manual" }: { e?: Equipo; categoria?: string }) {
   const d = useDatos();
+  const [eq, setEq] = useState(e?.id || "");
   return (
-    <Ventana titulo="Agregar documento" onSubmit={async (v, f) => {
-      const archivo = (f.querySelector("input[type=file]") as HTMLInputElement).files?.[0];
+    <Ventana titulo={categoria === "manual" ? "Cargar manual" : "Agregar documento"} onSubmit={async (v, f) => {
+      const archivos = Array.from((f.querySelector("input[type=file]") as HTMLInputElement).files || []);
+      if (!eq) throw { msg: "Elegí el equipo." };
+      if (!archivos.length && !v.url) throw { msg: "Elegí un archivo o pegá un enlace." };
       const max = Number(d.conf("documento_max_mb", 25));
-      if (!archivo && !v.url) throw { msg: "Elegí un archivo o pegá un enlace." };
-      let ruta: string | null = null, mime: string | null = null, bytes: number | null = null;
-      if (archivo) {
-        if (archivo.size > max * 1048576) throw { msg: `El archivo supera los ${max} MB.` };
-        const foto = archivo.type.startsWith("image/");
-        const blob = foto ? await achicarFoto(archivo) : archivo;
-        const ext = foto ? "jpg" : (archivo.name.match(/\.([a-z0-9]{1,6})$/i)?.[1] || "bin").toLowerCase();
-        ruta = await subir("documentos", `${e.id}/${crypto.randomUUID()}.${ext}`, blob, foto ? "image/jpeg" : archivo.type);
-        mime = foto ? "image/jpeg" : archivo.type; bytes = blob.size;
-      }
-      await insertar("documentos", { equipo_id: e.id, categoria: v.categoria, nombre: v.nombre || archivo?.name || "Documento", bucket: ruta ? "documentos" : null, ruta, url: ruta ? null : v.url, mime, bytes });
-      await d.recargar("documentos"); avisar("Documento agregado");
+      for (const a of archivos) await subirDocumento(eq, a, v.categoria, archivos.length === 1 ? v.nombre : null, max);
+      if (!archivos.length) await insertar("documentos", { equipo_id: eq, categoria: v.categoria, nombre: v.nombre || "Documento", url: v.url });
+      await d.recargar("documentos"); avisar(archivos.length > 1 ? `${archivos.length} documentos cargados` : "Documento cargado");
     }}>
-      <Campo label="Tipo"><select name="categoria" defaultValue="manual">{Object.entries(CATEGORIAS).map(([k, n]) => <option key={k} value={k}>{n}</option>)}</select></Campo>
-      <Campo label="Nombre"><input type="text" name="nombre" placeholder="Ej.: Manual de operación y mantenimiento" /></Campo>
-      <Campo label="Archivo (PDF, foto, programa de PLC…)"><input type="file" /></Campo>
-      <Campo label="…o un enlace"><input type="url" name="url" placeholder="https://" /></Campo>
+      {!e && <Campo label="Equipo *"><select required value={eq} onChange={(x) => setEq(x.target.value)} aria-label="Equipo"><option value="">Elegí…</option>
+        {d.equipos.filter((x) => x.estado !== "baja").map((x) => <option key={x.id} value={x.id}>{x.codigo} · {x.nombre}</option>)}</select></Campo>}
+      <Campo label="Tipo"><select name="categoria" defaultValue={categoria}>{Object.entries(CATEGORIAS).map(([k, n]) => <option key={k} value={k}>{n}</option>)}</select></Campo>
+      <Campo label="Archivo" ayuda="PDF, foto, programa de PLC… Podés elegir varios a la vez. Hasta 25 MB cada uno."><input type="file" multiple accept=".pdf,image/*,.doc,.docx,.xls,.xlsx,.zip,.txt,.dwg,application/pdf" /></Campo>
+      <Campo label="Nombre (opcional)"><input type="text" name="nombre" placeholder="Ej.: Manual de operación y mantenimiento (si no, va el nombre del archivo)" /></Campo>
+      <Campo label="…o un enlace (si el manual está en la web del fabricante)"><input type="url" name="url" placeholder="https://" /></Campo>
     </Ventana>
   );
 }
@@ -96,6 +94,7 @@ export function Ficha() {
   hist.sort((a, b) => b.ts.localeCompare(a.ts));
   const [est, c] = estadoEquipo(e.estado);
   const verDocs = ["jefe", "encargado", "tecnico"].includes(perfil);
+  const manuales = docs.filter((x) => ["manual", "plano", "plc", "bloqueo"].includes(x.categoria));
   const prevs = d.preventivos.filter((p) => p.equipo_id === e.id && p.activo);
   const tabs: [string, string][] = [["historial", "Historial"], ["ordenes", `${tema.t("ordenes")} (${ordenes.length})`], ["preventivos", `Preventivos (${prevs.length})`], ...(verDocs ? [["documentos", `Documentos (${docs.length})`] as [string, string]] : []), ["movimientos", `${tema.t("movimientos")} (${movs.length})`], ["datos", "Datos"]];
   const tel = d.conf<string>("telefono_mantenimiento", "");
@@ -106,6 +105,7 @@ export function Ficha() {
           {e.estado !== "baja" && <Link className="boton" to={"/reportar/" + e.id}><Ico n="reportes" />{tema.t("reportar")}</Link>}
           {["jefe", "encargado"].includes(perfil) && e.estado !== "baja" && <Link className="boton pri" to={"/ordenes/nueva?equipo=" + e.id}><Ico n="mas" />Nueva {tema.t("orden_abrev")}</Link>}
           {perfil === "jefe" && <Link className="boton" to={`/equipos/${e.id}/editar`}>Editar ficha</Link>}
+          {perfil === "jefe" && e.estado !== "baja" && <button className="boton" onClick={() => abrir(<NuevoDocumento e={e} />)}><Ico n="libro" />Cargar manual</button>}
           <AccionesEquipo e={e} />
           {e.estado === "baja" && ["jefe", "encargado", "direccion"].includes(perfil) && <button className="boton" onClick={async () => {
             try { descargar(`informe-baja-${e.codigo}.pdf`, await pdfBaja(d, tema.tokens, e.id, tema.t("orden_abrev"))); } catch { avisar("No se pudo armar el informe de baja."); }
@@ -122,6 +122,8 @@ export function Ficha() {
             <dt>Empresa dueña</dt><dd>{due && <Emp sigla={due.sigla} nombre={due.nombre} />}</dd>
             <dt>Dónde está</dt><dd>{ubi && <Emp sigla={ubi.sigla} nombre={ubi.nombre} />}{ubi?.id !== due?.id && <> <Pastilla c="info">En otra empresa</Pastilla></>}<div className="chico suave">{[d.areas.find((a) => a.id === e.area_id)?.nombre, e.ubicacion].filter(Boolean).join(" · ") || ""}</div></dd>
             {e.horometro != null && <><dt>{tema.t("horometro")}</dt><dd>{nf.format(e.horometro)} h <span className="chico suave">({fd(e.horometro_fecha)})</span></dd></>}
+            {verDocs && <><dt>Manuales</dt><dd>{manuales.length ? manuales.map((m, i) => <span key={m.id}>{i > 0 && " · "}<AbrirDoc doc={m} /></span>)
+              : <span className="suave">{perfil === "jefe" ? "Ninguno cargado: tocá «Cargar manual»" : "Ninguno cargado"}</span>}</dd></>}
             <dt>Alta</dt><dd>{fd(e.creado_en)}{d.usuarioDe(e.creado_por) ? " · " + d.usuarioDe(e.creado_por)!.nombre : ""}</dd>
           </dl>
         </div>
