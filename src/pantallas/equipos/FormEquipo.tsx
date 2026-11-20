@@ -6,11 +6,11 @@ import { useDatos } from "../../datos/store";
 import { useTema } from "../../sistema/tema";
 import { insertar, actualizar } from "../../datos/cola";
 import { falla } from "../../datos/supabase";
-import { achicarFoto, subir } from "../../comun/archivos";
+import { Captura, achicarFoto, subir, type Medio } from "../../comun/archivos";
 import { Campo, avisar } from "../../comun/ui";
 import { Ico } from "../../sistema/iconos";
 import { Recien } from "./Recien";
-import { subirDocumento } from "../../comun/documentos";
+import { subirDocumento, subirFotosEquipo } from "../../comun/documentos";
 import { ProveedorCampo, proveedorDe, valores as valoresForm } from "../../comun/proveedor";
 import type { CampoTipo, Equipo } from "../../datos/tipos";
 
@@ -30,11 +30,12 @@ export function FormEquipo() {
   const e = id ? d.equipo(id) : undefined;
   const [tipo, setTipo] = useState(e?.tipo || "");
   const [chapa, setChapa] = useState<string | null>(null);
+  const [fotos, setFotos] = useState<Medio[]>([]);
   const [ocupado, setOcupado] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [creado, setCreado] = useState<Equipo | null>(null);
   if (id && !e) return <p className="vacio">No existe el equipo.</p>;
-  if (creado) return <Recien e={creado} otro={() => { setCreado(null); setChapa(null); setTipo(""); }} />;
+  if (creado) return <Recien e={creado} otro={() => { setCreado(null); setChapa(null); setFotos([]); setTipo(""); }} />;
   const campos = d.tipos_equipo.find((t) => t.sigla === tipo)?.campos || [];
 
   async function guardar(ev: FormEvent<HTMLFormElement>) {
@@ -63,7 +64,6 @@ export function FormEquipo() {
       // Fotos: chapa, campos de tipo foto y fotos generales → documentos del equipo
       const docs: { categoria: string; nombre: string; archivo: File }[] = [];
       const fc = f.get("chapa"); if (fc instanceof File && fc.size) docs.push({ categoria: "chapa", nombre: "Foto de la chapa", archivo: fc });
-      for (const x of f.getAll("fotos")) if (x instanceof File && x.size) docs.push({ categoria: "foto", nombre: "Foto del equipo", archivo: x });
       const camposFoto: Record<string, string> = {};
       for (const c of campos.filter((c) => c.tipo === "foto")) { const x = f.get("foto:" + c.clave); if (x instanceof File && x.size) docs.push({ categoria: "foto", nombre: c.etiqueta, archivo: x }); }
       for (const doc of docs) {
@@ -73,6 +73,7 @@ export function FormEquipo() {
         const campo = campos.find((c) => c.tipo === "foto" && c.etiqueta === doc.nombre);
         if (campo) camposFoto[campo.clave] = ruta;
       }
+      await subirFotosEquipo(eq.id, fotos, null);
       if (Object.keys(camposFoto).length) eq = await actualizar("equipos", eq.id, { campos: { ...valores, ...camposFoto } }) as Equipo;
       // Manuales y otros documentos (PDF, planos, PLC…)
       const max = Number(d.conf("documento_max_mb", 25));
@@ -136,7 +137,8 @@ export function FormEquipo() {
             <Campo label="Manual del fabricante (PDF)" ayuda="Podés elegir varios archivos"><input type="file" name="manuales" accept=".pdf,application/pdf,image/*" multiple /></Campo>
             <Campo label="Planos, programas de PLC u otros"><input type="file" name="otros_docs" multiple /></Campo>
           </div>
-          <Campo label="Más fotos del equipo (opcional)"><input type="file" name="fotos" accept="image/*" multiple /></Campo>
+          <Captura medios={fotos} setMedios={setFotos} video={false} compacto titulo={`Fotos del equipo (opcional${fotos.length ? ` · ${fotos.length} elegida${fotos.length > 1 ? "s" : ""}` : ""})`} />
+          <p className="chico suave" style={{ margin: 0 }}>Sacá o elegí todas las que quieras: se van sumando, no se reemplazan.</p>
           <p className="chico suave" style={{ margin: 0 }}>Después se suman más desde la ficha del equipo («Cargar manual») o desde Menú → Manuales. Los ve solo el personal de mantenimiento.</p>
         </section>
         {error && <p className="nota critico" role="alert">{error}</p>}

@@ -14,3 +14,14 @@ export async function subirDocumento(equipoId: string, archivo: File, categoria:
   await insertar("documentos", { equipo_id: equipoId, categoria, nombre: (nombre || "").trim() || sinExt || "Documento", bucket: "documentos", ruta, mime, bytes: blob.size });
   return ruta;
 }
+
+/** Fotos del equipo ya preparadas (achicadas) con Captura: cada una queda como documento «Foto». */
+export async function subirFotosEquipo(equipoId: string, fotos: { id: string; blob: Blob; mime: string }[], nombre: string | null) {
+  let n = 0;
+  for (const m of fotos) {
+    const ruta = await subir("documentos", `${equipoId}/${m.id}.jpg`, m.blob, m.mime || "image/jpeg");
+    await insertar("documentos", { equipo_id: equipoId, categoria: "foto", nombre: (nombre || "").trim() || "Foto del equipo", bucket: "documentos", ruta, mime: m.mime || "image/jpeg", bytes: m.blob.size });
+    n++;
+  }
+  return n;
+}

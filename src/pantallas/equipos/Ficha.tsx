@@ -10,13 +10,13 @@ import { fd, fdt, nf, pesos } from "../../comun/formato";
 import { estadoEquipo } from "../Inicio";
 import { enlaceEquipo, qrDataUrl } from "../../comun/qr";
 import { pdfEtiquetas } from "../../comun/etiquetas";
-import { urlFirmada, useUrl } from "../../comun/archivos";
+import { Captura, urlFirmada, useUrl, type Medio } from "../../comun/archivos";
 import { insertar, actualizar, llamar } from "../../datos/cola";
 import { BotonNFC, datosEtiqueta } from "./Recien";
 import { Ico } from "../../sistema/iconos";
 import { AccionesEquipo } from "../movimientos/AccionesEquipo";
 import { pdfBaja } from "../../comun/informes";
-import { subirDocumento } from "../../comun/documentos";
+import { subirDocumento, subirFotosEquipo } from "../../comun/documentos";
 import { FormPreventivo, ListaPrev } from "../preventivos/Preventivos";
 import { estadoPrev } from "../preventivos/comun";
 import { ESTADOS_MOV } from "../movimientos/Movimientos";
@@ -32,6 +32,31 @@ function Qr({ codigo }: { codigo: string }) {
 function Miniatura({ doc }: { doc: Documento }) {
   const u = useUrl(doc.bucket, doc.ruta);
   return u ? <img src={u} alt={doc.nombre} style={{ width: 120, height: 90, objectFit: "cover", borderRadius: "var(--r-m)", border: "var(--borde) solid var(--linea)" }} /> : null;
+}
+const ES_FOTO = (x: Documento) => ["chapa", "foto", "configuracion"].includes(x.categoria) || (x.mime || "").startsWith("image/");
+function FotoGaleria({ doc }: { doc: Documento }) {
+  const u = useUrl(doc.bucket, doc.ruta);
+  const nombre = doc.categoria === "chapa" ? "Chapa" : doc.nombre;
+  return <figure style={{ margin: 0, display: "flex", flexDirection: "column", gap: 2, width: 120 }}>
+    {u ? <img src={u} alt={nombre} loading="lazy" onClick={() => abrir(<Ventana titulo={nombre}><img src={u} alt={nombre} style={{ maxWidth: "100%", borderRadius: "var(--r-m)" }} /></Ventana>)} /> : <div className="ph">Cargando…</div>}
+    <figcaption className="chico suave" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{nombre}</figcaption>
+  </figure>;
+}
+/** Sumar fotos al equipo: se van acumulando (cámara o galería) y se guardan todas juntas. */
+export function NuevasFotos({ e }: { e: Equipo }) {
+  const d = useDatos();
+  const [medios, setMedios] = useState<Medio[]>([]);
+  return (
+    <Ventana titulo="Agregar fotos" ok={medios.length > 1 ? `Guardar ${medios.length} fotos` : "Guardar foto"} onSubmit={async (v) => {
+      if (!medios.length) throw { msg: "Sacá o elegí al menos una foto." };
+      const n = await subirFotosEquipo(e.id, medios, v.nombre);
+      await d.recargar("documentos"); avisar(n > 1 ? `${n} fotos agregadas` : "Foto agregada");
+    }}>
+      <p className="chico suave" style={{ margin: 0 }}>Podés sacar varias seguidas o elegirlas de la galería: se van sumando. Tocá × para quitar una antes de guardar.</p>
+      <Captura medios={medios} setMedios={setMedios} video={false} compacto />
+      <Campo label="Descripción (opcional)"><input type="text" name="nombre" placeholder="Ej.: Tablero eléctrico, vista lateral…" /></Campo>
+    </Ventana>
+  );
 }
 /** Cargar manuales y documentos. Sin equipo, pide elegirlo (desde Menú → Manuales). */
 export function NuevoDocumento({ e, categoria = "manual" }: { e?: Equipo; categoria?: string }) {
@@ -94,6 +119,7 @@ export function Ficha() {
   hist.sort((a, b) => b.ts.localeCompare(a.ts));
   const [est, c] = estadoEquipo(e.estado);
   const verDocs = ["jefe", "encargado", "tecnico"].includes(perfil);
+  const fotos = docs.filter(ES_FOTO);
   const manuales = docs.filter((x) => ["manual", "plano", "plc", "bloqueo"].includes(x.categoria));
   const prevs = d.preventivos.filter((p) => p.equipo_id === e.id && p.activo);
   const tabs: [string, string][] = [["historial", "Historial"], ["ordenes", `${tema.t("ordenes")} (${ordenes.length})`], ["preventivos", `Preventivos (${prevs.length})`], ...(verDocs ? [["documentos", `Documentos (${docs.length})`] as [string, string]] : []), ["movimientos", `${tema.t("movimientos")} (${movs.length})`], ["datos", "Datos"]];
@@ -134,6 +160,11 @@ export function Ficha() {
           {perfil === "jefe" && <BotonNFC codigo={e.codigo} />}
         </div>
       </div>
+      {verDocs && (fotos.length > 0 || perfil === "jefe") && <section className="panel fotos-equipo">
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: "var(--e2)" }}><h2 style={{ margin: 0 }}>Fotos ({fotos.length})</h2><span className="sp" />
+          {perfil === "jefe" && e.estado !== "baja" && <button className="boton chico" onClick={() => abrir(<NuevasFotos e={e} />)}><Ico n="camara" />Agregar fotos</button>}</div>
+        {fotos.length ? <div className="medios">{fotos.map((x) => <FotoGaleria key={x.id} doc={x} />)}</div> : <p className="vacio" style={{ margin: 0 }}>Sin fotos. Tocá «Agregar fotos»: podés cargar todas las que quieras.</p>}
+      </section>}
       {bajaMov && <div className="nota" role="note">
         <b>Dado de baja el {fd(bajaMov.fecha_salida || bajaMov.creado_en)}</b> · destino: {d.item("destino_baja", bajaMov.destino_baja)?.nombre || bajaMov.destino_baja}
         {bajaMov.receptor ? ` · retira: ${bajaMov.receptor}` : ""}{bajaMov.valor_recupero != null ? ` · valor de recupero: ${pesos(Number(bajaMov.valor_recupero))}` : ""}

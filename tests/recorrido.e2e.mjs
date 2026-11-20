@@ -73,6 +73,17 @@ await jefe.click(".ventana button[type=submit]");
 prueba("el jefe sube un manual desde la ficha", await aviso(jefe, /Documento cargado/));
 await jefe.waitForSelector(".placa a:has-text('Manual de operación')", { timeout: 8000 }).catch(() => {});
 prueba("y queda a la vista en la ficha, debajo de los datos", !!(await jefe.$(".placa a:has-text('Manual de operación')")));
+await jefe.click(".fotos-equipo button:has-text('Agregar fotos')"); await jefe.waitForSelector(".ventana .captura");
+await jefe.setInputFiles(".ventana .captura input[capture]", { name: "frente.png", mimeType: "image/png", buffer: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==", "base64") });
+await jefe.waitForSelector(".ventana .medios img");
+await jefe.setInputFiles(".ventana .captura input[multiple]", [{ name: "lateral.png", mimeType: "image/png", buffer: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==", "base64") }, { name: "tablero.png", mimeType: "image/png", buffer: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==", "base64") }]);
+await jefe.waitForFunction(() => document.querySelectorAll(".ventana .medios img").length === 3, null, { timeout: 8000 }).catch(() => {});
+prueba("las fotos nuevas se suman a las anteriores, no las reemplazan", (await jefe.$$(".ventana .medios img")).length === 3);
+await jefe.click(".ventana .medios .quitar >> nth=2");
+await jefe.fill(".ventana input[name=nombre]", "Vista del equipo"); await jefe.click(".ventana button[type=submit]");
+prueba("el jefe guarda varias fotos del equipo juntas", await aviso(jefe, /2 fotos agregadas/));
+await jefe.waitForFunction(() => document.querySelectorAll(".fotos-equipo figure").length >= 2, null, { timeout: 8000 }).catch(() => {});
+prueba("y se ven en la galería de la ficha", /Fotos \(\d+\)/.test(await jefe.textContent(".fotos-equipo h2")) && (await jefe.$$(".fotos-equipo figure")).length >= 2);
 // Dos equipos más para las etiquetas
 for (const [t, n, e] of [["COM", "Compresor de tornillo 30 HP", "INY"], ["INY", "Inyectora 280 t", "INY"]]) {
   await jefe.goto(APP + "equipos/nuevo"); await jefe.selectOption("select[name=tipo]", t); await jefe.selectOption("select[name=duena]", emp[e]);
