@@ -287,5 +287,22 @@ r = await jefe.rpc("estado_usuario", { p_id: conHist, p_activo: true }); prueba(
 r = await crear(jefe, "con.historia", "operario", ["INY"]); prueba("el usuario liberado se puede volver a usar", !r.error, r.error);
 try { sql(`delete from usuarios where id = '${conHist}'`); prueba("fuera de eliminar_usuario, los usuarios no se borran", false); } catch { prueba("fuera de eliminar_usuario, los usuarios no se borran", true); }
 
+console.log("Preventivos");
+r = await enc.from("preventivos").insert({ equipo_id: comp2.id, titulo: "x", frecuencia: 1, unidad: "meses" }).select(); prueba("el encargado no arma el plan (lo cambia el jefe)", no(r) || !!r.error, r);
+r = await jefe.from("preventivos").insert({ equipo_id: comp2.id, titulo: "Revisión de correas", frecuencia: 1, unidad: "meses", ultima_fecha: "2026-01-01" }).select().single();
+const prev = r.data; prueba("el jefe carga una tarea preventiva", !!prev?.id, r.error);
+prueba("vencida según la base", sql(`select public.preventivo_estado(p, e.horometro) from preventivos p join equipos e on e.id = p.equipo_id where p.id = '${prev.id}'`) === "vencida");
+r = await tec.from("preventivos").select("id").eq("id", prev.id); prueba("el técnico de la empresa la ve", filas(r) === 1, r);
+r = await tec2.from("preventivos").select("id").eq("id", prev.id); prueba("el de otra empresa no", no(r), r);
+r = await op.from("preventivos").select("id"); prueba("el operario no ve el plan", no(r), r);
+r = await enc.from("ordenes").insert({ equipo_id: comp2.id, preventivo_id: prev.id, titulo: "Preventivo: correas", tipo: "correctiva" }).select().single();
+prueba("el encargado genera la orden (queda como preventiva)", r.data?.tipo === "preventiva", r.error);
+r = await enc.from("ordenes").insert({ equipo_id: comp2.id, preventivo_id: prev.id, titulo: "Otra vez" }).select(); prueba("no se generan dos órdenes abiertas para la misma tarea", !!r.error, r);
+r = await tec.rpc("preventivo_hecho", { p_id: prev.id }); prueba("el técnico no registra preventivos hechos a mano", !!r.error);
+r = await enc.rpc("preventivo_hecho", { p_id: prev.id, p_fecha: "2026-11-10" }); prueba("el encargado sí (por ejemplo, al cargar el plan)", !r.error && sql(`select ultima_fecha from preventivos where id = '${prev.id}'`) === "2026-11-10", r.error);
+r = await jefe.from("preventivos").delete().eq("id", prev.id).select(); prueba("las tareas no se borran (se quitan del plan)", no(r) || !!r.error, r);
+sql("select public.avisos_diarios()");
+prueba("el resumen diario cuenta los preventivos vencidos", /preventivos vencidos/.test(sql(`select cuerpo from avisos where usuario_id = '${jefe.uid}' and tipo = 'resumen_diario' order by id desc limit 1`)));
+
 console.log(`\n${ok} correctas, ${mal} con problemas`);
 process.exit(mal ? 1 : 0);

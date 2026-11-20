@@ -456,13 +456,62 @@ if (subOk) {
 console.log("Editar mis datos");
 const yo = await como("jefe");
 await yo.goto(APP + "usuarios"); await yo.click("button:has-text('Editar mis datos')"); await yo.waitForSelector(".ventana form");
-prueba("el perfil de jefe no se puede cambiar desde ahí", (await yo.$eval(".ventana input[disabled]", (x) => x.value)) === "Jefe de mantenimiento");
+prueba("el perfil de jefe no se puede cambiar desde ahí", (await yo.$eval(".ventana input[disabled]", (x) => x.value)) === "Gerente de mantenimiento");
 await yo.fill(".ventana input[name=nombre]", "Agustín Coto T."); await yo.fill(".ventana input[name=usuario]", "agustin"); await yo.fill(".ventana input[name=telefono]", "11 6000-1234");
 await yo.click(".ventana button[type=submit]");
 prueba("el jefe edita su nombre, teléfono y usuario de ingreso", await aviso(yo, /Tus datos se guardaron/)
   && sql("select usuario || '|' || nombre || '|' || telefono from usuarios where perfil = 'jefe'") === "agustin|Agustín Coto T.|11 6000-1234");
 const yo2 = await como(null); await yo2.goto(APP); await yo2.fill("#l-u", "agustin"); await yo2.fill("#l-p", "clave-jefe"); await yo2.click("form button[type=submit]");
 prueba("y entra con el usuario nuevo y la misma contraseña", !!(await yo2.waitForSelector("main h1", { timeout: 15000 }).catch(() => null)));
+
+console.log("Fusión con W-Main: navegación, preventivos, consultas y etiquetas viejas");
+const cel = await como(null, true); await cel.goto(APP); await cel.fill("#l-u", "agustin"); await cel.fill("#l-p", "clave-jefe"); await cel.click("form button[type=submit]"); await cel.waitForSelector("main h1");
+prueba("celular: barra de abajo con Inicio, Órdenes, Escanear, Falla y Menú", (await cel.textContent(".nav-abajo")).replace(/\s+/g, "").startsWith("InicioÓrdenesEscanearFallaMenú") && !(await cel.isVisible(".menu")));
+await cel.click(".nav-abajo button:has-text('Menú')"); await cel.waitForSelector(".cajon");
+const cajonTxt = await cel.textContent(".cajon");
+prueba("el Menú se abre por secciones, como W-Main", ["Día a día", "Equipos", "Consultas e informes", "Ajustes", "Usuarios y permisos", "Configuración", "Buscar fallas anteriores", "Historial de modificaciones", "¿Dónde está cada cosa?", "Gerente de mantenimiento"].every((t) => cajonTxt.includes(t)), cajonTxt.slice(0, 300));
+await foto(cel, "60-menu-celular");
+await cel.click(".cajon a:has-text('Preventivos')"); await cel.waitForSelector("h1:has-text('Preventivos')");
+prueba("tocar una opción cierra el menú y abre la pantalla", !(await cel.$(".cajon")));
+await cel.click(".nav-abajo a:has-text('Escanear')"); await cel.waitForSelector("h1:has-text('Escanear QR / NFC')");
+prueba("el botón Escanear abre el lector", true);
+await foto(cel, "61-escanear");
+
+await yo2.goto(APP + "preventivos"); await yo2.waitForSelector("h1:has-text('Preventivos')");
+await yo2.click("button:has-text('Tarea')"); await yo2.waitForSelector(".ventana form");
+await yo2.selectOption(".ventana select[aria-label=Equipo]", idCom);
+await yo2.fill(".ventana input[name=titulo]", "Cambio de filtro de aire"); await yo2.fill(".ventana input[name=frecuencia]", "1");
+const haceDosMeses = new Date(Date.now() - 62 * 864e5).toISOString().slice(0, 10);
+await yo2.fill(".ventana input[name=ultima_fecha]", haceDosMeses); await yo2.click(".ventana button[type=submit]");
+prueba("el jefe carga una tarea preventiva mensual", await aviso(yo2, /Tarea agregada/));
+await yo2.waitForSelector(".kpi-vencida .v:text-is('1')", { timeout: 8000 }).catch(() => {});
+prueba("hecha hace dos meses: figura vencida en las tarjetas", (await yo2.textContent(".kpi-vencida .v")) === "1");
+await foto(yo2, "62-preventivos");
+await yo2.click(".tarea-prev button:has-text('Generar orden')"); await yo2.waitForURL(/\/ordenes\/[0-9a-f-]{36}$/);
+const otPrev = yo2.url().split("/").pop();
+prueba("«Generar orden» crea la orden preventiva", sql(`select tipo || '|' || titulo from ordenes where id = '${otPrev}'`) === "preventiva|Preventivo: Cambio de filtro de aire");
+sql(`select public._transicion(); update ordenes set estado = 'terminada', terminada_en = now() where id = '${otPrev}';`);
+prueba("al terminar la orden, la tarea queda al día", sql("select ultima_fecha = current_date from preventivos where titulo = 'Cambio de filtro de aire'") === "t");
+await yo2.goto(APP + "equipos/" + idCom); await yo2.click("button[role=tab]:has-text('Preventivos')");
+await yo2.waitForSelector("text=Al día", { timeout: 8000 }).catch(() => {});
+prueba("la ficha del equipo muestra sus preventivos", /Cambio de filtro de aire/.test(await yo2.textContent("main")) && /Al día/.test(await yo2.textContent("main")));
+
+await yo2.goto(APP + "fallas"); await yo2.fill("input[type=search]", "aceite");
+prueba("Buscar fallas anteriores encuentra la de aceite y qué se hizo", /INY-INY-001/.test(await yo2.textContent("main")) && /Cambio de sellos/.test(await yo2.textContent("main")));
+await foto(yo2, "63-buscar-fallas");
+await yo2.goto(APP + "intervenciones"); await yo2.waitForSelector("main table tbody tr");
+prueba("Historial de intervenciones lista las fichas", /Desarme del cilindro/.test(await yo2.textContent("main table")));
+await yo2.goto(APP + "informe"); await yo2.waitForSelector("h1:has-text('Informe mensual')");
+prueba("Informe mensual con sus indicadores", /Órdenes terminadas/.test(await yo2.textContent("main")) && /Gasto por empresa/.test(await yo2.textContent("main")));
+await foto(yo2, "64-informe");
+await yo2.goto(APP + "resumen"); await yo2.waitForSelector("h1:has-text('Resumen para Dirección')");
+prueba("Resumen para Dirección", /Lo más urgente/.test(await yo2.textContent("main")));
+await yo2.goto(APP + "manuales"); await yo2.waitForSelector("h1:has-text('Manuales')");
+prueba("Manuales reúne los documentos de todos los equipos", /Manual de operación/.test(await yo2.textContent("main")));
+await yo2.goto(APP + "ayuda"); await yo2.waitForSelector("h1:has-text('¿Dónde está cada cosa?')");
+prueba("«¿Dónde está cada cosa?»", (await yo2.$$("details.ayuda")).length >= 8);
+await yo2.goto(APP + "#INY-INY-001"); await yo2.waitForURL(/\/equipos\/[0-9a-f-]{36}/, { timeout: 15000 }).catch(() => {});
+prueba("una etiqueta vieja de W-Main (dirección#código) abre el equipo en la app nueva", yo2.url().endsWith("/equipos/" + idIny), yo2.url());
 
 console.log(`\n${ok} correctas, ${mal} con problemas, ${errores.length} errores de página`);
 await b.close();
